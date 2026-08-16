@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 703]</P>
+  <P Name="ZoomFactor">FitSystem</P>
+  <Block BlockType="Inport" Name="aux_multiplier" SID="24">
+    <P Name="Position">[25, 58, 55, 72]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Gain" Name="Auxiliary_Power" SID="111">
+    <P Name="Position">[115, 50, 145, 80]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Gain">auxiliary_base_power_kw*auxiliary_override</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_aux_kW" SID="25">
+    <P Name="Position">[200, 58, 230, 72]</P>
+    <P Name="ZOrder">2</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">4</P>
+    <P Name="Src">111#out:1</P>
+    <P Name="Dst">25#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">5</P>
+    <P Name="Src">24#out:1</P>
+    <P Name="Dst">111#in:1</P>
+  </Line>
+</System>

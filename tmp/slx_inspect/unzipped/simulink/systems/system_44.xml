@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 703]</P>
+  <P Name="ZoomFactor">FitSystem</P>
+  <Block BlockType="Inport" Name="P_battery_cmd_kW" SID="47">
+    <P Name="Position">[25, 118, 55, 132]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Gain" Name="Charge_Energy_Rate" SID="142">
+    <P Name="Position">[290, 110, 320, 140]</P>
+    <P Name="ZOrder">8</P>
+    <P Name="Gain">-battery2_charge_efficiency/3600</P>
+  </Block>
+  <Block BlockType="RelationalOperator" Name="Discharge_Direction" SID="140">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[290, 262, 320, 293]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="Operator">&lt;=</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+    <P Name="RndMeth">Simplest</P>
+  </Block>
+  <Block BlockType="Gain" Name="Discharge_Energy_Rate" SID="141">
+    <P Name="Position">[290, 25, 320, 55]</P>
+    <P Name="ZOrder">7</P>
+    <P Name="Gain">-1/(battery2_discharge_efficiency*3600)</P>
+  </Block>
+  <Block BlockType="Switch" Name="Efficiency_Selection" SID="143">
+    <P Name="Position">[410, 90, 460, 130]</P>
+    <P Name="ZOrder">9</P>
+    <P Name="Criteria">u2 ~= 0</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Gain" Name="State_of_Energy" SID="145">
+    <P Name="Position">[635, 95, 665, 125]</P>
+    <P Name="ZOrder">11</P>
+    <P Name="Gain">1/battery2_usable_energy_kwh</P>
+  </Block>
+  <Block BlockType="DiscreteIntegrator" Name="Stored_Energy_kWh" SID="144">
+    <PortCounts in="1" out="1"/>
+    <P Name="Position">[530, 92, 565, 128]</P>
+    <P Name="ZOrder">10</P>
+    <P Name="InitialCondition">battery2_initial_energy_kwh</P>
+    <P Name="InitialConditionSetting">Auto</P>
+    <P Name="SampleTime">model_sample_time_s</P>
+    <P Name="LimitOutput">on</P>
+    <P Name="UpperSaturationLimit">battery2_max_energy_kwh</P>
+    <P Name="LowerSaturationLimit">battery2_min_energy_kwh</P>
+    <P Name="ICPrevOutput">DiscIntNeverNeededParam</P>
+    <P Name="ICPrevScaledInput">DiscIntNeverNeededParam</P>
+  </Block>
+  <Block BlockType="Saturate" Name="Terminal_Power_Limit" SID="138">
+    <P Name="Position">[140, 110, 170, 140]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="UpperLimit">battery2_max_discharge_kw</P>
+    <P Name="LowerLimit">-battery2_max_charge_kw</P>
+  </Block>
+  <Block BlockType="Constant" Name="Zero" SID="139">
+    <P Name="Position">[140, 270, 170, 300]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="Value">0</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_battery_actual_kW" SID="48">
+    <P Name="Position">[290, 193, 320, 207]</P>
+    <P Name="ZOrder">2</P>
+  </Block>
+  <Block BlockType="Outport" Name="SOE_battery" SID="49">
+    <P Name="Position">[725, 103, 755, 117]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">21</P>
+    <P Name="Src">145#out:1</P>
+    <P Name="Dst">49#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">22</P>
+    <P Name="Src">144#out:1</P>
+    <P Name="Dst">145#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">23</P>
+    <P Name="Src">143#out:1</P>
+    <P Name="Dst">144#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">24</P>
+    <P Name="Src">142#out:1</P>
+    <P Name="Dst">143#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">25</P>
+    <P Name="Src">140#out:1</P>
+    <P Name="Points">[47, 0; 0, -170]</P>
+    <P Name="Dst">143#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">26</P>
+    <P Name="Src">141#out:1</P>
+    <P Name="Points">[59, 0; 0, 55]</P>
+    <P Name="Dst">143#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">27</P>
+    <P Name="Src">139#out:1</P>
+    <P Name="Dst">140#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">29</P>
+    <P Name="Src">138#out:1</P>
+    <P Name="Points">[36, 0]</P>
+    <Branch>
+      <P Name="ZOrder">35</P>
+      <P Name="Points">[20, 0]</P>
+      <Branch>
+        <P Name="ZOrder">36</P>
+        <P Name="Points">[0, 75]</P>
+        <Branch>
+          <P Name="ZOrder">28</P>
+          <P Name="Dst">48#in:1</P>
+        </Branch>
+        <Branch>
+          <P Name="ZOrder">30</P>
+          <P Name="Points">[0, 70]</P>
+          <P Name="Dst">140#in:1</P>
+        </Branch>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">32</P>
+        <P Name="Dst">142#in:1</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">31</P>
+      <P Name="Points">[0, -85]</P>
+      <P Name="Dst">141#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">33</P>
+    <P Name="Src">47#out:1</P>
+    <P Name="Dst">138#in:1</P>
+  </Line>
+</System>

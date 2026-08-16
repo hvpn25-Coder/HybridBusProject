@@ -1,0 +1,9 @@
+routeID,routeName,region,fileName,distanceKm,drivingDurationHours,retrievedUTC,originLongitude,originLatitude,destinationLongitude,destinationLatitude
+EUR-BER-VIE,"Berlin, Germany to Vienna, Austria",Germany / Austria,OSRM_Berlin_Vienna.json,677.8177,7.44525,2026-08-15T05:26:09Z,13.405,52.52,16.3738,48.2082
+EUR-HAM-PAR,"Hamburg, Germany to Paris, France",Germany / France,OSRM_Hamburg_Paris.json,903.0361,9.20513888888889,2026-08-15T05:26:10Z,9.9937,53.5511,2.3522,48.8566
+EUR-MUC-ROM,"Munich, Germany to Rome, Italy",Germany / Austria / Italy,OSRM_Munich_Rome.json,915.8953,9.78919444444444,2026-08-15T05:26:10Z,11.582,48.1351,12.4964,41.9028
+EUR-AMS-ZRH,"Amsterdam, Netherlands to Zurich, Switzerland",Netherlands / Germany / Switzerland,OSRM_Amsterdam_Zurich.json,821.3774,8.48791666666667,2026-08-15T05:26:11Z,4.9041,52.3676,8.5417,47.3769
+EUR-STO-CPH,"Stockholm, Sweden to Copenhagen, Denmark",Sweden / Denmark,OSRM_Stockholm_Copenhagen.json,656.7745,7.59430555555556,2026-08-15T05:26:11Z,18.0686,59.3293,12.5683,55.6761
+EUR-PRG-BRU,"Prague, Czechia to Brussels, Belgium",Czechia / Germany / Belgium,OSRM_Prague_Brussels.json,907.5635,9.03802777777778,2026-08-15T05:26:12Z,14.4378,50.0755,4.3517,50.8503
+EUR-WAW-PRG,"Warsaw, Poland to Prague, Czechia",Poland / Czechia,OSRM_Warsaw_Prague.json,638.3335,7.40488888888889,2026-08-15T05:26:12Z,21.0122,52.2297,14.4378,50.0755
+EUR-FRA-MIL,"Frankfurt, Germany to Milan, Italy",Germany / Switzerland / Italy,OSRM_Frankfurt_Milan.json,664.9363,7.35272222222222,2026-08-15T05:26:12Z,8.6821,50.1109,9.19,45.4642

@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[23, 11, 1017, 770]</P>
+  <P Name="ZoomFactor">47</P>
+  <P Name="ReportName">simulink-default.rpt</P>
+  <P Name="SIDHighWatermark">224</P>
+  <Block BlockType="SubSystem" Name="Auxiliary_Loads" SID="21">
+    <PortCounts in="1" out="1"/>
+    <P Name="Position">[425, 530, 545, 580]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_21"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_21"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Battery_Pack_1" SID="38">
+    <PortCounts in="1" out="2"/>
+    <P Name="Position">[915, 442, 1110, 493]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_38"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_38"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Battery_Pack_2" SID="44">
+    <PortCounts in="1" out="2"/>
+    <P Name="Position">[915, 547, 1110, 598]</P>
+    <P Name="ZOrder">7</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_44"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_44"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Energy_and_Cost_Accounting" SID="56">
+    <PortCounts in="9" out="2"/>
+    <P Name="Position">[1860, 435, 1910, 555]</P>
+    <P Name="ZOrder">9</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_56"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_56"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Engine_Genset" SID="50">
+    <PortCounts in="1" out="2"/>
+    <P Name="Position">[915, 312, 1110, 363]</P>
+    <P Name="ZOrder">8</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_50"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_50"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Output_Logging" SID="69">
+    <PortCounts in="17"/>
+    <P Name="Position">[2000, 210, 2050, 450]</P>
+    <P Name="ZOrder">10</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_69"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_69"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Rear_Hub_Motor_Drive" SID="14">
+    <PortCounts in="2" out="2"/>
+    <P Name="Position">[1475, 442, 1675, 493]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_14"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_14"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Route_and_Environment" SID="1">
+    <PortCounts out="3"/>
+    <P Name="Position">[25, 182, 100, 258]</P>
+    <P Name="ZOrder">1</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_1"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_1"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Supervisory_Energy_Management" SID="26">
+    <PortCounts in="4" out="6"/>
+    <P Name="Position">[1720, 537, 1770, 613]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_26"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_26"/>
+  </Block>
+  <Block BlockType="SubSystem" Name="Vehicle_Longitudinal_Dynamics" SID="7">
+    <PortCounts in="2" out="2"/>
+    <P Name="Position">[1235, 542, 1410, 593]</P>
+    <P Name="ZOrder">2</P>
+    <P Name="LibrarySourceProduct" Ref="bdmxdata:LibrarySourceProduct_7"/>
+    <P Name="ContentPreviewEnabled">on</P>
+    <System Ref="system_7"/>
+  </Block>
+  <Line>
+    <P Name="ZOrder">108</P>
+    <P Name="Src">1#out:3</P>
+    <P Name="Points">[20, 0; 0, 310]</P>
+    <P Name="Dst">21#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">138</P>
+    <P Name="Src">1#out:2</P>
+    <P Name="Points">[1101, 0; 0, 360]</P>
+    <P Name="Dst">7#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">226</P>
+    <P Name="Src">26#out:6</P>
+    <P Name="Points">[8, 0]</P>
+    <Branch>
+      <P Name="ZOrder">225</P>
+      <P Name="Points">[0, -45]</P>
+      <P Name="Dst">56#in:9</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">227</P>
+      <P Name="Points">[195, 0; 0, -150]</P>
+      <P Name="Dst">69#in:17</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">228</P>
+    <P Name="Src">56#out:2</P>
+    <P Name="Points">[48, 0; 0, -120]</P>
+    <P Name="Dst">69#in:14</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">229</P>
+    <P Name="Src">56#out:1</P>
+    <P Name="Points">[24, 0; 0, -75]</P>
+    <P Name="Dst">69#in:13</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">231</P>
+    <P Name="Src">50#out:2</P>
+    <P Name="Points">[583, 0]</P>
+    <Branch>
+      <P Name="ZOrder">230</P>
+      <P Name="Points">[0, 130]</P>
+      <P Name="Dst">56#in:4</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">232</P>
+      <P Name="Points">[123, 0; 0, -65]</P>
+      <P Name="Dst">69#in:6</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">234</P>
+    <P Name="Src">50#out:1</P>
+    <P Name="Points">[465, 0]</P>
+    <Branch>
+      <P Name="ZOrder">233</P>
+      <P Name="Points">[257, 0; 0, 140]</P>
+      <P Name="Dst">56#in:3</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">235</P>
+      <P Name="Points">[0, -55]</P>
+      <P Name="Dst">69#in:5</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">237</P>
+    <P Name="Src">44#out:2</P>
+    <P Name="Points">[7, 0]</P>
+    <Branch>
+      <P Name="ZOrder">281</P>
+      <P Name="Points">[36, 0]</P>
+      <Branch>
+        <P Name="ZOrder">236</P>
+        <P Name="Points">[15, 0; 0, 29; 382, 0; 0, -9]</P>
+        <P Name="Dst">26#in:4</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">238</P>
+        <P Name="Points">[0, -55; 679, 0; 0, 10]</P>
+        <P Name="Dst">56#in:8</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">239</P>
+      <P Name="Points">[0, -240]</P>
+      <P Name="Dst">69#in:10</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">241</P>
+    <P Name="Src">44#out:1</P>
+    <P Name="Points">[19, 0; 0, -50]</P>
+    <Branch>
+      <P Name="ZOrder">240</P>
+      <P Name="Dst">56#in:6</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">242</P>
+      <P Name="Points">[0, -180]</P>
+      <P Name="Dst">69#in:9</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">244</P>
+    <P Name="Src">38#out:2</P>
+    <P Name="Points">[43, 0]</P>
+    <Branch>
+      <P Name="ZOrder">285</P>
+      <P Name="Points">[167, 0]</P>
+      <Branch>
+        <P Name="ZOrder">245</P>
+        <P Name="Points">[102, 0; 0, 105]</P>
+        <P Name="Dst">26#in:3</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">246</P>
+        <P Name="Points">[0, 45]</P>
+        <P Name="Dst">56#in:7</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">243</P>
+      <P Name="Points">[0, -161; 798, 0; 0, -4]</P>
+      <P Name="Dst">69#in:8</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">248</P>
+    <P Name="Src">38#out:1</P>
+    <P Name="Points">[198, 0]</P>
+    <Branch>
+      <P Name="ZOrder">247</P>
+      <P Name="Points">[12, 0; 0, -22; 398, 0; 0, 62]</P>
+      <P Name="Dst">56#in:5</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">249</P>
+      <P Name="Points">[0, -142; 598, 0; 0, -13]</P>
+      <P Name="Dst">69#in:7</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">250</P>
+    <P Name="Src">26#out:5</P>
+    <P Name="Points">[2, 0; 0, -215]</P>
+    <P Name="Dst">69#in:12</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">251</P>
+    <P Name="Src">26#out:4</P>
+    <P Name="Points">[38, 0; 0, -220]</P>
+    <P Name="Dst">69#in:11</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">253</P>
+    <P Name="Src">21#out:1</P>
+    <P Name="Points">[143, 0]</P>
+    <Branch>
+      <P Name="ZOrder">288</P>
+      <P Name="Points">[10, 0; 0, -19; 991, 0]</P>
+      <Branch>
+        <P Name="ZOrder">254</P>
+        <P Name="Points">[18, 0; 0, -86]</P>
+        <P Name="Dst">56#in:2</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">255</P>
+        <P Name="Points">[0, 29]</P>
+        <P Name="Dst">26#in:2</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">252</P>
+      <P Name="Points">[0, -300]</P>
+      <P Name="Dst">69#in:4</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">257</P>
+    <P Name="Src">14#out:1</P>
+    <P Name="Points">[4, 0]</P>
+    <Branch>
+      <P Name="ZOrder">273</P>
+      <P Name="Points">[57, 0]</P>
+      <Branch>
+        <P Name="ZOrder">258</P>
+        <P Name="Points">[4, 0; 0, -20]</P>
+        <P Name="Dst">56#in:1</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">259</P>
+        <P Name="Points">[0, -215]</P>
+        <P Name="Dst">69#in:3</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">256</P>
+      <P Name="Points">[0, 90]</P>
+      <P Name="Dst">26#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">261</P>
+    <P Name="Src">7#out:1</P>
+    <P Name="Points">[4, 0]</P>
+    <Branch>
+      <P Name="ZOrder">260</P>
+      <P Name="Points">[24, 0; 0, -100]</P>
+      <P Name="Dst">14#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">262</P>
+      <P Name="Points">[0, -330]</P>
+      <P Name="Dst">69#in:2</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">264</P>
+    <P Name="Src">1#out:1</P>
+    <P Name="Points">[1077, 0]</P>
+    <Branch>
+      <P Name="ZOrder">275</P>
+      <P Name="Points">[277, 0]</P>
+      <Branch>
+        <P Name="ZOrder">263</P>
+        <P Name="Points">[144, 0; 0, 15]</P>
+        <P Name="Dst">69#in:1</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">266</P>
+        <P Name="Points">[0, 285]</P>
+        <P Name="Dst">14#in:2</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">265</P>
+      <P Name="Points">[0, 360]</P>
+      <P Name="Dst">7#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">267</P>
+    <P Name="Src">7#out:2</P>
+    <P Name="Points">[289, 0; 0, -157; 270, 0; 0, -3]</P>
+    <P Name="Dst">69#in:15</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">268</P>
+    <P Name="Src">14#out:2</P>
+    <P Name="Points">[12, 0; 0, -65; 289, 0; 0, 20]</P>
+    <P Name="Dst">69#in:16</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">269</P>
+    <P Name="Src">26#out:1</P>
+    <P Name="Points">[10, 0; 0, -250; -905, 0; 0, 170]</P>
+    <P Name="Dst">38#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">270</P>
+    <P Name="Src">26#out:2</P>
+    <P Name="Points">[20, 0; 0, -268; -935, 0; 0, 283]</P>
+    <P Name="Dst">44#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">271</P>
+    <P Name="Src">26#out:3</P>
+    <P Name="Points">[30, 0; 0, -287; -965, 0; 0, 57]</P>
+    <P Name="Dst">50#in:1</P>
+  </Line>
+</System>

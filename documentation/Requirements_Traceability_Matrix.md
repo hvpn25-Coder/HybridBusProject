@@ -1,0 +1,18 @@
+# Requirements Traceability Matrix
+
+Each claim is linked to its governing equation or rule, observable signal, verification test, and acceptance criterion.
+
+| RequirementID | Category | Requirement | EquationReference | EvidenceSignal | VerificationTest | AcceptanceCriterion | Status |
+|---|---|---|---|---|---|---|---|
+| REQ-PHY-001 | Physics | Wheel demand shall include inertia, rolling, grade, and aerodynamic forces. | 4.1-4.8 | Wheel.Demand_kW | ConstantSpeedLevel; LevelAcceleration; PositiveGrade | Hand calculation within 2% for constant-speed case | PASS |
+| REQ-PHY-002 | Physics | Auxiliaries shall consume energy at zero vehicle speed. | 6.1 | Auxiliary.Power_kW | StationaryAuxiliary | Positive energy delta and analytical match | PASS |
+| REQ-DRV-001 | Driveline | Motor and reduction limits shall report unmet traction demand. | 5.1-5.4 | Wheel.UnmetTraction_kW | MotorSaturation | Unmet energy is positive when saturated | PASS |
+| REQ-ENE-001 | Energy | The combined DC boundary shall conserve energy within tolerance. | 9.1 | Energy.BalanceResidual_kW | EnergyConservation | Integrated absolute residual below tolerance | PASS |
+| REQ-CTL-001 | Control | Exactly one battery shall be active for traction at a time. | 8.1 | Controller.ActiveBattery | BatterySwitching | Role swap obeys fixed 30% rule | PASS |
+| REQ-CTL-002 | Control | The genset shall charge only the standby battery at constant optimum power. | 7.1-7.2 | Genset.ElectricalPower_kW | StandbyGensetCharge; GensetTractionIsolation; GensetBestEfficiencyPoint | No traction offset and fixed nonzero genset command | PASS |
+| REQ-CTL-003 | Control | Regeneration shall serve auxiliaries, active battery, then load bank. | 8.1-8.4 | Regeneration.* | RegenerationPriority | Allocation identity closes and surplus reaches load bank | PASS |
+| REQ-SAF-001 | Protection | Battery energy and SOE shall remain within configured bounds. | 6.2-6.4 | Battery1/2.SOE | BatteryUpperLimit; BatteryLowerLimit | No upper or lower bound violation | PASS |
+| REQ-DAT-001 | Data | Route geometry and time histories shall be ordered, finite, and traceable. | 3.2 | Route / Route_Geometry | RouteGeolocation; RouteValidationFailure | Valid coordinate bounds and strictly ordered sequence | PASS |
+| REQ-NUM-001 | Numerics | Repeated identical inputs shall produce repeatable results. | 10.1 | Summary | Repeatability; ZeroSpeedStability | Bitwise-identical scalar KPI result | PASS |
+| REQ-OPT-001 | Optimization | Ranked configurations shall be feasible and sorted by cost per kilometre. | 12.1-12.3 | TopConfigurations | OptimizationRanking | Feasible cases sorted in ascending objective | PASS |
+| REQ-EQV-001 | Equivalence | MATLAB and Simulink implementations shall agree within declared tolerances. | Credibility protocol | Equivalence.SignalChecks | MATLAB-Simulink equivalence suite | Every signal check passes its declared tolerance | FAIL |

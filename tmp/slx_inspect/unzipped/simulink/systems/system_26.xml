@@ -1,0 +1,955 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 715]</P>
+  <P Name="Open">on</P>
+  <P Name="ZoomFactor">7</P>
+  <Block BlockType="Inport" Name="P_motor_dc_kW" SID="29">
+    <P Name="Position">[1070, 568, 1100, 582]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_aux_kW" SID="30">
+    <P Name="Position">[1290, 503, 1320, 517]</P>
+    <P Name="ZOrder">2</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery1" SID="31">
+    <P Name="Position">[505, 503, 535, 517]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">3</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery2" SID="32">
+    <P Name="Position">[605, 503, 635, 517]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="Port">4</P>
+  </Block>
+  <Block BlockType="Switch" Name="Active_Battery1_Selection" SID="190">
+    <P Name="Position">[25, 490, 75, 530]</P>
+    <P Name="ZOrder">43</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="UnitDelay" Name="Active_Battery1_State" SID="189">
+    <P Name="Position">[1005, 288, 1040, 322]</P>
+    <P Name="ZOrder">42</P>
+    <P Name="InitialCondition">initial_active_battery_is_1</P>
+    <P Name="SampleTime">model_sample_time_s</P>
+    <P Name="HasFrameUpgradeWarning">on</P>
+  </Block>
+  <Block BlockType="RelationalOperator" Name="Active_Battery_Full" SID="216">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1415, 392, 1445, 423]</P>
+    <P Name="ZOrder">69</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+    <P Name="RndMeth">Simplest</P>
+  </Block>
+  <Block BlockType="Switch" Name="Active_Battery_Number" SID="191">
+    <P Name="Position">[1000, 170, 1050, 210]</P>
+    <P Name="ZOrder">44</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Switch" Name="Active_Battery_SOE" SID="214">
+    <P Name="Position">[705, 365, 755, 405]</P>
+    <P Name="ZOrder">67</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Switch" Name="Active_Max_SOE" SID="215">
+    <P Name="Position">[1090, 505, 1140, 545]</P>
+    <P Name="ZOrder">68</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Sum" Name="After_Auxiliary_Priority" SID="210">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1655, 242, 1685, 273]</P>
+    <P Name="ZOrder">63</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">+-</P>
+  </Block>
+  <Block BlockType="Saturate" Name="Available_Regeneration" SID="209">
+    <P Name="Position">[1535, 370, 1565, 400]</P>
+    <P Name="ZOrder">62</P>
+    <P Name="UpperLimit">inf</P>
+    <P Name="LowerLimit">0</P>
+  </Block>
+  <Block BlockType="RelationalOperator" Name="Battery1_At_Or_Below_30pct" SID="177">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[190, 367, 220, 398]</P>
+    <P Name="ZOrder">30</P>
+    <P Name="Operator">&lt;=</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+    <P Name="RndMeth">Simplest</P>
+  </Block>
+  <Block BlockType="Constant" Name="Battery1_Max_SOE" SID="212">
+    <P Name="Position">[765, 495, 795, 525]</P>
+    <P Name="ZOrder">65</P>
+    <P Name="Value">battery1_max_soe</P>
+  </Block>
+  <Block BlockType="Logic" Name="Battery1_Ready_For_Traction" SID="179">
+    <PortCounts in="1" out="1"/>
+    <P Name="Position">[365, 369, 395, 401]</P>
+    <P Name="ZOrder">32</P>
+    <P Name="Operator">NOT</P>
+    <P Name="IconShape">distinctive</P>
+    <P Name="AllPortsSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+  </Block>
+  <Block BlockType="Switch" Name="Battery1_Standby_Charge_Command" SID="199">
+    <P Name="Position">[1865, 395, 1915, 435]</P>
+    <P Name="ZOrder">52</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Sum" Name="Battery1_Total_Command" SID="201">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[2060, 549, 2090, 581]</P>
+    <P Name="ZOrder">54</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="Switch" Name="Battery1_Traction_Command" SID="197">
+    <P Name="Position">[1455, -135, 1505, -95]</P>
+    <P Name="ZOrder">50</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="RelationalOperator" Name="Battery2_At_Or_Below_30pct" SID="178">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[190, 237, 220, 268]</P>
+    <P Name="ZOrder">31</P>
+    <P Name="Operator">&lt;=</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+    <P Name="RndMeth">Simplest</P>
+  </Block>
+  <Block BlockType="Constant" Name="Battery2_Max_SOE" SID="213">
+    <P Name="Position">[865, 495, 895, 525]</P>
+    <P Name="ZOrder">66</P>
+    <P Name="Value">battery2_max_soe</P>
+  </Block>
+  <Block BlockType="Constant" Name="Battery2_Number" SID="185">
+    <P Name="Position">[820, 215, 850, 245]</P>
+    <P Name="ZOrder">38</P>
+    <P Name="Value">2</P>
+  </Block>
+  <Block BlockType="Logic" Name="Battery2_Ready_For_Traction" SID="180">
+    <PortCounts in="1" out="1"/>
+    <P Name="Position">[365, 239, 395, 271]</P>
+    <P Name="ZOrder">33</P>
+    <P Name="Operator">NOT</P>
+    <P Name="IconShape">distinctive</P>
+    <P Name="AllPortsSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+  </Block>
+  <Block BlockType="Switch" Name="Battery2_Standby_Charge_Command" SID="200">
+    <P Name="Position">[1865, 305, 1915, 345]</P>
+    <P Name="ZOrder">53</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Sum" Name="Battery2_Total_Command" SID="202">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[2060, 299, 2090, 331]</P>
+    <P Name="ZOrder">55</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="Switch" Name="Battery2_Traction_Command" SID="198">
+    <P Name="Position">[165, -135, 215, -95]</P>
+    <P Name="ZOrder">51</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Gain" Name="Constant_Best_Efficiency_Genset_Power" SID="195">
+    <P Name="Position">[1475, 75, 1505, 105]</P>
+    <P Name="ZOrder">48</P>
+    <P Name="Gain">genset_optimum_power_kw</P>
+  </Block>
+  <Block BlockType="Sum" Name="DC_Load_Demand" SID="175">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1345, 369, 1375, 401]</P>
+    <P Name="ZOrder">28</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="Constant" Name="Full_Detection_Margin" SID="223">
+    <P Name="Position">[1210, 510, 1240, 540]</P>
+    <P Name="ZOrder">73</P>
+    <P Name="Value">battery_full_detection_margin</P>
+  </Block>
+  <Block BlockType="Logic" Name="Full_During_Regeneration" SID="217">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1225, 187, 1255, 218]</P>
+    <P Name="ZOrder">70</P>
+    <P Name="AllPortsSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+  </Block>
+  <Block BlockType="Sum" Name="Full_SOE_Threshold" SID="224">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1315, 447, 1345, 478]</P>
+    <P Name="ZOrder">74</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">+-</P>
+  </Block>
+  <Block BlockType="Gain" Name="Genset_Charge_Mode_Offset" SID="203">
+    <P Name="Position">[1475, 185, 1505, 215]</P>
+    <P Name="ZOrder">56</P>
+    <P Name="Gain">2</P>
+  </Block>
+  <Block BlockType="Constant" Name="Logical_One" SID="183">
+    <P Name="Position">[520, 280, 550, 310]</P>
+    <P Name="ZOrder">36</P>
+  </Block>
+  <Block BlockType="Constant" Name="Logical_Zero" SID="184">
+    <P Name="Position">[285, 370, 315, 400]</P>
+    <P Name="ZOrder">37</P>
+    <P Name="Value">0</P>
+  </Block>
+  <Block BlockType="Gain" Name="Negative_Standby_SOE" SID="193">
+    <P Name="Position">[1135, 85, 1165, 115]</P>
+    <P Name="ZOrder">46</P>
+    <P Name="Gain">-1</P>
+  </Block>
+  <Block BlockType="Switch" Name="Next_Active_When_B1" SID="187">
+    <P Name="Position">[615, 260, 665, 300]</P>
+    <P Name="ZOrder">40</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Switch" Name="Next_Active_When_B2" SID="188">
+    <P Name="Position">[615, 360, 665, 400]</P>
+    <P Name="ZOrder">41</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Switch" Name="Operating_Mode" SID="206">
+    <P Name="Position">[1865, 165, 1915, 205]</P>
+    <P Name="ZOrder">59</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Saturate" Name="Regen_After_Auxiliary" SID="211">
+    <P Name="Position">[1760, 190, 1790, 220]</P>
+    <P Name="ZOrder">64</P>
+    <P Name="UpperLimit">inf</P>
+    <P Name="LowerLimit">0</P>
+  </Block>
+  <Block BlockType="Gain" Name="Regeneration_Available" SID="208">
+    <P Name="Position">[1190, 440, 1220, 470]</P>
+    <P Name="ZOrder">61</P>
+    <P Name="Gain">-1</P>
+  </Block>
+  <Block BlockType="RelationalOperator" Name="Regeneration_Direction" SID="205">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[705, 242, 735, 273]</P>
+    <P Name="ZOrder">58</P>
+    <P Name="Operator">&lt;</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+    <P Name="RndMeth">Simplest</P>
+  </Block>
+  <Block BlockType="Constant" Name="Regeneration_Mode" SID="186">
+    <P Name="Position">[1680, 100, 1710, 130]</P>
+    <P Name="ZOrder">39</P>
+    <P Name="Value">6</P>
+  </Block>
+  <Block BlockType="Switch" Name="Resistor_Load_Bank" SID="219">
+    <P Name="Position">[1860, 25, 1910, 65]</P>
+    <P Name="ZOrder">72</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Constant" Name="Role_Switch_Threshold_30pct" SID="176">
+    <P Name="Position">[25, 375, 55, 405]</P>
+    <P Name="ZOrder">29</P>
+    <P Name="Value">battery_role_switch_soe</P>
+  </Block>
+  <Block BlockType="Switch" Name="Routed_Traction_Command" SID="218">
+    <P Name="Position">[1315, 25, 1365, 65]</P>
+    <P Name="ZOrder">71</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Switch" Name="Standby_Battery_SOE" SID="192">
+    <P Name="Position">[1000, 80, 1050, 120]</P>
+    <P Name="ZOrder">45</P>
+    <P Name="Criteria">u2 &gt; Threshold</P>
+    <P Name="InputSameDT">off</P>
+    <P Name="SaturateOnIntegerOverflow">off</P>
+  </Block>
+  <Block BlockType="Relay" Name="Standby_Charge_Hysteresis" SID="194">
+    <P Name="Position">[1275, 85, 1305, 115]</P>
+    <P Name="ZOrder">47</P>
+    <P Name="OnSwitchValue">-battery_role_switch_soe</P>
+    <P Name="OffSwitchValue">-genset_charge_target_soe</P>
+  </Block>
+  <Block BlockType="Gain" Name="Standby_Charge_Power" SID="196">
+    <P Name="Position">[1680, 295, 1710, 325]</P>
+    <P Name="ZOrder">49</P>
+    <P Name="Gain">-1</P>
+  </Block>
+  <Block BlockType="Logic" Name="Switch_From_B1_To_B2" SID="181">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[520, 193, 550, 227]</P>
+    <P Name="ZOrder">34</P>
+    <P Name="IconShape">distinctive</P>
+    <P Name="AllPortsSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+  </Block>
+  <Block BlockType="Logic" Name="Switch_From_B2_To_B1" SID="182">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[520, 363, 550, 397]</P>
+    <P Name="ZOrder">35</P>
+    <P Name="IconShape">distinctive</P>
+    <P Name="AllPortsSameDT">off</P>
+    <P Name="OutDataTypeStr">boolean</P>
+  </Block>
+  <Block BlockType="Sum" Name="Traction_And_Charge_Mode" SID="204">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[1680, 184, 1710, 216]</P>
+    <P Name="ZOrder">57</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_battery1_cmd_kW" SID="33">
+    <P Name="Position">[2185, 558, 2215, 572]</P>
+    <P Name="ZOrder">5</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_battery2_cmd_kW" SID="34">
+    <P Name="Position">[2185, 308, 2215, 322]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_genset_cmd_kW" SID="35">
+    <P Name="Position">[1680, 33, 1710, 47]</P>
+    <P Name="ZOrder">7</P>
+    <P Name="Port">3</P>
+  </Block>
+  <Block BlockType="Outport" Name="active_battery" SID="36">
+    <P Name="Position">[1135, 193, 1165, 207]</P>
+    <P Name="ZOrder">8</P>
+    <P Name="Port">4</P>
+  </Block>
+  <Block BlockType="Outport" Name="operating_mode" SID="37">
+    <P Name="Position">[2060, 178, 2090, 192]</P>
+    <P Name="ZOrder">9</P>
+    <P Name="Port">5</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_resistor_load_bank_kW" SID="207">
+    <P Name="Position">[1980, -122, 2010, -108]</P>
+    <P Name="ZOrder">60</P>
+    <P Name="Port">6</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">260</P>
+    <P Name="Src">206#out:1</P>
+    <P Name="Dst">37#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">261</P>
+    <P Name="Src">204#out:1</P>
+    <P Name="Dst">206#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">263</P>
+    <P Name="Src">186#out:1</P>
+    <P Name="Points">[86, 0; 0, 55]</P>
+    <P Name="Dst">206#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">264</P>
+    <P Name="Src">203#out:1</P>
+    <P Name="Points">[83, 0; 0, 10]</P>
+    <P Name="Dst">204#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">265</P>
+    <P Name="Src">202#out:1</P>
+    <P Name="Dst">34#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">266</P>
+    <P Name="Src">200#out:1</P>
+    <P Name="Dst">202#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">268</P>
+    <P Name="Src">201#out:1</P>
+    <P Name="Dst">33#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">269</P>
+    <P Name="Src">199#out:1</P>
+    <P Name="Points">[96, 0; 0, 160]</P>
+    <P Name="Dst">201#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">272</P>
+    <P Name="Src">196#out:1</P>
+    <P Name="Points">[63, 0]</P>
+    <Branch>
+      <P Name="ZOrder">271</P>
+      <P Name="Points">[0, 120]</P>
+      <P Name="Dst">199#in:3</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">273</P>
+      <P Name="Dst">200#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">279</P>
+    <P Name="Src">195#out:1</P>
+    <P Name="Points">[69, 0]</P>
+    <Branch>
+      <P Name="ZOrder">278</P>
+      <P Name="Points">[0, -50]</P>
+      <P Name="Dst">35#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">280</P>
+      <P Name="Points">[34, 0; 0, 220]</P>
+      <P Name="Dst">196#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">282</P>
+    <P Name="Src">194#out:1</P>
+    <P Name="Points">[66, 0]</P>
+    <Branch>
+      <P Name="ZOrder">281</P>
+      <P Name="Points">[14, 0; 0, -10]</P>
+      <P Name="Dst">195#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">283</P>
+      <P Name="Points">[0, 100]</P>
+      <P Name="Dst">203#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">284</P>
+    <P Name="Src">193#out:1</P>
+    <P Name="Dst">194#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">285</P>
+    <P Name="Src">192#out:1</P>
+    <P Name="Dst">193#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">287</P>
+    <P Name="Src">191#out:1</P>
+    <P Name="Points">[10, 0]</P>
+    <Branch>
+      <P Name="ZOrder">286</P>
+      <P Name="Points">[0, 10]</P>
+      <P Name="Dst">36#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">288</P>
+      <P Name="Points">[28, 0; 0, -14; 554, 0; 0, 24]</P>
+      <P Name="Dst">204#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">289</P>
+    <P Name="Src">185#out:1</P>
+    <P Name="Points">[57, 0; 0, -25]</P>
+    <P Name="Dst">191#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">315</P>
+    <P Name="Src">179#out:1</P>
+    <P Name="Dst">182#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">316</P>
+    <P Name="Src">180#out:1</P>
+    <P Name="Points">[40, 0; 0, -40]</P>
+    <P Name="Dst">181#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">318</P>
+    <P Name="Src">178#out:1</P>
+    <P Name="Points">[67, 0]</P>
+    <Branch>
+      <P Name="ZOrder">317</P>
+      <P Name="Dst">180#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">319</P>
+      <P Name="Points">[0, 71; 185, 0; 0, 49]</P>
+      <P Name="Dst">182#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">321</P>
+    <P Name="Src">177#out:1</P>
+    <P Name="Points">[55, 0]</P>
+    <Branch>
+      <P Name="ZOrder">320</P>
+      <P Name="Dst">179#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">322</P>
+      <P Name="Points">[0, -180]</P>
+      <P Name="Dst">181#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">327</P>
+    <P Name="Src">176#out:1</P>
+    <P Name="Points">[40, 0]</P>
+    <Branch>
+      <P Name="ZOrder">326</P>
+      <P Name="Dst">177#in:2</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">328</P>
+      <P Name="Points">[0, -130]</P>
+      <P Name="Dst">178#in:2</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">407</P>
+    <P Name="Src">219#out:1</P>
+    <P Name="Points">[10, 0; 0, -160]</P>
+    <P Name="Dst">207#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">408</P>
+    <P Name="Src">211#out:1</P>
+    <P Name="Points">[25, 0; 0, -175]</P>
+    <P Name="Dst">219#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">410</P>
+    <P Name="Src">218#out:1</P>
+    <P Name="Points">[19, 0]</P>
+    <Branch>
+      <P Name="ZOrder">409</P>
+      <P Name="Points">[0, -74; -1282, 0; 0, -71]</P>
+      <P Name="Dst">198#in:3</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">411</P>
+      <P Name="Points">[3, 0; 0, -175]</P>
+      <P Name="Dst">197#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">413</P>
+    <P Name="Src">217#out:1</P>
+    <P Name="Points">[19, 0]</P>
+    <Branch>
+      <P Name="ZOrder">412</P>
+      <P Name="Points">[8, 0; 0, -36; 482, 0; 0, -124]</P>
+      <P Name="Dst">219#in:2</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">414</P>
+      <P Name="Points">[0, -60; -64, 0; 0, -100]</P>
+      <P Name="Dst">218#in:2</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">420</P>
+    <P Name="Src">210#out:1</P>
+    <P Name="Points">[149, 0; 0, -81; -103, 0; 0, 26]</P>
+    <P Name="Dst">211#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">421</P>
+    <P Name="Src">209#out:1</P>
+    <P Name="Points">[19, 0; 0, -135]</P>
+    <P Name="Dst">210#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">430</P>
+    <P Name="Src">31#out:1</P>
+    <P Name="Points">[19, 0]</P>
+    <Branch>
+      <P Name="ZOrder">481</P>
+      <P Name="Points">[0, -15]</P>
+      <Branch>
+        <P Name="ZOrder">429</P>
+        <P Name="Points">[0, -55; -90, 0; 0, -325]</P>
+        <P Name="Dst">192#in:3</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">432</P>
+        <P Name="Points">[-435, 0; 0, -120]</P>
+        <P Name="Dst">177#in:1</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">431</P>
+      <P Name="Points">[56, 0; 0, -140]</P>
+      <P Name="Dst">214#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">434</P>
+    <P Name="Src">32#out:1</P>
+    <P Name="Points">[19, 0; 0, -24]</P>
+    <Branch>
+      <P Name="ZOrder">484</P>
+      <P Name="Points">[0, -4; -199, 0]</P>
+      <Branch>
+        <P Name="ZOrder">435</P>
+        <P Name="Points">[0, -397]</P>
+        <P Name="Dst">192#in:1</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">436</P>
+        <P Name="Points">[-327, 0; 0, -237]</P>
+        <P Name="Dst">178#in:1</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">433</P>
+      <P Name="Points">[-199, 0; 0, -137; 213, 0; 0, 51]</P>
+      <P Name="Dst">214#in:3</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">438</P>
+    <P Name="Src">184#out:1</P>
+    <P Name="Points">[19, 0]</P>
+    <Branch>
+      <P Name="ZOrder">488</P>
+      <P Name="Points">[1, 0; 0, -47]</P>
+      <Branch>
+        <P Name="ZOrder">491</P>
+        <P Name="Points">[244, 0]</P>
+        <Branch>
+          <P Name="ZOrder">493</P>
+          <P Name="Points">[0, -73]</P>
+          <Branch>
+            <P Name="ZOrder">443</P>
+            <P Name="Points">[0, -15; 106, 0]</P>
+            <P Name="Dst">205#in:2</P>
+          </Branch>
+          <Branch>
+            <P Name="ZOrder">446</P>
+            <P Name="Dst">187#in:1</P>
+          </Branch>
+        </Branch>
+        <Branch>
+          <P Name="ZOrder">442</P>
+          <P Name="Points">[12, 0; 0, 57]</P>
+          <P Name="Dst">188#in:3</P>
+        </Branch>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">490</P>
+        <P Name="Points">[0, -33; 136, 0; 0, -166]</P>
+        <Branch>
+          <P Name="ZOrder">495</P>
+          <P Name="Points">[0, -109]</P>
+          <Branch>
+            <P Name="ZOrder">496</P>
+            <P Name="Points">[0, -29]</P>
+            <Branch>
+              <P Name="ZOrder">437</P>
+              <P Name="Points">[1364, 0; 0, 59]</P>
+              <P Name="Dst">219#in:3</P>
+            </Branch>
+            <Branch>
+              <P Name="ZOrder">440</P>
+              <P Name="Points">[0, -101]</P>
+              <P Name="Dst">197#in:3</P>
+            </Branch>
+          </Branch>
+          <Branch>
+            <P Name="ZOrder">439</P>
+            <P Name="Dst">218#in:1</P>
+          </Branch>
+        </Branch>
+        <Branch>
+          <P Name="ZOrder">444</P>
+          <P Name="Points">[1124, 0; 0, 261]</P>
+          <P Name="Dst">199#in:1</P>
+        </Branch>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">487</P>
+      <P Name="Points">[0, -38]</P>
+      <Branch>
+        <P Name="ZOrder">441</P>
+        <P Name="Points">[0, -3; -376, 0; 0, 81; 1830, 0; 0, -85]</P>
+        <P Name="Dst">200#in:3</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">445</P>
+        <P Name="Points">[-224, 0; 0, -477]</P>
+        <P Name="Dst">198#in:1</P>
+      </Branch>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">447</P>
+    <P Name="Src">181#out:1</P>
+    <P Name="Points">[45, 0]</P>
+    <P Name="Dst">187#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">449</P>
+    <P Name="Src">183#out:1</P>
+    <P Name="Points">[21, 0]</P>
+    <Branch>
+      <P Name="ZOrder">498</P>
+      <P Name="Points">[17, 0]</P>
+      <Branch>
+        <P Name="ZOrder">448</P>
+        <P Name="Points">[0, -105; 383, 0; 0, -15]</P>
+        <P Name="Dst">191#in:1</P>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">451</P>
+        <P Name="Dst">187#in:3</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">450</P>
+      <P Name="Points">[0, 70]</P>
+      <P Name="Dst">188#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">452</P>
+    <P Name="Src">182#out:1</P>
+    <P Name="Dst">188#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">453</P>
+    <P Name="Src">187#out:1</P>
+    <P Name="Points">[5, 0; 0, -108; -724, 0; 0, 323]</P>
+    <P Name="Dst">190#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">454</P>
+    <P Name="Src">189#out:1</P>
+    <P Name="Points">[48, 0; 0, 164; -1092, 0; 0, 41]</P>
+    <P Name="Dst">190#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">455</P>
+    <P Name="Src">188#out:1</P>
+    <P Name="Points">[10, 0; 0, -226; -749, 0; 0, 371]</P>
+    <P Name="Dst">190#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">469</P>
+    <P Name="Src">197#out:1</P>
+    <P Name="Points">[96, 0; 0, 680]</P>
+    <P Name="Dst">201#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">470</P>
+    <P Name="Src">198#out:1</P>
+    <P Name="Points">[132, 0; 0, 59; 1633, 0; 0, 371]</P>
+    <P Name="Dst">202#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">472</P>
+    <P Name="Src">205#out:1</P>
+    <P Name="Points">[20, 0]</P>
+    <Branch>
+      <P Name="ZOrder">471</P>
+      <P Name="Points">[0, -106; 1070, 0; 0, 31]</P>
+      <P Name="Dst">206#in:2</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">473</P>
+      <P Name="Points">[7, 0; 0, -98; 416, 0; 0, 33]</P>
+      <P Name="Dst">217#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">548</P>
+    <P Name="Src">224#out:1</P>
+    <P Name="Points">[18, 0; 0, -50]</P>
+    <P Name="Dst">216#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">549</P>
+    <P Name="Src">223#out:1</P>
+    <P Name="Points">[28, 0; 0, -55]</P>
+    <P Name="Dst">224#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">551</P>
+    <P Name="Src">175#out:1</P>
+    <P Name="Points">[2, 0]</P>
+    <Branch>
+      <P Name="ZOrder">550</P>
+      <P Name="Points">[0, -112; -599, 0; 0, -48; -93, 0]</P>
+      <P Name="Dst">205#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">552</P>
+      <P Name="Points">[18, 0; 0, -223; -178, 0; 0, -102]</P>
+      <P Name="Dst">218#in:3</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">554</P>
+    <P Name="Src">190#out:1</P>
+    <P Name="Points">[20, 0]</P>
+    <Branch>
+      <P Name="ZOrder">577</P>
+      <P Name="Points">[14, 0]</P>
+      <Branch>
+        <P Name="ZOrder">578</P>
+        <P Name="Points">[184, 0]</P>
+        <Branch>
+          <P Name="ZOrder">580</P>
+          <P Name="Points">[0, 36]</P>
+          <Branch>
+            <P Name="ZOrder">582</P>
+            <P Name="Points">[0, 73; 1503, 0; 0, -204]</P>
+            <Branch>
+              <P Name="ZOrder">553</P>
+              <P Name="Points">[0, -90]</P>
+              <P Name="Dst">200#in:2</P>
+            </Branch>
+            <Branch>
+              <P Name="ZOrder">557</P>
+              <P Name="Dst">199#in:2</P>
+            </Branch>
+          </Branch>
+          <Branch>
+            <P Name="ZOrder">555</P>
+            <P Name="Points">[756, 0; 0, -21]</P>
+            <P Name="Dst">215#in:2</P>
+          </Branch>
+        </Branch>
+        <Branch>
+          <P Name="ZOrder">579</P>
+          <P Name="Points">[154, 0; 0, -178]</P>
+          <Branch>
+            <P Name="ZOrder">583</P>
+            <P Name="Points">[0, -150]</P>
+            <Branch>
+              <P Name="ZOrder">585</P>
+              <P Name="Points">[0, -82]</P>
+              <Branch>
+                <P Name="ZOrder">561</P>
+                <P Name="Dst">192#in:2</P>
+              </Branch>
+              <Branch>
+                <P Name="ZOrder">562</P>
+                <P Name="Points">[0, -215]</P>
+                <P Name="Dst">197#in:2</P>
+              </Branch>
+            </Branch>
+            <Branch>
+              <P Name="ZOrder">560</P>
+              <P Name="Points">[533, 0]</P>
+              <P Name="Dst">191#in:2</P>
+            </Branch>
+          </Branch>
+          <Branch>
+            <P Name="ZOrder">558</P>
+            <P Name="Points">[238, 0]</P>
+            <P Name="Dst">214#in:2</P>
+          </Branch>
+        </Branch>
+      </Branch>
+      <Branch>
+        <P Name="ZOrder">556</P>
+        <P Name="Points">[0, -148; 8, 0; 0, -477]</P>
+        <P Name="Dst">198#in:2</P>
+      </Branch>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">559</P>
+      <P Name="Points">[0, -34; 849, 0; 0, -171]</P>
+      <P Name="Dst">189#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">564</P>
+    <P Name="Src">30#out:1</P>
+    <P Name="Points">[57, 0]</P>
+    <Branch>
+      <P Name="ZOrder">563</P>
+      <P Name="Points">[0, -74; -74, 0; 0, -41]</P>
+      <P Name="Dst">175#in:2</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">565</P>
+      <P Name="Points">[107, 0; 0, -245]</P>
+      <P Name="Dst">210#in:2</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">567</P>
+    <P Name="Src">29#out:1</P>
+    <P Name="Points">[58, 0; 0, -70; -15, 0; 0, -50]</P>
+    <Branch>
+      <P Name="ZOrder">566</P>
+      <P Name="Points">[0, -70]</P>
+      <P Name="Dst">175#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">568</P>
+      <P Name="Dst">208#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">569</P>
+    <P Name="Src">208#out:1</P>
+    <P Name="Points">[18, 0; 0, -98; 212, 0; 0, 28]</P>
+    <P Name="Dst">209#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">570</P>
+    <P Name="Src">212#out:1</P>
+    <P Name="Points">[30, 0; 0, 22; 128, 0; 0, -22]</P>
+    <P Name="Dst">215#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">571</P>
+    <P Name="Src">213#out:1</P>
+    <P Name="Points">[117, 0; 0, 30]</P>
+    <P Name="Dst">215#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">572</P>
+    <P Name="Src">214#out:1</P>
+    <P Name="Points">[164, 0; 0, -37; 464, 0; 0, 52]</P>
+    <P Name="Dst">216#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">573</P>
+    <P Name="Src">215#out:1</P>
+    <P Name="Points">[30, 0; 0, -21; 91, 0; 0, -49]</P>
+    <P Name="Dst">224#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">574</P>
+    <P Name="Src">216#out:1</P>
+    <P Name="Points">[28, 0; 0, -116; -371, 0; 0, -125; 97, 0; 0, 41]</P>
+    <P Name="Dst">217#in:2</P>
+  </Line>
+</System>

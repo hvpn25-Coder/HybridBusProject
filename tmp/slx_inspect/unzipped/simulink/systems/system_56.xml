@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 715]</P>
+  <P Name="ZoomFactor">11</P>
+  <Block BlockType="Inport" Name="P_motor_dc_kW" SID="59">
+    <P Name="Position">[25, 173, 55, 187]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_aux_kW" SID="60">
+    <P Name="Position">[25, 243, 55, 257]</P>
+    <P Name="ZOrder">2</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_genset_kW" SID="61">
+    <P Name="Position">[25, 313, 55, 327]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">3</P>
+  </Block>
+  <Block BlockType="Inport" Name="fuel_rate_L_s" SID="62">
+    <P Name="Position">[315, 243, 345, 257]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="Port">4</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_battery1_kW" SID="63">
+    <P Name="Position">[25, 383, 55, 397]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="Port">5</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_battery2_kW" SID="64">
+    <P Name="Position">[25, 458, 55, 472]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="Port">6</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery1" SID="65">
+    <P Name="Position">[25, 28, 55, 42]</P>
+    <P Name="ZOrder">7</P>
+    <P Name="Port">7</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery2" SID="66">
+    <P Name="Position">[25, 103, 55, 117]</P>
+    <P Name="ZOrder">8</P>
+    <P Name="Port">8</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_resistor_load_bank_kW" SID="220">
+    <P Name="Position">[0, 348, 30, 362]</P>
+    <P Name="ZOrder">20</P>
+    <P Name="Port">9</P>
+  </Block>
+  <Block BlockType="Terminator" Name="Battery1_SOE_Monitor" SID="155">
+    <P Name="Position">[185, 25, 205, 45]</P>
+    <P Name="ZOrder">18</P>
+  </Block>
+  <Block BlockType="Terminator" Name="Battery2_SOE_Monitor" SID="156">
+    <P Name="Position">[185, 100, 205, 120]</P>
+    <P Name="ZOrder">19</P>
+  </Block>
+  <Block BlockType="Sum" Name="Battery_Discharge_Power" SID="150">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[180, 389, 210, 421]</P>
+    <P Name="ZOrder">13</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="DiscreteIntegrator" Name="Cumulative_Cost" SID="154">
+    <PortCounts in="1" out="1"/>
+    <P Name="Position">[650, 377, 685, 413]</P>
+    <P Name="ZOrder">17</P>
+    <P Name="InitialConditionSetting">Auto</P>
+    <P Name="SampleTime">model_sample_time_s</P>
+    <P Name="ICPrevOutput">DiscIntNeverNeededParam</P>
+    <P Name="ICPrevScaledInput">DiscIntNeverNeededParam</P>
+  </Block>
+  <Block BlockType="Sum" Name="DC_Power_Balance" SID="148">
+    <PortCounts in="6" out="1"/>
+    <P Name="Position">[100, 276, 130, 309]</P>
+    <P Name="ZOrder">11</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">--+++-</P>
+  </Block>
+  <Block BlockType="Gain" Name="Electricity_Cost_Rate" SID="152">
+    <P Name="Position">[435, 390, 465, 420]</P>
+    <P Name="ZOrder">15</P>
+    <P Name="Gain">electricity_price_per_kWh/(grid_charge_efficiency*3600)</P>
+  </Block>
+  <Block BlockType="Gain" Name="Fuel_Cost_Rate" SID="149">
+    <P Name="Position">[435, 235, 465, 265]</P>
+    <P Name="ZOrder">12</P>
+    <P Name="Gain">fuel_price_per_L</P>
+  </Block>
+  <Block BlockType="Saturate" Name="Positive_Battery_Power" SID="151">
+    <P Name="Position">[315, 390, 345, 420]</P>
+    <P Name="ZOrder">14</P>
+    <P Name="UpperLimit">inf</P>
+    <P Name="LowerLimit">0</P>
+  </Block>
+  <Block BlockType="Sum" Name="Total_Cost_Rate" SID="153">
+    <PortCounts in="2" out="1"/>
+    <P Name="Position">[555, 379, 585, 411]</P>
+    <P Name="ZOrder">16</P>
+    <P Name="IconShape">rectangular</P>
+    <P Name="Inputs">|++</P>
+  </Block>
+  <Block BlockType="Outport" Name="cumulative_cost" SID="67">
+    <P Name="Position">[745, 388, 775, 402]</P>
+    <P Name="ZOrder">9</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_balance_residual_kW" SID="68">
+    <P Name="Position">[315, 313, 345, 327]</P>
+    <P Name="ZOrder">10</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">25</P>
+    <P Name="Src">66#out:1</P>
+    <P Name="Dst">156#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">26</P>
+    <P Name="Src">65#out:1</P>
+    <P Name="Dst">155#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">27</P>
+    <P Name="Src">154#out:1</P>
+    <P Name="Dst">67#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">28</P>
+    <P Name="Src">153#out:1</P>
+    <P Name="Dst">154#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">29</P>
+    <P Name="Src">152#out:1</P>
+    <P Name="Dst">153#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">30</P>
+    <P Name="Src">149#out:1</P>
+    <P Name="Points">[50, 0; 0, 145]</P>
+    <P Name="Dst">153#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">31</P>
+    <P Name="Src">151#out:1</P>
+    <P Name="Dst">152#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">32</P>
+    <P Name="Src">150#out:1</P>
+    <P Name="Dst">151#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">33</P>
+    <P Name="Src">62#out:1</P>
+    <P Name="Dst">149#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">46</P>
+    <P Name="Src">220#out:1</P>
+    <P Name="Points">[146, 0; 0, -93; -108, 0; 0, 43]</P>
+    <P Name="Dst">148#in:6</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">47</P>
+    <P Name="Src">59#out:1</P>
+    <P Name="Points">[31, 0; 0, 100]</P>
+    <P Name="Dst">148#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">48</P>
+    <P Name="Src">60#out:1</P>
+    <P Name="Points">[22, 0; 0, 35]</P>
+    <P Name="Dst">148#in:2</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">49</P>
+    <P Name="Src">61#out:1</P>
+    <P Name="Points">[4, 0; 0, -30]</P>
+    <P Name="Dst">148#in:3</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">51</P>
+    <P Name="Src">63#out:1</P>
+    <P Name="Points">[36, 0]</P>
+    <Branch>
+      <P Name="ZOrder">50</P>
+      <P Name="Points">[0, 30; -161, 0; 0, -125]</P>
+      <P Name="Dst">148#in:4</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">52</P>
+      <P Name="Points">[30, 0; 0, 15]</P>
+      <P Name="Dst">150#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">54</P>
+    <P Name="Src">64#out:1</P>
+    <P Name="Points">[16, 0]</P>
+    <Branch>
+      <P Name="ZOrder">53</P>
+      <P Name="Points">[3, 0; 0, -19; -132, 0; 0, -146]</P>
+      <P Name="Dst">148#in:5</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">55</P>
+      <P Name="Points">[0, -50]</P>
+      <P Name="Dst">150#in:2</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">56</P>
+    <P Name="Src">148#out:1</P>
+    <P Name="Points">[113, 0; 0, 25]</P>
+    <P Name="Dst">68#in:1</P>
+  </Line>
+</System>

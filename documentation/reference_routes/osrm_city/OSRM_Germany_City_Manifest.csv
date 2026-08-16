@@ -1,0 +1,10 @@
+routeID,routeName,fileName,distanceKm,durationHours,retrievedUTC
+DE-MAN-CITY,Mannheim Urban Circuit,OSRM_Mannheim_City.json,34.1584,0.915055555555556,2026-08-15T05:34:37Z
+DE-STR-CITY,Stuttgart Urban Circuit,OSRM_Stuttgart_City.json,36.3867,1.00055555555556,2026-08-15T05:34:38Z
+DE-BER-CITY,Berlin Urban Circuit,OSRM_Berlin_City.json,29.0107,0.817888888888889,2026-08-15T05:34:38Z
+DE-MUC-CITY,Munich Urban Circuit,OSRM_Munich_City.json,24.8606,0.733944444444444,2026-08-15T05:34:38Z
+DE-HAM-CITY,Hamburg Urban Circuit,OSRM_Hamburg_City.json,34.9241,1.07380555555556,2026-08-15T05:34:39Z
+DE-FRA-CITY,Frankfurt Urban Circuit,OSRM_Frankfurt_City.json,51.0957,1.17591666666667,2026-08-15T05:34:39Z
+DE-CGN-CITY,Cologne Urban Circuit,OSRM_Cologne_City.json,28.2424,0.896666666666667,2026-08-15T05:34:39Z
+DE-DUS-CITY,Dusseldorf Urban Circuit,OSRM_Dusseldorf_City.json,52.3995,1.16113888888889,2026-08-15T05:34:39Z
+DE-LEJ-CITY,Leipzig Urban Circuit,OSRM_Leipzig_City.json,31.3723,0.913277777777778,2026-08-15T05:34:40Z

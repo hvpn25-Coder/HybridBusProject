@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 703]</P>
+  <P Name="ZoomFactor">FitSystem</P>
+  <Block BlockType="Inport" Name="P_genset_cmd_kW" SID="53">
+    <P Name="Position">[25, 103, 55, 117]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Saturate" Name="Electrical_Power_Limit" SID="146">
+    <P Name="Position">[140, 95, 170, 125]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="UpperLimit">genset_max_power_kw</P>
+    <P Name="LowerLimit">0</P>
+  </Block>
+  <Block BlockType="Gain" Name="Fuel_Map_Approximation" SID="147">
+    <P Name="Position">[285, 25, 315, 55]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="Gain">genset_fuel_L_per_kWh/3600</P>
+  </Block>
+  <Block BlockType="Outport" Name="P_genset_electric_kW" SID="54">
+    <P Name="Position">[285, 113, 315, 127]</P>
+    <P Name="ZOrder">2</P>
+  </Block>
+  <Block BlockType="Outport" Name="fuel_rate_L_s" SID="55">
+    <P Name="Position">[395, 33, 425, 47]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">8</P>
+    <P Name="Src">147#out:1</P>
+    <P Name="Dst">55#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">10</P>
+    <P Name="Src">146#out:1</P>
+    <P Name="Points">[33, 0]</P>
+    <Branch>
+      <P Name="ZOrder">9</P>
+      <P Name="Points">[20, 0; 0, 10]</P>
+      <P Name="Dst">54#in:1</P>
+    </Branch>
+    <Branch>
+      <P Name="ZOrder">11</P>
+      <P Name="Points">[0, -70]</P>
+      <P Name="Dst">147#in:1</P>
+    </Branch>
+  </Line>
+  <Line>
+    <P Name="ZOrder">12</P>
+    <P Name="Src">53#out:1</P>
+    <P Name="Dst">146#in:1</P>
+  </Line>
+</System>

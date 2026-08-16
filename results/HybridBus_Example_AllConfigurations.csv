@@ -1,0 +1,101 @@
+Evaluation,Battery1ID,Battery2ID,MotorID,GensetID,TyreID,FinalDriveID,MassID,AuxID,RouteID,ControlID,Feasible,RejectionReason,CostPer_km,Fuel_L_per_100km,Electrical_kWh_per_km,TotalSourceEnergy_kWh_per_km,FinalBattery1SOE,FinalBattery2SOE,UnmetTractionEnergy_kWh,EstimatedVehicleMass_kg
+1,BAT-01,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+2,BAT-02,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+3,BAT-03,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+4,BAT-04,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+5,BAT-05,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+6,BAT-06,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+7,BAT-07,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+8,BAT-08,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+9,BAT-09,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+10,BAT-10,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+11,BAT-11,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+12,BAT-12,fixed,MOT-01,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+13,BAT-01,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+14,BAT-02,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+15,BAT-03,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+16,BAT-04,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+17,BAT-05,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,Reduction ratio outside motor compatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+18,BAT-06,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+19,BAT-07,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+20,BAT-08,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+21,BAT-09,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+22,BAT-10,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+23,BAT-11,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+24,BAT-12,fixed,MOT-02,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+25,BAT-01,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.22409366032442,0,1.24496477958011,1.24496477958011,0.789995685539709,0.758131178028758,0,17859.0909090909
+26,BAT-02,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.22376778216306,0,1.24315434535034,1.24315434535034,0.795076032114164,0.758170269825251,0,17913.6363636364
+27,BAT-03,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.223444025937045,0,1.24135569965025,1.24135569965025,0.799374306141223,0.758209371833967,0,17968.1818181818
+28,BAT-04,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.223122450227183,0,1.2395691679288,1.2395691679288,0.803058082270727,0.758248498700235,0,18022.7272727273
+29,BAT-05,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222803435198886,0,1.23779686221603,1.23779686221603,0.806250185432681,0.758287725236865,0,18077.2727272727
+30,BAT-06,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222486626282685,0,1.23603681268158,1.23603681268158,0.809042869580505,0.758326951773497,0,18131.8181818182
+31,BAT-07,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222172175928086,0,1.23428986626715,1.23428986626715,0.811506594009272,0.758366217030381,0,18186.3636363636
+32,BAT-08,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+33,BAT-09,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+34,BAT-10,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+35,BAT-11,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+36,BAT-12,fixed,MOT-03,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+37,BAT-01,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.223148862113651,0,1.23971590063139,1.23971590063139,0.790248668907728,0.758305974907694,0,17877.2727272727
+38,BAT-02,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222823765122627,0,1.23790980623682,1.23790980623682,0.79530774179601,0.758345737573048,0,17931.8181818182
+39,BAT-03,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222500949647384,0,1.23611638692991,1.23611638692991,0.799587978855567,0.758385540970512,0,17986.3636363636
+40,BAT-04,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222180175155164,0,1.23433430641758,1.23433430641758,0.803256324083078,0.758425344367975,0,18040.9090909091
+41,BAT-05,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221861966194189,0,1.23256647885661,1.23256647885661,0.806435052844351,0.758465249283702,0,18095.4545454545
+42,BAT-06,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221546193443379,0,1.23081218579655,1.23081218579655,0.809215992033273,0.758505177945614,0,18150
+43,BAT-07,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221232441384499,0,1.22906911880277,1.22906911880277,0.811669411802088,0.758545106607526,0,18204.5454545455
+44,BAT-08,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+45,BAT-09,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+46,BAT-10,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+47,BAT-11,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+48,BAT-12,fixed,MOT-04,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+49,BAT-01,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.222216022108889,0,1.2345334561605,1.2345334561605,0.790498450293359,0.758481433834716,0,17895.4545454545
+50,BAT-02,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221891577536206,0,1.23273098631225,1.23273098631225,0.795536547929607,0.758521845277988,0,17950
+51,BAT-03,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221569707728101,0,1.23094282071167,1.23094282071167,0.799798970257626,0.758562352616159,0,18004.5454545455
+52,BAT-04,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.221249872924088,0,1.22916596068938,1.22916596068938,0.803452046973132,0.758602859954329,0,18059.0909090909
+53,BAT-05,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.220932277058306,0,1.22740153921281,1.22740153921281,0.806617607154,0.75864339565561,0,18113.6363636364
+54,BAT-06,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.220617462644325,0,1.22565257024625,1.22565257024625,0.809386960280206,0.758684028917135,0,18168.1818181818
+55,BAT-07,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.220304619928036,0,1.22391455515576,1.22391455515576,0.811830165541216,0.758724662178658,0,18222.7272727273
+56,BAT-08,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+57,BAT-09,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+58,BAT-10,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+59,BAT-11,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+60,BAT-12,fixed,MOT-05,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+61,BAT-01,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+62,BAT-02,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+63,BAT-03,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.2206499583786,0,1.22583310210334,1.22583310210334,0.800007357789131,0.758739778214217,0,18022.7272727273
+64,BAT-04,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.220331068218228,0,1.22406149010127,1.22406149010127,0.803645350940832,0.758780991950906,0,18077.2727272727
+65,BAT-05,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.220014362118653,0,1.22230201177029,1.22230201177029,0.8067978494755,0.758822205687595,0,18131.8181818182
+66,BAT-06,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.219700089256726,0,1.22055605142626,1.22055605142626,0.809555837763347,0.75886347526603,0,18186.3636363636
+67,BAT-07,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.21938819555039,0,1.21882330861328,1.21882330861328,0.811988944629917,0.758904815505833,0,18240.9090909091
+68,BAT-08,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.219078371957033,0,1.21710206642796,1.21710206642796,0.81415136754858,0.758946155745637,0,18295.4545454545
+69,BAT-09,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.21877052889045,0,1.21539182716917,1.21539182716917,0.81608585997785,0.758987505845563,0,18350
+70,BAT-10,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.21846520441996,0,1.21369558011089,1.21369558011089,0.817826532249426,0.759028971323709,0,18404.5454545455
+71,BAT-11,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+72,BAT-12,fixed,MOT-06,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+73,BAT-01,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+74,BAT-02,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+75,BAT-03,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.219741499353806,0,1.22078610752114,1.22078610752114,0.800213187272733,0.758917814279316,0,18040.9090909091
+76,BAT-04,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.219423419165281,0,1.21901899536267,1.21901899536267,0.803836307911442,0.758959710863193,0,18095.4545454545
+77,BAT-05,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.219107748374004,0,1.21726526874447,1.21726526874447,0.806975872687652,0.759001633359896,0,18150
+78,BAT-06,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.218794097705311,0,1.21552276502951,1.21552276502951,0.809722619986397,0.759043555856598,0,18204.5454545455
+79,BAT-07,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.218482802208094,0,1.21379334560052,1.21379334560052,0.812145812488642,0.759085536233719,0,18259.0909090909
+80,BAT-08,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.218173967684385,0,1.21207759824658,1.21207759824658,0.814299358681014,0.759127601559899,0,18313.6363636364
+81,BAT-09,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.217867269585791,0,1.21037371992106,1.21037371992106,0.816225884608635,0.75916970737791,0,18368.1818181818
+82,BAT-10,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,1,,0.217562474474384,0,1.20868041374658,1.20868041374658,0.817959477689724,0.759211813195921,0,18422.7272727273
+83,BAT-11,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+84,BAT-12,fixed,MOT-07,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+85,BAT-01,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+86,BAT-02,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+87,BAT-03,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+88,BAT-04,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+89,BAT-05,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+90,BAT-06,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+91,BAT-07,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+92,BAT-08,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+93,BAT-09,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+94,BAT-10,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+95,BAT-11,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+96,BAT-12,fixed,MOT-08,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+97,BAT-01,fixed,MOT-09,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+98,BAT-02,fixed,MOT-09,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+99,BAT-03,fixed,MOT-09,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN
+100,BAT-04,fixed,MOT-09,fixed,fixed,fixed,fixed,fixed,fixed,fixed,0,DC voltage incompatibility,Inf,Inf,Inf,Inf,NaN,NaN,Inf,NaN

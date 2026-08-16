@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[23, 11, 1017, 770]</P>
+  <P Name="ZoomFactor">43</P>
+  <Block BlockType="Inport" Name="v_vehicle_m_s" SID="72">
+    <P Name="Position">[50, 1133, 80, 1147]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_wheel_kW" SID="73">
+    <P Name="Position">[50, 53, 80, 67]</P>
+    <P Name="ZOrder">2</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_motor_dc_kW" SID="74">
+    <P Name="Position">[50, 138, 80, 152]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">3</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_aux_kW" SID="75">
+    <P Name="Position">[50, 218, 80, 232]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="Port">4</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_genset_kW" SID="76">
+    <P Name="Position">[50, 303, 80, 317]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="Port">5</P>
+  </Block>
+  <Block BlockType="Inport" Name="fuel_rate_L_s" SID="77">
+    <P Name="Position">[50, 383, 80, 397]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="Port">6</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_battery1_kW" SID="78">
+    <P Name="Position">[50, 468, 80, 482]</P>
+    <P Name="ZOrder">7</P>
+    <P Name="Port">7</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery1" SID="79">
+    <P Name="Position">[50, 553, 80, 567]</P>
+    <P Name="ZOrder">8</P>
+    <P Name="Port">8</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_battery2_kW" SID="80">
+    <P Name="Position">[50, 633, 80, 647]</P>
+    <P Name="ZOrder">9</P>
+    <P Name="Port">9</P>
+  </Block>
+  <Block BlockType="Inport" Name="SOE_battery2" SID="81">
+    <P Name="Position">[50, 718, 80, 732]</P>
+    <P Name="ZOrder">10</P>
+    <P Name="Port">10</P>
+  </Block>
+  <Block BlockType="Inport" Name="active_battery" SID="82">
+    <P Name="Position">[50, 798, 80, 812]</P>
+    <P Name="ZOrder">11</P>
+    <P Name="Port">11</P>
+  </Block>
+  <Block BlockType="Inport" Name="operating_mode" SID="83">
+    <P Name="Position">[50, 883, 80, 897]</P>
+    <P Name="ZOrder">12</P>
+    <P Name="Port">12</P>
+  </Block>
+  <Block BlockType="Inport" Name="cumulative_cost" SID="84">
+    <P Name="Position">[50, 968, 80, 982]</P>
+    <P Name="ZOrder">13</P>
+    <P Name="Port">13</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_balance_residual_kW" SID="85">
+    <P Name="Position">[50, 1048, 80, 1062]</P>
+    <P Name="ZOrder">14</P>
+    <P Name="Port">14</P>
+  </Block>
+  <Block BlockType="Inport" Name="a_vehicle_m_s2" SID="171">
+    <P Name="Position">[125, 68, 155, 82]</P>
+    <P Name="ZOrder">29</P>
+    <P Name="Port">15</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_unmet_motor_kW" SID="172">
+    <P Name="Position">[230, 173, 260, 187]</P>
+    <P Name="ZOrder">30</P>
+    <P Name="Port">16</P>
+  </Block>
+  <Block BlockType="Inport" Name="P_resistor_load_bank_kW" SID="221">
+    <P Name="Position">[75, 8, 105, 22]</P>
+    <P Name="ZOrder">33</P>
+    <P Name="Port">17</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_active_battery" SID="167">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 790, 235, 820]</P>
+    <P Name="ZOrder">25</P>
+    <P Name="VariableName">log_active_battery</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_aux_power" SID="160">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 210, 235, 240]</P>
+    <P Name="ZOrder">18</P>
+    <P Name="VariableName">log_aux_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_balance_residual" SID="170">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 1040, 235, 1070]</P>
+    <P Name="ZOrder">28</P>
+    <P Name="VariableName">log_balance_residual</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_battery1_power" SID="163">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 460, 235, 490]</P>
+    <P Name="ZOrder">21</P>
+    <P Name="VariableName">log_battery1_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_battery1_soe" SID="164">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 545, 235, 575]</P>
+    <P Name="ZOrder">22</P>
+    <P Name="VariableName">log_battery1_soe</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_battery2_power" SID="165">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 625, 235, 655]</P>
+    <P Name="ZOrder">23</P>
+    <P Name="VariableName">log_battery2_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_battery2_soe" SID="166">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 710, 235, 740]</P>
+    <P Name="ZOrder">24</P>
+    <P Name="VariableName">log_battery2_soe</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_cumulative_cost" SID="169">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 960, 235, 990]</P>
+    <P Name="ZOrder">27</P>
+    <P Name="VariableName">log_cumulative_cost</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_fuel_rate" SID="162">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 375, 235, 405]</P>
+    <P Name="ZOrder">20</P>
+    <P Name="VariableName">log_fuel_rate</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_genset_power" SID="161">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 295, 235, 325]</P>
+    <P Name="ZOrder">19</P>
+    <P Name="VariableName">log_genset_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_motor_dc_power" SID="159">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 130, 235, 160]</P>
+    <P Name="ZOrder">17</P>
+    <P Name="VariableName">log_motor_dc_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_operating_mode" SID="168">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 875, 235, 905]</P>
+    <P Name="ZOrder">26</P>
+    <P Name="VariableName">log_operating_mode</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_resistor_load_bank" SID="222">
+    <PortCounts in="1"/>
+    <P Name="Position">[190, 0, 280, 30]</P>
+    <P Name="ZOrder">34</P>
+    <P Name="VariableName">sim_resistor_load_bank_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_unmet_motor_power" SID="174">
+    <PortCounts in="1"/>
+    <P Name="Position">[335, 165, 425, 195]</P>
+    <P Name="ZOrder">32</P>
+    <P Name="VariableName">log_unmet_motor_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_vehicle_acceleration" SID="173">
+    <PortCounts in="1"/>
+    <P Name="Position">[280, 0, 370, 30]</P>
+    <P Name="ZOrder">31</P>
+    <P Name="VariableName">log_vehicle_acceleration</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_vehicle_speed" SID="157">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 1125, 235, 1155]</P>
+    <P Name="ZOrder">15</P>
+    <P Name="VariableName">log_vehicle_speed</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Block BlockType="ToWorkspace" Name="log_wheel_power" SID="158">
+    <PortCounts in="1"/>
+    <P Name="Position">[145, 45, 235, 75]</P>
+    <P Name="ZOrder">16</P>
+    <P Name="VariableName">log_wheel_power</P>
+    <P Name="MaxDataPoints">inf</P>
+    <P Name="SaveFormat">Timeseries</P>
+    <P Name="FixptAsFi">on</P>
+    <P Name="SampleTime">-1</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">16</P>
+    <P Name="Src">85#out:1</P>
+    <P Name="Dst">170#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">17</P>
+    <P Name="Src">84#out:1</P>
+    <P Name="Dst">169#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">18</P>
+    <P Name="Src">83#out:1</P>
+    <P Name="Dst">168#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">19</P>
+    <P Name="Src">82#out:1</P>
+    <P Name="Dst">167#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">20</P>
+    <P Name="Src">81#out:1</P>
+    <P Name="Dst">166#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">21</P>
+    <P Name="Src">80#out:1</P>
+    <P Name="Dst">165#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">22</P>
+    <P Name="Src">79#out:1</P>
+    <P Name="Dst">164#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">23</P>
+    <P Name="Src">78#out:1</P>
+    <P Name="Dst">163#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">24</P>
+    <P Name="Src">77#out:1</P>
+    <P Name="Dst">162#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">25</P>
+    <P Name="Src">76#out:1</P>
+    <P Name="Dst">161#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">26</P>
+    <P Name="Src">75#out:1</P>
+    <P Name="Dst">160#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">27</P>
+    <P Name="Src">74#out:1</P>
+    <P Name="Dst">159#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">28</P>
+    <P Name="Src">73#out:1</P>
+    <P Name="Dst">158#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">29</P>
+    <P Name="Src">72#out:1</P>
+    <P Name="Dst">157#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">32</P>
+    <P Name="Src">172#out:1</P>
+    <P Name="Dst">174#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">35</P>
+    <P Name="Src">221#out:1</P>
+    <P Name="Dst">222#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">36</P>
+    <P Name="Src">171#out:1</P>
+    <P Name="Points">[54, 0; 0, -60]</P>
+    <P Name="Dst">173#in:1</P>
+  </Line>
+</System>

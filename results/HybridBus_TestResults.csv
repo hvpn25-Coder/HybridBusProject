@@ -1,0 +1,24 @@
+Test,Purpose,Inputs,Expected,Actual,Status,Elapsed_s
+ConstantSpeedLevel,"Constant-speed wheel power matches hand calculation",See test function,Assertion passes,"19000 kg: actual 20.699 kW, hand 20.699 kW",PASS,0.0872098
+StationaryAuxiliary,"Auxiliary load consumes battery energy at zero speed",See test function,Assertion passes,"battery delta 0.258636 kWh",PASS,0.0459754
+LevelAcceleration,"Acceleration increases wheel demand",See test function,Assertion passes,"peak 181.2 kW",PASS,0.0668802
+PositiveGrade,"Positive grade increases wheel power",See test function,Assertion passes,"grade demand increased",PASS,0.0284452
+DownhillRegeneration,"Negative grade produces regenerative DC power",See test function,Assertion passes,"regen 1.85 kWh",PASS,0.0313599
+RegenerationPriority,"Regeneration supplies auxiliaries, then the active battery, then the load bank",See test function,Assertion passes,"auxiliary first; 2.228 kWh diverted to resistor bank at full active SOE",PASS,0.023263
+BatterySwitching,"Low active pack deterministically switches to standby pack",See test function,Assertion passes,"battery 2 became active immediately below 30%",PASS,0.3105662
+StandbyGensetCharge,"Genset charges only the standby battery",See test function,Assertion passes,"B1 supplied auxiliaries while genset charged B2; fuel 1.4915 L",PASS,0.0254265
+GensetTractionIsolation,"Genset output never offsets traction-bus demand",See test function,Assertion passes,"active-battery traction power is identical with genset enabled and disabled",PASS,0.0215112
+GensetHysteresis,"Genset starts for low standby SOE without chattering",See test function,Assertion passes,"1 deliberate start(s), 0 well-spaced transition(s)",PASS,0.3138201
+BatteryUpperLimit,"Battery energy never exceeds upper limit",See test function,Assertion passes,"upper SOE limits respected",PASS,0.016793
+BatteryLowerLimit,"Battery energy never falls below lower limit",See test function,Assertion passes,"lower limit clamped with unmet power",PASS,0.02309
+MotorSaturation,"Motor saturation reports unmet wheel power",See test function,Assertion passes,"unmet 0.713 kWh",PASS,0.0118347
+GensetBestEfficiencyPoint,"Genset runs at one constant optimum power",See test function,Assertion passes,"constant at 123.2 kW",PASS,0.2204954
+RouteGeolocation,"Every geographic corridor has ordered valid latitude and longitude geometry",See test function,Assertion passes,"17 geographic routes, 20257 coordinate rows",PASS,0.0876009
+RouteValidationFailure,"Duplicate route time is rejected",See test function,Assertion passes,"duplicate time rejected",PASS,0.1802982
+IncompatibleSelection,"Compatibility filter records rejection reason",See test function,Assertion passes,"voltage mismatch recorded",PASS,8.9270813
+EnergyConservation,"Cumulative DC residual remains within tolerance",See test function,Assertion passes,"residual < 1e-9 kWh",PASS,0.2571077
+Repeatability,"Identical inputs produce identical scalar KPIs",See test function,Assertion passes,"bitwise-identical cost KPI",PASS,0.4446235
+ZeroSpeedStability,"Zero-speed calculation remains finite",See test function,Assertion passes,"all signals finite",PASS,0.0124255
+TerminalCostCorrection,"Grid-equivalent terminal correction matches hand calculation",See test function,Assertion passes,"grid correction 69.1757 kWh",PASS,0.2348952
+ChargeSustainingComparison,"Terminal combined-SOE tolerance is enforced",See test function,Assertion passes,"deviation 0.208978",PASS,0.2251265
+OptimizationRanking,"Feasible configurations are sorted by total cost per kilometre",See test function,Assertion passes,"1 ranked feasible cases",PASS,7.9071319

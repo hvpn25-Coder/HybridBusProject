@@ -1,0 +1,9 @@
+work/
+slprj/
+*.slxc
+*.mex*
+codegen/
+*.autosave
+tmp/**/rendered*/
+tmp/*.png
+generated/

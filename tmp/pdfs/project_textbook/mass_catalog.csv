@@ -1,0 +1,13 @@
+ComponentID,Name,TotalVehicleMass_kg,CurbMass_kg,PassengerCount,PassengerMass_kg,CargoMass_kg,OptimizationEnabled,Notes
+MASS-01,Total Vehicle Mass 19000 kg,19000,11500,0,75,200,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-02,Total Vehicle Mass 22700 kg,22700,11772.7272727273,6,75,245.454545454545,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-03,Total Vehicle Mass 26500 kg,26500,12045.4545454545,12,75,290.909090909091,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-04,Total Vehicle Mass 30200 kg,30200,12318.1818181818,18,75,336.363636363636,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-05,Total Vehicle Mass 33900 kg,33900,12590.9090909091,24,75,381.818181818182,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-06,Total Vehicle Mass 37600 kg,37600,12863.6363636364,30,75,427.272727272727,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-07,Total Vehicle Mass 41400 kg,41400,13136.3636363636,35,75,472.727272727273,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-08,Total Vehicle Mass 45100 kg,45100,13409.0909090909,41,75,518.181818181818,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-09,Total Vehicle Mass 48800 kg,48800,13681.8181818182,47,75,563.636363636364,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-10,Total Vehicle Mass 52500 kg,52500,13954.5454545455,53,75,609.090909090909,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-11,Total Vehicle Mass 56300 kg,56300,14227.2727272727,59,75,654.545454545455,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"
+MASS-12,Total Vehicle Mass 60000 kg,60000,14500,65,75,700,1,"TotalVehicleMass_kg includes curb, occupants, cargo, and powertrain"

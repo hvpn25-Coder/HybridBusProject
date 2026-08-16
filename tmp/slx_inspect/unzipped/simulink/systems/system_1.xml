@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<System>
+  <P Name="Location">[433, 403, 931, 703]</P>
+  <P Name="ZoomFactor">FitSystem</P>
+  <Block BlockType="FromWorkspace" Name="Route_Aux_Multiplier" SID="88">
+    <P Name="Position">[35, 208, 100, 232]</P>
+    <P Name="ZOrder">6</P>
+    <P Name="VariableName">route_aux_multiplier</P>
+  </Block>
+  <Block BlockType="FromWorkspace" Name="Route_Grade" SID="87">
+    <P Name="Position">[35, 53, 100, 77]</P>
+    <P Name="ZOrder">5</P>
+    <P Name="VariableName">route_grade</P>
+  </Block>
+  <Block BlockType="FromWorkspace" Name="Route_Speed" SID="86">
+    <P Name="Position">[35, 128, 100, 152]</P>
+    <P Name="ZOrder">4</P>
+    <P Name="VariableName">route_speed</P>
+  </Block>
+  <Block BlockType="Outport" Name="v_vehicle_m_s" SID="4">
+    <P Name="Position">[155, 133, 185, 147]</P>
+    <P Name="ZOrder">1</P>
+  </Block>
+  <Block BlockType="Outport" Name="grade_pct" SID="5">
+    <P Name="Position">[155, 58, 185, 72]</P>
+    <P Name="ZOrder">2</P>
+    <P Name="Port">2</P>
+  </Block>
+  <Block BlockType="Outport" Name="aux_multiplier" SID="6">
+    <P Name="Position">[155, 213, 185, 227]</P>
+    <P Name="ZOrder">3</P>
+    <P Name="Port">3</P>
+  </Block>
+  <Line>
+    <P Name="ZOrder">5</P>
+    <P Name="Src">88#out:1</P>
+    <P Name="Dst">6#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">6</P>
+    <P Name="Src">87#out:1</P>
+    <P Name="Dst">5#in:1</P>
+  </Line>
+  <Line>
+    <P Name="ZOrder">7</P>
+    <P Name="Src">86#out:1</P>
+    <P Name="Dst">4#in:1</P>
+  </Line>
+</System>
