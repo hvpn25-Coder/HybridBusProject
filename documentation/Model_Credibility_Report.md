@@ -1,7 +1,7 @@
 # Model Credibility Report
 
-Generated: 15-Aug-2026 20:19:43
-Database version: 1.6.1
+Generated: 25-Aug-2026 22:45:12
+Database version: 1.7.0
 
 This report distinguishes verified concept behavior, implementation equivalence, and measured-vehicle validation. A PASS at one level does not imply a PASS at a higher level.
 
@@ -10,7 +10,7 @@ This report distinguishes verified concept behavior, implementation equivalence,
 | Gate | Status | Evidence | Decision |
 |---|---|---|---|
 | Requirements traceability | PASS | Requirement-equation-signal-test matrix | Release evidence is traceable |
-| Physics and control verification | PASS | 23 automated behavioral scenarios | Concept behavior verified |
+| Physics and control verification | PASS | 26 automated behavioral scenarios | Concept behavior verified |
 | MATLAB-Simulink equivalence | FAIL | Signal-level independent implementation comparison | Resolve numerical differences before claiming implementation equivalence |
 | Uncertainty screening | PASS | Deterministic one-at-a-time parameter study | Use ranges for decision robustness, not statistical confidence |
 | Concept baseline comparison | PASS | Hybrid result plus transparent BEV and diesel screening equations | Suitable for concept screening, not procurement |
@@ -38,20 +38,20 @@ This report distinguishes verified concept behavior, implementation equivalence,
 
 | Concept | Fuel_L | GridEnergy_kWh | OperatingCost_EUR | Cost_EUR_per_km | SourceEnergy_kWh_per_km | EvidenceLevel |
 |---|---|---|---|---|---|---|
-| Proposed dual-battery hybrid | 43.624 | 69.1757 | 84.4312 | 2.1221 | 5.8548 | Implemented model |
-| Battery-electric screening baseline | 0 | 65.8907 | 11.8603 | 0.2981 | 1.6561 | Analytical screening |
-| Conventional-diesel screening baseline | 23.9303 | 0 | 39.4851 | 0.99241 | 5.8943 | Analytical screening |
+| Proposed dual-battery hybrid | 43.624 | 69.1757 | 119.2806 | 2.998 | 5.8548 | Implemented model |
+| Battery-electric screening baseline | 0 | 65.8907 | 26.3563 | 0.66244 | 1.6561 | Analytical screening |
+| Conventional-diesel screening baseline | 23.9303 | 0 | 50.2537 | 1.2631 | 5.8943 | Analytical screening |
 
 ## Sensitivity screening
 
 | Parameter | Perturbation_pct | LowCost_EUR_per_km | HighCost_EUR_per_km | CostSwing_pct | LowEnergy_kWh_per_km | HighEnergy_kWh_per_km | EnergySwing_pct |
 |---|---|---|---|---|---|---|---|
-| Auxiliary-load scalar | 20 | 2.1021 | 2.142 | 1.8815 | 5.7439 | 5.9657 | 3.7887 |
-| Total vehicle mass | 10 | 2.1047 | 2.1398 | 1.6504 | 5.7584 | 5.953 | 3.3232 |
-| Rolling resistance coefficient | 10 | 2.1154 | 2.1288 | 0.63421 | 5.8174 | 5.8922 | 1.2771 |
-| Aerodynamic drag coefficient | 10 | 2.1177 | 2.1265 | 0.41578 | 5.8303 | 5.8793 | 0.83723 |
-| Motor motoring efficiency | 3 | 2.1323 | 2.1125 | -0.93238 | 5.9114 | 5.8014 | -1.8775 |
-| Battery discharge efficiency | 3 | 2.1348 | 2.1113 | -1.1074 | 5.9256 | 5.7951 | -2.2298 |
+| Auxiliary-load scalar | 20 | 2.9536 | 3.0424 | 2.9596 | 5.7439 | 5.9657 | 3.7887 |
+| Total vehicle mass | 10 | 2.9595 | 3.0373 | 2.596 | 5.7584 | 5.953 | 3.3232 |
+| Rolling resistance coefficient | 10 | 2.983 | 3.013 | 0.99759 | 5.8174 | 5.8922 | 1.2771 |
+| Aerodynamic drag coefficient | 10 | 2.9882 | 3.0078 | 0.65401 | 5.8303 | 5.8793 | 0.83723 |
+| Motor motoring efficiency | 3 | 3.0206 | 2.9767 | -1.4666 | 5.9114 | 5.8014 | -1.8775 |
+| Battery discharge efficiency | 3 | 3.0263 | 2.9741 | -1.7419 | 5.9256 | 5.7951 | -2.2298 |
 
 ## Interpretation boundary
 

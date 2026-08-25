@@ -1,6 +1,6 @@
 Gate,Status,Evidence,Decision
 Requirements traceability,PASS,Requirement-equation-signal-test matrix,"Release evidence is traceable"
-Physics and control verification,PASS,23 automated behavioral scenarios,"Concept behavior verified"
+Physics and control verification,PASS,26 automated behavioral scenarios,"Concept behavior verified"
 MATLAB-Simulink equivalence,FAIL,Signal-level independent implementation comparison,"Resolve numerical differences before claiming implementation equivalence"
 Uncertainty screening,PASS,Deterministic one-at-a-time parameter study,"Use ranges for decision robustness, not statistical confidence"
 Concept baseline comparison,PASS,Hybrid result plus transparent BEV and diesel screening equations,"Suitable for concept screening, not procurement"

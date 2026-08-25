@@ -15,6 +15,7 @@ classdef HybridBusApp < handle
         FuelPriceField matlab.ui.control.NumericEditField
         ElectricityPriceField matlab.ui.control.NumericEditField
         MaxConfigurationsField matlab.ui.control.NumericEditField
+        BatterySetMultiplierField matlab.ui.control.NumericEditField
         RepeatRouteCheckBox matlab.ui.control.CheckBox
         StatusLabel matlab.ui.control.Label
         KPICards struct = struct
@@ -33,22 +34,38 @@ classdef HybridBusApp < handle
         PowerAxes matlab.ui.control.UIAxes
         BatteryAxes matlab.ui.control.UIAxes
         GensetAxes matlab.ui.control.UIAxes
+        SignalsXAxisSwitch matlab.ui.control.Switch
         DetailedPlotDropDown matlab.ui.control.DropDown
+        DetailedXAxisSwitch matlab.ui.control.Switch
         DetailedAxes matlab.ui.control.UIAxes
+        RouteMapModeSwitch matlab.ui.control.Switch
+        Route3DMetricLabel matlab.ui.control.Label
+        Route3DMetricSwitchGrid matlab.ui.container.GridLayout
+        Route3DMetricSwitch matlab.ui.control.Switch
+        RouteMap2DPanel matlab.ui.container.Panel
+        RouteMap3DPanel matlab.ui.container.Panel
         RouteMapAxes matlab.graphics.axis.GeographicAxes
+        Route3DAxes matlab.ui.control.UIAxes
         RouteMapTable matlab.ui.control.Table
         ArchitectureAxes matlab.ui.control.UIAxes
+        PowertrainModeSwitch matlab.ui.control.Switch
+        ArchitectureNoteLabel matlab.ui.control.Label
         Database struct = struct
         CurrentResults = []
         CurrentOptimization = []
         CancelRequested logical = false
+        HybridSOE1Cache double = 85
+        HybridSOE2Cache double = 20
+        LastValidBatterySetMultiplier double = 1
     end
 
     methods
         function app=HybridBusApp()
+            appRoot=fileparts(mfilename('fullpath'));
+            addpath(fullfile(appRoot,'src'),fullfile(appRoot,'models'), ...
+                fullfile(appRoot,'project'));
             app.buildUI();
-            defaultFile=fullfile(fileparts(mfilename('fullpath')), ...
-                'HybridBus_ComponentDatabase.xlsx');
+            defaultFile=fullfile(appRoot,'data','HybridBus_ComponentDatabase.xlsx');
             app.loadDatabase(defaultFile);
             app.Figure.Visible='on';
         end
@@ -63,32 +80,47 @@ classdef HybridBusApp < handle
             root.RowHeight={'1x','fit'}; root.ColumnWidth={350,'1x'};
             root.Padding=[0 0 0 0]; root.ColumnSpacing=8;
             side=uipanel(root,'Title','Configuration'); side.Layout.Row=1; side.Layout.Column=1;
-            sideGrid=uigridlayout(side,[18 2]);
-            sideGrid.RowHeight=[repmat({'fit'},1,17),{'1x'}];
-            sideGrid.ColumnWidth={120,'1x'}; sideGrid.Padding=[10 10 10 10];
+            sideGrid=uigridlayout(side,[17 2]);
+            sideGrid.RowHeight=[repmat({'fit'},1,16),{'1x'}];
+            sideGrid.ColumnWidth={140,'1x'}; sideGrid.Padding=[10 10 10 10];
             addLabel(sideGrid,'Database',1); dbGrid=uigridlayout(sideGrid,[1 2]);
             dbGrid.Layout.Row=1; dbGrid.Layout.Column=2; dbGrid.ColumnWidth={'1x','fit'};
             dbGrid.Padding=[0 0 0 0];
             app.DatabaseField=uieditfield(dbGrid,'text','Editable','off');
             uibutton(dbGrid,'Text','...','ButtonPushedFcn',@(~,~)app.browseDatabase());
-            app.RouteDropDown=app.addDropDown(sideGrid,'Route',2);
+
+            missionPanel=uipanel(sideGrid,'Title','Mission Inputs');
+            missionPanel.Layout.Row=2; missionPanel.Layout.Column=[1 2];
+            missionGrid=uigridlayout(missionPanel,[3 2]);
+            missionGrid.RowHeight={'fit','fit','fit'};
+            missionGrid.ColumnWidth={120,'1x'};
+            missionGrid.Padding=[8 6 8 6]; missionGrid.RowSpacing=5;
+            app.RouteDropDown=app.addDropDown(missionGrid,'Route',1);
             app.RouteDropDown.ValueChangedFcn=@(~,~)app.updateRouteMap();
+            app.MassDropDown=app.addDropDown(missionGrid,'Total vehicle mass',2);
+            app.AuxDropDown=app.addDropDown(missionGrid,'Auxiliary',3);
+
             app.Battery1DropDown=app.addDropDown(sideGrid,'Battery 1',3);
             app.Battery2DropDown=app.addDropDown(sideGrid,'Battery 2',4);
             app.MotorDropDown=app.addDropDown(sideGrid,'Hub motor pair',5);
             app.GensetDropDown=app.addDropDown(sideGrid,'Genset',6);
-            app.MassDropDown=app.addDropDown(sideGrid,'Total vehicle mass',7);
-            app.AuxDropDown=app.addDropDown(sideGrid,'Auxiliary',8);
-            app.SOE1Field=app.addNumber(sideGrid,'Initial B1 SOE (%)',9,85,[10 95]);
-            app.SOE2Field=app.addNumber(sideGrid,'Initial B2 SOE (%)',10,20,[10 95]);
-            app.FuelPriceField=app.addNumber(sideGrid,'Fuel price (EUR/L)',11,1.65,[0 inf]);
-            app.ElectricityPriceField=app.addNumber(sideGrid,'Electricity (EUR/kWh)',12,0.18,[0 inf]);
-            app.MaxConfigurationsField=app.addNumber(sideGrid,'Max configurations',13,40,[1 1000]);
+            app.BatterySetMultiplierField=app.addNumber(sideGrid,'Battery set multiplier',7,1,[0.5 inf]);
+            app.BatterySetMultiplierField.Tooltip=[ ...
+                'Hybrid: positive whole sets; each set has one active and one standby pack. ' ...
+                'BEV: positive half-set steps; 0.5/1/1.5 sets mean 1/2/3 connected packs.'];
+            app.BatterySetMultiplierField.ValueChangedFcn=@(~,~)app.updateBatterySetMultiplier();
+            app.SOE1Field=app.addNumber(sideGrid,'Initial B1 SOE (%)',8,85,[10 95]);
+            app.SOE2Field=app.addNumber(sideGrid,'Initial B2 SOE (%)',9,20,[10 95]);
+            app.SOE1Field.ValueChangedFcn=@(~,~)app.synchronizeBEVSOE(1);
+            app.SOE2Field.ValueChangedFcn=@(~,~)app.synchronizeBEVSOE(2);
+            app.FuelPriceField=app.addNumber(sideGrid,'Fuel price (EUR/L)',10,2.10,[0 inf]);
+            app.ElectricityPriceField=app.addNumber(sideGrid,'Electricity (EUR/kWh)',11,0.40,[0 inf]);
+            app.MaxConfigurationsField=app.addNumber(sideGrid,'Max configurations',12,40,[1 1000]);
             app.RepeatRouteCheckBox=uicheckbox(sideGrid,'Text','Repeat route until depleted', ...
                 'Value',false,'Tooltip',['Continuously repeat the selected route until the fuel tank ' ...
                 'is empty and both batteries reach their usable-energy limits.']);
-            app.RepeatRouteCheckBox.Layout.Row=14; app.RepeatRouteCheckBox.Layout.Column=[1 2];
-            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[15 16];
+            app.RepeatRouteCheckBox.Layout.Row=13; app.RepeatRouteCheckBox.Layout.Column=[1 2];
+            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[14 15];
             buttonGrid.Layout.Column=[1 2]; buttonGrid.ColumnWidth={'1x','1x'};
             buttonGrid.RowHeight={'fit','fit'}; buttonGrid.Padding=[0 0 0 0];
             uibutton(buttonGrid,'Text','Run Manual','ButtonPushedFcn',@(~,~)app.runManual());
@@ -96,7 +128,7 @@ classdef HybridBusApp < handle
             uibutton(buttonGrid,'Text','Cancel','ButtonPushedFcn',@(~,~)app.requestCancel());
             uibutton(buttonGrid,'Text','Export','ButtonPushedFcn',@(~,~)app.exportCurrent());
             app.StatusLabel=uilabel(sideGrid,'Text','Ready','WordWrap','on');
-            app.StatusLabel.Layout.Row=17; app.StatusLabel.Layout.Column=[1 2];
+            app.StatusLabel.Layout.Row=16; app.StatusLabel.Layout.Column=[1 2];
 
             tabs=uitabgroup(root); tabs.Layout.Row=1; tabs.Layout.Column=2;
             % Creation order defines the user-facing workflow and initial tab.
@@ -109,16 +141,31 @@ classdef HybridBusApp < handle
             plotTab=uitab(tabs,'Title','Signals');
             detailedTab=uitab(tabs,'Title','Detailed Plot');
 
-            plotGrid=uigridlayout(plotTab,[2 2]);
+            signalsGrid=uigridlayout(plotTab,[2 1]);
+            signalsGrid.RowHeight={'fit','1x'}; signalsGrid.ColumnWidth={'1x'};
+            signalsControlGrid=uigridlayout(signalsGrid,[1 3]);
+            signalsControlGrid.Layout.Row=1; signalsControlGrid.Layout.Column=1;
+            signalsControlGrid.ColumnWidth={'1x','fit','fit'};
+            signalsControlGrid.Padding=[6 3 6 3];
+            uilabel(signalsControlGrid,'Text','Signal histories','FontWeight','bold', ...
+                'FontColor',[0.18 0.25 0.33]);
+            uilabel(signalsControlGrid,'Text','X-axis:','HorizontalAlignment','right');
+            [app.SignalsXAxisSwitch,signalsSwitchGrid]=createColoredModeSwitch( ...
+                signalsControlGrid,{"Time","Distance"},"Time", ...
+                @(src,~)app.updateXAxisMode(src.Value), ...
+                'Toggle all signal plots between elapsed time and cumulative distance.');
+            signalsSwitchGrid.Layout.Row=1; signalsSwitchGrid.Layout.Column=3;
+            plotGrid=uigridlayout(signalsGrid,[2 2]);
+            plotGrid.Layout.Row=2; plotGrid.Layout.Column=1;
             app.SpeedAxes=uiaxes(plotGrid); title(app.SpeedAxes,'Route speed'); grid(app.SpeedAxes,'on');
             app.PowerAxes=uiaxes(plotGrid); title(app.PowerAxes,'Power flow'); grid(app.PowerAxes,'on');
             app.BatteryAxes=uiaxes(plotGrid); title(app.BatteryAxes,'Battery SOE'); grid(app.BatteryAxes,'on');
             app.GensetAxes=uiaxes(plotGrid); title(app.GensetAxes,'Genset and fuel'); grid(app.GensetAxes,'on');
             detailedGrid=uigridlayout(detailedTab,[2 1]);
             detailedGrid.RowHeight={'fit','1x'}; detailedGrid.ColumnWidth={'1x'};
-            selectorGrid=uigridlayout(detailedGrid,[1 2]);
+            selectorGrid=uigridlayout(detailedGrid,[1 4]);
             selectorGrid.Layout.Row=1; selectorGrid.Layout.Column=1;
-            selectorGrid.ColumnWidth={'fit','1x'}; selectorGrid.Padding=[0 0 0 0];
+            selectorGrid.ColumnWidth={'fit','1x','fit','fit'}; selectorGrid.Padding=[0 0 0 0];
             uilabel(selectorGrid,'Text','Plot:','FontWeight','bold');
             plotItems={'Vehicle Acceleration (m/s^2)','Vehicle Speed (km/h)', ...
                 'Vehicle Distance (km)','Net Torque at the Wheels','Motor Torques', ...
@@ -126,28 +173,78 @@ classdef HybridBusApp < handle
                 'Battery Power','Engine Power'};
             app.DetailedPlotDropDown=uidropdown(selectorGrid,'Items',plotItems, ...
                 'Value',plotItems{1},'ValueChangedFcn',@(~,~)app.updateDetailedPlot());
+            uilabel(selectorGrid,'Text','X-axis:','HorizontalAlignment','right', ...
+                'FontWeight','bold');
+            [app.DetailedXAxisSwitch,detailedSwitchGrid]=createColoredModeSwitch( ...
+                selectorGrid,{"Time","Distance"},"Time", ...
+                @(src,~)app.updateXAxisMode(src.Value), ...
+                'Toggle all signal plots between elapsed time and cumulative distance.');
+            detailedSwitchGrid.Layout.Row=1; detailedSwitchGrid.Layout.Column=4;
             app.DetailedAxes=uiaxes(detailedGrid);
             app.DetailedAxes.Layout.Row=2; app.DetailedAxes.Layout.Column=1;
             title(app.DetailedAxes,'Run a simulation to view detailed signals');
-            xlabel(app.DetailedAxes,'Time (s)'); grid(app.DetailedAxes,'on');
-            routeMapGrid=uigridlayout(routeMapTab,[2 1]);
-            routeMapGrid.RowHeight={'1x',145}; routeMapGrid.ColumnWidth={'1x'};
-            app.RouteMapAxes=geoaxes(routeMapGrid);
-            app.RouteMapAxes.Layout.Row=1; app.RouteMapAxes.Layout.Column=1;
+            xlabel(app.DetailedAxes,'Time (min)'); grid(app.DetailedAxes,'on');
+            routeMapGrid=uigridlayout(routeMapTab,[3 1]);
+            routeMapGrid.RowHeight={'fit','1x',165}; routeMapGrid.ColumnWidth={'1x'};
+            routeModeGrid=uigridlayout(routeMapGrid,[1 5]);
+            routeModeGrid.Layout.Row=1; routeModeGrid.Layout.Column=1;
+            routeModeGrid.ColumnWidth={'1x','fit','fit','fit','fit'};
+            routeModeGrid.Padding=[6 3 6 3];
+            uilabel(routeModeGrid,'Text','Route visualization', ...
+                'FontWeight','bold','FontColor',[0.18 0.25 0.33]);
+            uilabel(routeModeGrid,'Text','Map mode:','HorizontalAlignment','right');
+            [app.RouteMapModeSwitch,routeMapSwitchGrid]=createColoredModeSwitch( ...
+                routeModeGrid,{"2D","3D"},"2D", ...
+                @(~,~)app.updateRouteMapMode(), ...
+                'Toggle between the geographic 2D map and the 3D route profile.');
+            routeMapSwitchGrid.Layout.Row=1; routeMapSwitchGrid.Layout.Column=3;
+            app.Route3DMetricLabel=uilabel(routeModeGrid,'Text','3D quantity:', ...
+                'HorizontalAlignment','right','Visible','off');
+            app.Route3DMetricLabel.Layout.Row=1; app.Route3DMetricLabel.Layout.Column=4;
+            [app.Route3DMetricSwitch,app.Route3DMetricSwitchGrid]=createColoredModeSwitch( ...
+                routeModeGrid,{"Elevation","Slope"},"Elevation", ...
+                @(~,~)app.updateRoute3DMetric(), ...
+                'Show the 3D route using elevation in metres or road slope in percent.');
+            app.Route3DMetricSwitchGrid.Layout.Row=1;
+            app.Route3DMetricSwitchGrid.Layout.Column=5;
+            app.Route3DMetricSwitchGrid.Visible='off';
+            app.RouteMap2DPanel=uipanel(routeMapGrid,'BorderType','none');
+            app.RouteMap2DPanel.Layout.Row=2; app.RouteMap2DPanel.Layout.Column=1;
+            route2DGrid=uigridlayout(app.RouteMap2DPanel,[1 1]);
+            route2DGrid.Padding=[0 0 0 0];
+            app.RouteMapAxes=geoaxes(route2DGrid);
+            app.RouteMap3DPanel=uipanel(routeMapGrid,'BorderType','none','Visible','off');
+            app.RouteMap3DPanel.Layout.Row=2; app.RouteMap3DPanel.Layout.Column=1;
+            route3DGrid=uigridlayout(app.RouteMap3DPanel,[1 1]);
+            route3DGrid.Padding=[0 0 0 0];
+            app.Route3DAxes=uiaxes(route3DGrid);
             app.RouteMapTable=uitable(routeMapGrid,'ColumnName',{'Property','Value'}, ...
                 'ColumnWidth',{190,'auto'},'RowName',{});
-            app.RouteMapTable.Layout.Row=2; app.RouteMapTable.Layout.Column=1;
-            architectureGrid=uigridlayout(architectureTab,[2 1]);
-            architectureGrid.RowHeight={'fit','1x'}; architectureGrid.ColumnWidth={'1x'};
-            architectureNote=uilabel(architectureGrid,'WordWrap','on', ...
+            app.RouteMapTable.Layout.Row=3; app.RouteMapTable.Layout.Column=1;
+            architectureGrid=uigridlayout(architectureTab,[3 1]);
+            architectureGrid.RowHeight={'fit','fit','1x'}; architectureGrid.ColumnWidth={'1x'};
+            architectureControls=uigridlayout(architectureGrid,[1 3]);
+            architectureControls.Layout.Row=1; architectureControls.Layout.Column=1;
+            architectureControls.ColumnWidth={'1x','fit','fit'};
+            architectureControls.Padding=[6 3 6 3];
+            uilabel(architectureControls,'Text','Selectable powertrain architecture', ...
+                'FontWeight','bold','FontColor',[0.18 0.25 0.33]);
+            uilabel(architectureControls,'Text','Powertrain:','HorizontalAlignment','right');
+            [app.PowertrainModeSwitch,powertrainSwitchGrid]=createColoredModeSwitch( ...
+                architectureControls,{"Hybrid","BEV"},"Hybrid", ...
+                @(~,~)app.updatePowertrainMode(), ...
+                'Toggle between isolated-genset hybrid and battery-electric operation.');
+            powertrainSwitchGrid.Layout.Row=1; powertrainSwitchGrid.Layout.Column=3;
+            app.ArchitectureNoteLabel=uilabel(architectureGrid,'WordWrap','on', ...
                 'Text',['First-principles view: the genset is isolated from the traction DC bus and ' ...
                 'charges only the standby battery at constant best-efficiency power. The active battery ' ...
                 'alone supports traction until 30% SOE. Regeneration returns from the wheels through the ' ...
                 'fixed reduction and motor-inverters, then supplies auxiliaries first, charges the active ' ...
-                'battery second, and dissipates surplus power in the resistor load bank third.']);
-            architectureNote.Layout.Row=1; architectureNote.Layout.Column=1;
+                'battery second, and dissipates surplus power in the resistor load bank third. ' ...
+                'Click any component block to inspect its selected specification and implemented role.']);
+            app.ArchitectureNoteLabel.Layout.Row=2; app.ArchitectureNoteLabel.Layout.Column=1;
             app.ArchitectureAxes=uiaxes(architectureGrid);
-            app.ArchitectureAxes.Layout.Row=2; app.ArchitectureAxes.Layout.Column=1;
+            app.ArchitectureAxes.Layout.Row=3; app.ArchitectureAxes.Layout.Column=1;
             app.drawPowertrainArchitecture();
             app.buildKPIDashboard(summaryTab);
             app.buildSimulationAnalysis(analysisTab);
@@ -223,21 +320,97 @@ classdef HybridBusApp < handle
             app.SOE2Field.Value=100*double(D.InitialBattery2SOE);
             app.FuelPriceField.Value=double(D.FuelPrice);
             app.ElectricityPriceField.Value=double(D.ElectricityPrice);
+            if isfield(D,'BatterySetMultiplier')
+                app.BatterySetMultiplierField.Value=double(D.BatterySetMultiplier);
+            else
+                app.BatterySetMultiplierField.Value=1;
+            end
+            app.LastValidBatterySetMultiplier=app.BatterySetMultiplierField.Value;
+            app.HybridSOE1Cache=app.SOE1Field.Value;
+            app.HybridSOE2Cache=app.SOE2Field.Value;
+        end
+
+        function updatePowertrainMode(app)
+            styleColoredModeSwitch(app.PowertrainModeSwitch);
+            isBEV=strcmpi(string(app.PowertrainModeSwitch.Value),"BEV");
+            if ~isBEV && abs(app.BatterySetMultiplierField.Value- ...
+                    round(app.BatterySetMultiplierField.Value))>1e-9
+                app.BatterySetMultiplierField.Value=max(1,round(app.BatterySetMultiplierField.Value));
+                app.LastValidBatterySetMultiplier=app.BatterySetMultiplierField.Value;
+            end
+            if isBEV
+                app.HybridSOE1Cache=app.SOE1Field.Value;
+                app.HybridSOE2Cache=app.SOE2Field.Value;
+                app.SOE1Field.Value=85; app.SOE2Field.Value=85;
+                app.GensetDropDown.Enable='off';
+                app.ArchitectureNoteLabel.Text=[ ...
+                    'Battery-electric view: the battery set multiplier connects two packs per set; half-set ' ...
+                    'increments represent one additional pack. All connected packs start at the same SOE ' ...
+                    '(85% by default), and the BMS shares power within each bank''s limits. Regeneration ' ...
+                    'supplies auxiliaries first, charges the connected battery pack(s) second, and sends ' ...
+                    'surplus to the resistor load bank third. Click any block for specifications.'];
+            else
+                app.SOE1Field.Value=app.HybridSOE1Cache;
+                app.SOE2Field.Value=app.HybridSOE2Cache;
+                app.GensetDropDown.Enable='on';
+                app.ArchitectureNoteLabel.Text=[ ...
+                    'First-principles view: the genset is isolated from the traction DC bus and charges only ' ...
+                    'the standby battery bank at constant best-efficiency power. The active battery bank supports ' ...
+                    'traction until 30% SOE. Regeneration supplies auxiliaries first, the active battery ' ...
+                    'second, and the resistor load bank third. Click any block for specifications.'];
+            end
+            app.drawPowertrainArchitecture();
+        end
+
+        function updateBatterySetMultiplier(app)
+            value=app.BatterySetMultiplierField.Value;
+            isBEV=strcmpi(string(app.PowertrainModeSwitch.Value),"BEV");
+            if isBEV
+                isValid=value>=0.5 && abs(2*value-round(2*value))<=1e-9;
+                requirement='BEV multiplier must be 0.5 or greater in 0.5-set increments.';
+            else
+                isValid=value>=1 && abs(value-round(value))<=1e-9;
+                requirement='Hybrid multiplier must be a positive whole number of sets.';
+            end
+            if ~isValid
+                app.BatterySetMultiplierField.Value=app.LastValidBatterySetMultiplier;
+                uialert(app.Figure,requirement,'Invalid battery set multiplier');
+                return
+            end
+            app.LastValidBatterySetMultiplier=value;
+            app.drawPowertrainArchitecture();
+        end
+
+        function synchronizeBEVSOE(app,sourceBattery)
+            if ~strcmpi(string(app.PowertrainModeSwitch.Value),"BEV"), return; end
+            if sourceBattery==1, app.SOE2Field.Value=app.SOE1Field.Value;
+            else, app.SOE1Field.Value=app.SOE2Field.Value; end
         end
 
         function O=gatherOverrides(app)
+            dashboard=app.Database.Dashboard;
             O=struct('SelectedRoute',string(app.RouteDropDown.Value), ...
                 'SelectedBattery1',string(app.Battery1DropDown.Value), ...
                 'SelectedBattery2',string(app.Battery2DropDown.Value), ...
                 'SelectedMotor',string(app.MotorDropDown.Value), ...
                 'SelectedGenset',string(app.GensetDropDown.Value), ...
+                'SelectedTyre',string(dashboard.SelectedTyre), ...
+                'SelectedFinalDrive',string(dashboard.SelectedFinalDrive), ...
                 'SelectedMass',string(app.MassDropDown.Value), ...
                 'SelectedAuxProfile',string(app.AuxDropDown.Value), ...
+                'SelectedEnvironment',string(dashboard.SelectedEnvironment), ...
+                'SelectedControl',string(dashboard.SelectedControl), ...
                 'InitialBattery1SOE',app.SOE1Field.Value/100, ...
                 'InitialBattery2SOE',app.SOE2Field.Value/100, ...
+                'InitialActiveBattery',double(dashboard.InitialActiveBattery), ...
+                'AuxiliaryScalarOverride',double(dashboard.AuxiliaryScalarOverride), ...
+                'FuelTankCapacity',double(dashboard.FuelTankCapacity), ...
                 'FuelPrice',app.FuelPriceField.Value, ...
                 'ElectricityPrice',app.ElectricityPriceField.Value, ...
                 'RepeatUntilDepleted',app.RepeatRouteCheckBox.Value);
+            O.PowertrainMode=string(app.PowertrainModeSwitch.Value);
+            O.BatterySetMultiplier=app.BatterySetMultiplierField.Value;
+            if O.PowertrainMode=="BEV", O.InitialBattery2SOE=O.InitialBattery1SOE; end
         end
 
         function updateRouteMap(app)
@@ -250,6 +423,7 @@ classdef HybridBusApp < handle
             if isempty(row),return,end
             app.RouteDropDown.Tooltip=char(row.RouteName+" - "+row.RouteType);
             ax=app.RouteMapAxes; cla(ax); hold(ax,'on');
+            ax3=app.Route3DAxes; cla(ax3,'reset'); hold(ax3,'on');
             hasGeometry=isfield(app.Database,'Route_Geometry') && ...
                 any(app.Database.Route_Geometry.RouteID==routeID);
             if hasGeometry
@@ -276,23 +450,122 @@ classdef HybridBusApp < handle
                     geometry.Latitude_deg(end),geometry.Longitude_deg(end));
                 geometryText=sprintf('%d coordinate samples; %.1f km geographic polyline', ...
                     height(geometry),geometry.CumulativeDistance_km(end));
+                if ismember('Elevation_m',geometry.Properties.VariableNames) && ...
+                        all(isfinite(geometry.Elevation_m))
+                    elevation=geometry.Elevation_m;
+                    slope=compute_route_slope_percent( ...
+                        geometry.CumulativeDistance_km,elevation);
+                    showSlope=strcmp(app.Route3DMetricSwitch.Value,'Slope');
+                    if showSlope
+                        displayValues=slope;
+                        quantityName='Road slope'; quantityUnit='%';
+                        titleSuffix='3D road slope';
+                    else
+                        displayValues=elevation;
+                        quantityName='Elevation'; quantityUnit='m';
+                        titleSuffix='3D terrain elevation';
+                    end
+                    axis(ax3,'on');
+                    surface(ax3,[geometry.Longitude_deg geometry.Longitude_deg], ...
+                        [geometry.Latitude_deg geometry.Latitude_deg], ...
+                        [displayValues displayValues],[displayValues displayValues], ...
+                        'FaceColor','none','EdgeColor','interp','LineWidth',2.8, ...
+                        'DisplayName',quantityName);
+                    valueSpan=max(displayValues)-min(displayValues);
+                    if showSlope
+                        displayFloor=min(displayValues)-max(1,0.08*valueSpan);
+                    else
+                        displayFloor=min(displayValues)-max(10,0.05*valueSpan);
+                    end
+                    plot3(ax3,geometry.Longitude_deg,geometry.Latitude_deg, ...
+                        repmat(displayFloor,height(geometry),1), ...
+                        'Color',[0.73 0.77 0.82],'LineWidth',0.8, ...
+                        'DisplayName','Reference projection');
+                    scatter3(ax3,geometry.Longitude_deg(1),geometry.Latitude_deg(1), ...
+                        displayValues(1),75,[0.12 0.58 0.29],'filled', ...
+                        'DisplayName','Start');
+                    scatter3(ax3,geometry.Longitude_deg(end),geometry.Latitude_deg(end), ...
+                        displayValues(end),75,[0.78 0.20 0.15],'filled', ...
+                        'DisplayName','Destination');
+                    xlabel(ax3,'Longitude (deg)'); ylabel(ax3,'Latitude (deg)');
+                    zlabel(ax3,sprintf('%s (%s)',quantityName,quantityUnit));
+                    grid(ax3,'on'); box(ax3,'on');
+                    view(ax3,[-42 26]); colormap(ax3,turbo(256));
+                    colorScale=colorbar(ax3);
+                    colorScale.Label.String=sprintf('%s (%s)',quantityName,quantityUnit);
+                    title(ax3,char(row.RouteName+" - "+titleSuffix));
+                    legend(ax3,'Location','best');
+                    elevationGain=sum(max(diff(elevation),0));
+                    elevationText=sprintf('%.0f to %.0f m; total ascent %.0f m', ...
+                        min(elevation),max(elevation),elevationGain);
+                    slopeText=sprintf('%.1f%% downhill to %.1f%% uphill; derived from elevation/path distance', ...
+                        min(slope),max(slope));
+                    displayText=sprintf('%s (%s)',quantityName,quantityUnit);
+                    elevationSource=char(geometry.ElevationSource(1));
+                else
+                    app.showUnavailable3DRoute('Elevation data are unavailable for this route');
+                    elevationText='Not available';
+                    slopeText='Not available';
+                    displayText='Not available';
+                    elevationSource='No elevation source stored';
+                end
             else
                 geolimits(ax,[35 65],[-15 30]);
                 geoplot(ax,NaN,NaN);
                 locationText='Not applicable - this mission is not tied to a real road corridor';
                 geometryText='No latitude/longitude geometry stored; coordinates are intentionally not fabricated';
+                app.showUnavailable3DRoute('No geographic route geometry is available');
+                elevationText='Not applicable';
+                slopeText='Not applicable';
+                displayText='Not applicable';
+                elevationSource='Not applicable';
             end
             try,geobasemap(ax,'streets-light');catch,geobasemap(ax,'none');end
             title(ax,char(row.RouteName+" - "+row.RouteType));
             hold(ax,'off');
+            hold(ax3,'off');
             app.RouteMapTable.Data={ ...
                 'Route ID',char(routeID); ...
                 'Region',char(row.Region); ...
                 'Catalog distance',sprintf('%.1f km',row.Distance_km); ...
                 'Coordinates',locationText; ...
                 'Geometry',geometryText; ...
+                'Elevation',elevationText; ...
+                'Slope',slopeText; ...
+                '3D display',displayText; ...
+                'Elevation source',elevationSource; ...
                 'Source',char(row.SourceOrganization); ...
                 'License',char(row.License)};
+            app.updateRouteMapMode();
+        end
+
+        function updateRouteMapMode(app)
+            show3D=strcmp(app.RouteMapModeSwitch.Value,'3D');
+            styleColoredModeSwitch(app.RouteMapModeSwitch);
+            if show3D
+                app.RouteMap2DPanel.Visible='off';
+                app.RouteMap3DPanel.Visible='on';
+                app.Route3DMetricLabel.Visible='on';
+                app.Route3DMetricSwitchGrid.Visible='on';
+            else
+                app.RouteMap2DPanel.Visible='on';
+                app.RouteMap3DPanel.Visible='off';
+                app.Route3DMetricLabel.Visible='off';
+                app.Route3DMetricSwitchGrid.Visible='off';
+            end
+        end
+
+        function updateRoute3DMetric(app)
+            styleColoredModeSwitch(app.Route3DMetricSwitch);
+            app.updateRouteMap();
+        end
+
+        function showUnavailable3DRoute(app,message)
+            ax=app.Route3DAxes;
+            text(ax,0.5,0.5,0.5,message,'HorizontalAlignment','center', ...
+                'FontWeight','bold','Color',[0.35 0.40 0.46]);
+            xlim(ax,[0 1]); ylim(ax,[0 1]); zlim(ax,[0 1]);
+            view(ax,3); axis(ax,'off');
         end
 
         function runManual(app)
@@ -310,8 +583,13 @@ classdef HybridBusApp < handle
         function runOptimization(app)
             app.CancelRequested=false; app.StatusLabel.Text='Optimizing...'; drawnow;
             try
+                if strcmpi(string(app.PowertrainModeSwitch.Value),"BEV")
+                    varyComponents=["Battery1","Battery2","Motor","FinalDrive"];
+                else
+                    varyComponents=["Battery1","Motor","Genset","FinalDrive"];
+                end
                 app.CurrentOptimization=optimize_hybrid_bus_configuration( ...
-                    string(app.DatabaseField.Value),Vary=["Battery1","Motor","Genset","FinalDrive"], ...
+                    string(app.DatabaseField.Value),Vary=varyComponents, ...
                     MaxConfigurations=round(app.MaxConfigurationsField.Value), ...
                     BaseOverrides=app.gatherOverrides(), ...
                     ProgressFcn=@(n,total,row)app.progress(n,total,row), ...
@@ -339,24 +617,31 @@ classdef HybridBusApp < handle
         end
 
         function updateResults(app,R)
-            t=R.Time;
-            plot(app.SpeedAxes,t,R.Signals.Vehicle.Speed_m_s*3.6,'LineWidth',1.2);
-            xlabel(app.SpeedAxes,'Time (s)'); ylabel(app.SpeedAxes,'km/h');
-            plot(app.PowerAxes,t,R.Signals.Wheel.Demand_kW,t,R.Signals.Motors.ElectricalPower_kW, ...
-                t,R.Signals.Auxiliary.Power_kW,t,R.Signals.Regeneration.ResistorLoadBank_kW, ...
+            tSeconds=R.Time(:);
+            [x,xLabel,tickFormat]=select_plot_x_axis(tSeconds, ...
+                R.Signals.Vehicle.Distance_m(:),string(app.SignalsXAxisSwitch.Value));
+            plot(app.SpeedAxes,x,R.Signals.Vehicle.Speed_m_s*3.6,'LineWidth',1.2);
+            xlabel(app.SpeedAxes,xLabel); ylabel(app.SpeedAxes,'km/h');
+            xtickformat(app.SpeedAxes,tickFormat);
+            plot(app.PowerAxes,x,R.Signals.Wheel.Demand_kW,x,R.Signals.Motors.ElectricalPower_kW, ...
+                x,R.Signals.Auxiliary.Power_kW,x,R.Signals.Regeneration.ResistorLoadBank_kW, ...
                 'LineWidth',1.0);
             legend(app.PowerAxes,{'Wheel','Motor DC','Auxiliary','Resistor load bank'}, ...
                 'Location','best');
-            xlabel(app.PowerAxes,'Time (s)'); ylabel(app.PowerAxes,'kW');
-            plot(app.BatteryAxes,t,100*R.Signals.Battery1.SOE, ...
-                t,100*R.Signals.Battery2.SOE,'LineWidth',1.2);
+            xlabel(app.PowerAxes,xLabel); ylabel(app.PowerAxes,'kW');
+            xtickformat(app.PowerAxes,tickFormat);
+            plot(app.BatteryAxes,x,100*R.Signals.Battery1.SOE, ...
+                x,100*R.Signals.Battery2.SOE,'LineWidth',1.2);
             legend(app.BatteryAxes,{'Battery 1','Battery 2'},'Location','best');
-            xlabel(app.BatteryAxes,'Time (s)'); ylabel(app.BatteryAxes,'SOE (%)');
+            xlabel(app.BatteryAxes,xLabel); ylabel(app.BatteryAxes,'SOE (%)');
+            xtickformat(app.BatteryAxes,tickFormat);
             ytickformat(app.BatteryAxes,'%.0f%%');
-            yyaxis(app.GensetAxes,'left'); plot(app.GensetAxes,t,R.Signals.Genset.ElectricalPower_kW);
+            yyaxis(app.GensetAxes,'left'); plot(app.GensetAxes,x,R.Signals.Genset.ElectricalPower_kW);
             ylabel(app.GensetAxes,'kW'); yyaxis(app.GensetAxes,'right');
-            plot(app.GensetAxes,t,cumsum(R.Signals.Genset.FuelRate_L_s.*[diff(t);median(diff(t))]));
-            ylabel(app.GensetAxes,'Fuel (L)'); xlabel(app.GensetAxes,'Time (s)');
+            timeStep_s=[diff(tSeconds);median(diff(tSeconds))];
+            plot(app.GensetAxes,x,cumsum(R.Signals.Genset.FuelRate_L_s.*timeStep_s));
+            ylabel(app.GensetAxes,'Fuel (L)'); xlabel(app.GensetAxes,xLabel);
+            xtickformat(app.GensetAxes,tickFormat);
             app.updateKPIDashboard(R);
             app.updateSimulationAnalysis(R);
             app.updateDetailedPlot();
@@ -627,7 +912,7 @@ classdef HybridBusApp < handle
             ax=app.DetailedAxes;
             cla(ax); legend(ax,'off'); grid(ax,'on');
             selection=string(app.DetailedPlotDropDown.Value);
-            title(ax,selection); xlabel(ax,'Time (s)');
+            title(ax,selection); xlabel(ax,'Time (min)');
             if isempty(app.CurrentResults)
                 ylabel(ax,'');
                 text(ax,0.5,0.5,'Run a manual case or optimization first.', ...
@@ -635,7 +920,10 @@ classdef HybridBusApp < handle
                 return
             end
 
-            R=app.CurrentResults; t=R.Time(:); S=R.Signals;
+            R=app.CurrentResults; S=R.Signals;
+            [x,xLabel,tickFormat]=select_plot_x_axis(R.Time(:), ...
+                S.Vehicle.Distance_m(:),string(app.DetailedXAxisSwitch.Value));
+            xlabel(ax,xLabel); xtickformat(ax,tickFormat);
             labels=strings(0,1);
             switch selection
                 case "Vehicle Acceleration (m/s^2)"
@@ -653,11 +941,11 @@ classdef HybridBusApp < handle
                 case {"Motor Torques","Reduction Gear Torques","Motor Power"}
                     tyreRadius=max(R.InputParameters.Tyre.LoadedRadius_m,eps);
                     wheelSpeed=S.Vehicle.Speed_m_s/tyreRadius;
-                    deliveredWheelTorque=zeros(size(t));
+                    deliveredWheelTorque=zeros(size(x));
                     moving=abs(wheelSpeed)>1e-9;
                     deliveredWheelTorque(moving)=1000*S.Wheel.Delivered_kW(moving)./wheelSpeed(moving);
                     ratio=max(R.InputParameters.FinalDrive.Ratio,eps);
-                    motorPairTorque=zeros(size(t));
+                    motorPairTorque=zeros(size(x));
                     motoring=deliveredWheelTorque>=0;
                     motorPairTorque(motoring)=deliveredWheelTorque(motoring)/ ...
                         (ratio*R.InputParameters.FinalDrive.MotoringEfficiency);
@@ -698,15 +986,40 @@ classdef HybridBusApp < handle
                     error('HybridBus:DetailedPlot','Unsupported detailed plot selection: %s',selection);
             end
 
-            plot(ax,t,values,'LineWidth',1.2);
-            ylabel(ax,yLabel); xlim(ax,[t(1),t(end)]);
+            plot(ax,x,values,'LineWidth',1.2);
+            ylabel(ax,yLabel); xlim(ax,[x(1),x(end)]);
             if ~isempty(labels)
                 legend(ax,cellstr(labels),'Location','best');
             end
         end
 
+        function updateXAxisMode(app,mode)
+            app.SignalsXAxisSwitch.Value=mode;
+            app.DetailedXAxisSwitch.Value=mode;
+            styleColoredModeSwitch(app.SignalsXAxisSwitch);
+            styleColoredModeSwitch(app.DetailedXAxisSwitch);
+            if isempty(app.CurrentResults)
+                if strcmp(mode,'Distance')
+                    xLabel='Distance (km)';
+                else
+                    xLabel='Time (min)';
+                end
+                xlabel(app.SpeedAxes,xLabel); xlabel(app.PowerAxes,xLabel);
+                xlabel(app.BatteryAxes,xLabel); xlabel(app.GensetAxes,xLabel);
+                xlabel(app.DetailedAxes,xLabel);
+                return
+            end
+            app.updateResults(app.CurrentResults);
+        end
+
         function drawPowertrainArchitecture(app)
+            if ~isempty(app.PowertrainModeSwitch) && ...
+                    strcmpi(string(app.PowertrainModeSwitch.Value),"BEV")
+                app.drawBEVPowertrainArchitecture();
+                return
+            end
             ax=app.ArchitectureAxes;
+            setCount=max(1,round(app.BatterySetMultiplierField.Value));
             cla(ax); hold(ax,'on'); axis(ax,[0 142 0 60]); axis(ax,'off');
             daspect(ax,[1 1 1]); ax.Color=[0.975 0.985 0.99];
 
@@ -770,33 +1083,42 @@ classdef HybridBusApp < handle
             architectureArrow(ax,61,31,61,28,control,1.0,'--');
 
             % Components are placed after links so every line terminates cleanly at a box edge.
-            architectureBlock(ax,[2 39 9 8],'Diesel fuel','fuel',[1.00 0.95 0.87],fuel);
-            architectureBlock(ax,[14 39 9 8],'Engine','engine',[0.97 0.91 1.00],mechanical);
-            architectureBlock(ax,[26 39 9 8],'Generator','generator',[0.88 0.97 0.97],electric);
+            architectureBlock(ax,[2 39 9 8],'Diesel fuel','fuel',[1.00 0.95 0.87],fuel, ...
+                @(~,~)app.showArchitectureSpecification("fuel"),"fuel");
+            architectureBlock(ax,[14 39 9 8],'Engine','engine',[0.97 0.91 1.00],mechanical, ...
+                @(~,~)app.showArchitectureSpecification("engine"),"engine");
+            architectureBlock(ax,[26 39 9 8],'Generator','generator',[0.88 0.97 0.97],electric, ...
+                @(~,~)app.showArchitectureSpecification("generator"),"generator");
             architectureBlock(ax,[38 38 12 10],sprintf('Fixed-point\ncharger'),'charger', ...
-                [1.00 0.94 0.86],charge);
+                [1.00 0.94 0.86],charge,@(~,~)app.showArchitectureSpecification("charger"),"charger");
             architectureBlock(ax,[54 38 14 10],sprintf('Standby\nselector'),'bus', ...
-                [1.00 0.94 0.86],charge);
-            architectureBlock(ax,[37 18 12 10],sprintf('Battery 1\nactive / standby'),'battery', ...
-                [0.89 0.94 1.00],regen);
+                [1.00 0.94 0.86],charge,@(~,~)app.showArchitectureSpecification("standby_selector"), ...
+                "standby_selector");
+            architectureBlock(ax,[37 18 12 10],sprintf('Battery 1 bank\n%d pack(s)',setCount),'battery', ...
+                [0.89 0.94 1.00],regen,@(~,~)app.showArchitectureSpecification("battery1"),"battery1");
             architectureBlock(ax,[54 18 14 10],sprintf('2  Active battery\nselector'),'bus', ...
-                [0.89 0.94 1.00],electric);
-            architectureBlock(ax,[73 18 12 10],sprintf('Battery 2\nactive / standby'),'battery', ...
-                [0.89 0.94 1.00],regen);
+                [0.89 0.94 1.00],electric,@(~,~)app.showArchitectureSpecification("active_selector"), ...
+                "active_selector");
+            architectureBlock(ax,[73 18 12 10],sprintf('Battery 2 bank\n%d pack(s)',setCount),'battery', ...
+                [0.89 0.94 1.00],regen,@(~,~)app.showArchitectureSpecification("battery2"),"battery2");
             architectureBlock(ax,[90 17 10 12],sprintf('Traction\nDC bus'),'bus', ...
-                [0.88 0.97 0.97],electric);
+                [0.88 0.97 0.97],electric,@(~,~)app.showArchitectureSpecification("traction_bus"), ...
+                "traction_bus");
             architectureBlock(ax,[104 18 13 10],sprintf('Motor pair\n+ inverters'),'motor', ...
-                [0.88 0.97 0.97],electric);
+                [0.88 0.97 0.97],electric,@(~,~)app.showArchitectureSpecification("motors"),"motors");
             architectureBlock(ax,[121 18 8 10],sprintf('Fixed\nreduction'),'gear', ...
-                [0.95 0.92 0.99],mechanical);
+                [0.95 0.92 0.99],mechanical,@(~,~)app.showArchitectureSpecification("reduction"), ...
+                "reduction");
             architectureBlock(ax,[133 18 9 10],sprintf('Wheels +\nvehicle'),'vehicle', ...
-                [0.90 0.97 0.92],road);
+                [0.90 0.97 0.92],road,@(~,~)app.showArchitectureSpecification("vehicle"),"vehicle");
             architectureBlock(ax,[103 5 13 8],sprintf('1  DC auxiliary\nloads'),'aux', ...
-                [0.91 0.97 0.95],electric);
+                [0.91 0.97 0.95],electric,@(~,~)app.showArchitectureSpecification("auxiliary"), ...
+                "auxiliary");
             architectureBlock(ax,[86 5 11 8],sprintf('3  Resistor\nload bank'),'resistor', ...
-                [1.00 0.92 0.89],dump);
+                [1.00 0.92 0.89],dump,@(~,~)app.showArchitectureSpecification("resistor"),"resistor");
             architectureBlock(ax,[53 51.5 24 7],sprintf('Supervisory energy manager\n30%% role-swap rule'),'controller', ...
-                [0.94 0.95 0.96],control);
+                [0.94 0.95 0.96],control,@(~,~)app.showArchitectureSpecification("controller"), ...
+                "controller");
 
             % Compact key stays outside the flow lanes.
             legendY=56; legendX=[73 83.5 94 105 116 127];
@@ -812,6 +1134,135 @@ classdef HybridBusApp < handle
                     'VerticalAlignment','middle','FontSize',7.5,'Color',[0.18 0.23 0.28]);
             end
             hold(ax,'off');
+        end
+
+        function drawBEVPowertrainArchitecture(app)
+            ax=app.ArchitectureAxes;
+            cla(ax); hold(ax,'on'); axis(ax,[0 142 0 60]); axis(ax,'off');
+            daspect(ax,[1 1 1]); ax.Color=[0.975 0.985 0.99];
+            electric=[0.02 0.49 0.50]; regen=[0.10 0.38 0.78];
+            mechanical=[0.49 0.24 0.74]; road=[0.16 0.50 0.35];
+            control=[0.38 0.44 0.50]; dump=[0.72 0.26 0.12]; gridColor=[0.05 0.45 0.72];
+            multiplier=app.BatterySetMultiplierField.Value;
+            totalPacks=max(1,round(2*multiplier));
+            battery1Count=ceil(totalPacks/2);
+            battery2Count=floor(totalPacks/2);
+
+            text(ax,3,54,'BATTERY-ELECTRIC POWERTRAIN','FontSize',9,'FontWeight','bold', ...
+                'Color',electric);
+            text(ax,72,52,'TRACTION: BATTERIES  >  DC BUS  >  MOTOR / INVERTERS  >  REDUCTION  >  WHEELS', ...
+                'HorizontalAlignment','center','FontSize',8,'FontWeight','bold','Color',electric);
+            text(ax,91,2,'REGEN PRIORITY: 1 AUXILIARIES   2 CONNECTED BATTERY PACK(S)   3 RESISTOR BANK', ...
+                'HorizontalAlignment','center','FontSize',8,'FontWeight','bold','Color',regen);
+
+            % Charging and parallel battery connection.
+            architectureArrow(ax,13,37,18,37,gridColor,2,'-');
+            plot(ax,[31 38 38],[37 37 32],'Color',gridColor,'LineWidth',1.8);
+            architectureArrow(ax,38,32,38,29,gridColor,1.8,'-');
+            plot(ax,[31 38 38],[37 37 20],'Color',gridColor,'LineWidth',1.8);
+            architectureArrow(ax,38,20,38,17,gridColor,1.8,'-');
+            architectureArrow(ax,50,25,57,25,electric,2.2,'-');
+            architectureArrow(ax,57,28,50,28,regen,1.8,'-');
+            plot(ax,[44 44 52 52],[29 32 32 28],'Color',electric,'LineWidth',1.8);
+            if battery2Count>0
+                plot(ax,[44 44 52 52],[17 14 14 25],'Color',electric,'LineWidth',1.8);
+            else
+                plot(ax,[44 52],[17 17],'Color',[0.60 0.64 0.68],'LineWidth',1.2,'LineStyle','--');
+                text(ax,48,14.8,'disconnected','HorizontalAlignment','center','FontSize',7, ...
+                    'Color',[0.45 0.48 0.52]);
+            end
+
+            % Bidirectional traction chain.
+            architectureArrow(ax,70,25,77,25,electric,2.2,'-');
+            architectureArrow(ax,77,28,70,28,regen,1.8,'-');
+            architectureArrow(ax,91,25,98,25,mechanical,2.2,'-');
+            architectureArrow(ax,98,28,91,28,regen,1.8,'-');
+            architectureArrow(ax,110,25,117,25,road,2.2,'-');
+            architectureArrow(ax,117,28,110,28,regen,1.8,'-');
+            plot(ax,[76 76 71],[25 15 15],'Color',electric,'LineWidth',1.7);
+            architectureArrow(ax,71,15,71,13,electric,1.7,'-');
+            plot(ax,[76 76 88],[28 15 15],'Color',dump,'LineWidth',1.5);
+            architectureArrow(ax,88,15,88,13,dump,1.5,'-');
+            plot(ax,[64 64],[47 32],'Color',control,'LineStyle','--','LineWidth',1.0);
+
+            architectureBlock(ax,[3 33 10 8],sprintf('Grid / depot\ncharger'),'charger', ...
+                [0.89 0.95 1.00],gridColor,@(~,~)app.showArchitectureSpecification("grid_charger"),"grid_charger");
+            architectureBlock(ax,[18 33 13 8],sprintf('Charge inlet +\nBMS'),'bus', ...
+                [0.90 0.96 0.98],electric,@(~,~)app.showArchitectureSpecification("bev_controller"),"bev_controller");
+            architectureBlock(ax,[32 20 12 9],sprintf('Battery 1 bank\n%d pack(s)',battery1Count),'battery', ...
+                [0.89 0.94 1.00],regen,@(~,~)app.showArchitectureSpecification("battery1"),"battery1");
+            if battery2Count>0, battery2Fill=[0.89 0.94 1.00]; battery2Edge=regen; battery2Text=sprintf('Battery 2 bank\n%d pack(s)',battery2Count);
+            else, battery2Fill=[0.94 0.94 0.94]; battery2Edge=[0.55 0.58 0.61]; battery2Text='Battery 2\ndisconnected'; end
+            architectureBlock(ax,[32 8 12 9],sprintf(battery2Text),'battery', ...
+                battery2Fill,battery2Edge,@(~,~)app.showArchitectureSpecification("battery2"),"battery2");
+            architectureBlock(ax,[52 20 18 12],sprintf('Parallel contactor + BMS\n%d connected pack(s)',totalPacks),'bus', ...
+                [0.88 0.97 0.97],electric,@(~,~)app.showArchitectureSpecification("bev_controller"),"bev_controller");
+            architectureBlock(ax,[77 20 14 12],sprintf('Motor pair\n+ inverters'),'motor', ...
+                [0.88 0.97 0.97],electric,@(~,~)app.showArchitectureSpecification("motors"),"motors");
+            architectureBlock(ax,[98 20 12 12],sprintf('Fixed\nreduction'),'gear', ...
+                [0.95 0.92 0.99],mechanical,@(~,~)app.showArchitectureSpecification("reduction"),"reduction");
+            architectureBlock(ax,[117 20 14 12],sprintf('Wheels +\nvehicle'),'vehicle', ...
+                [0.90 0.97 0.92],road,@(~,~)app.showArchitectureSpecification("vehicle"),"vehicle");
+            architectureBlock(ax,[64 5 14 8],sprintf('1  DC auxiliary\nloads'),'aux', ...
+                [0.91 0.97 0.95],electric,@(~,~)app.showArchitectureSpecification("auxiliary"),"auxiliary");
+            architectureBlock(ax,[82 5 13 8],sprintf('3  Resistor\nload bank'),'resistor', ...
+                [1.00 0.92 0.89],dump,@(~,~)app.showArchitectureSpecification("resistor"),"resistor");
+            architectureBlock(ax,[52 47 24 7],sprintf('BEV supervisory controller\nparallel power sharing'),'controller', ...
+                [0.94 0.95 0.96],control,@(~,~)app.showArchitectureSpecification("bev_controller"),"bev_controller");
+            hold(ax,'off');
+        end
+
+        function showArchitectureSpecification(app,componentKey)
+            try
+                selections=app.architectureSelections();
+                specification=architecture_component_specification( ...
+                    app.Database,selections,string(componentKey));
+                existing=findall(groot,'Type','figure','Tag','HybridBusComponentSpecification');
+                if ~isempty(existing),delete(existing);end
+                dialog=uifigure('Name',char(specification.Title+" Specifications"), ...
+                    'Tag','HybridBusComponentSpecification','Position',[420 180 720 590], ...
+                    'Resize','on');
+                layout=uigridlayout(dialog,[4 1]);
+                layout.RowHeight={'fit','fit','1x','fit'};
+                layout.ColumnWidth={'1x'}; layout.Padding=[18 16 18 14];
+                uilabel(layout,'Text',char(specification.Title), ...
+                    'FontSize',20,'FontWeight','bold','FontColor',[0.12 0.25 0.36]);
+                role=uilabel(layout,'Text',char(specification.Role),'WordWrap','on', ...
+                    'FontSize',11,'FontColor',[0.28 0.34 0.39]);
+                role.Layout.Row=2;
+                tableView=uitable(layout,'Data',specification.Rows, ...
+                    'ColumnName',specification.ColumnNames,'RowName',{}, ...
+                    'ColumnWidth',{245,330,85});
+                tableView.Layout.Row=3;
+                closeButton=uibutton(layout,'push','Text','Close', ...
+                    'ButtonPushedFcn',@(~,~)delete(dialog));
+                closeButton.Layout.Row=4;
+                movegui(dialog,'center');
+            catch exception
+                uialert(app.Figure,exception.message,'Specification unavailable');
+            end
+        end
+
+        function selections=architectureSelections(app)
+            selections=app.Database.Dashboard;
+            selections.SelectedBattery1=string(app.Battery1DropDown.Value);
+            selections.SelectedBattery2=string(app.Battery2DropDown.Value);
+            selections.SelectedMotor=string(app.MotorDropDown.Value);
+            selections.SelectedGenset=string(app.GensetDropDown.Value);
+            selections.SelectedMass=string(app.MassDropDown.Value);
+            selections.SelectedAuxProfile=string(app.AuxDropDown.Value);
+            selections.InitialBattery1SOE=app.SOE1Field.Value/100;
+            selections.InitialBattery2SOE=app.SOE2Field.Value/100;
+            selections.PowertrainMode=string(app.PowertrainModeSwitch.Value);
+            selections.BatterySetMultiplier=app.BatterySetMultiplierField.Value;
+            if ~isempty(app.CurrentResults) && ...
+                    isfield(app.CurrentResults,'InputParameters') && ...
+                    isfield(app.CurrentResults.InputParameters,'SelectedIDs')
+                ids=app.CurrentResults.InputParameters.SelectedIDs;
+                selections.SelectedTyre=string(ids.Tyre);
+                selections.SelectedFinalDrive=string(ids.FinalDrive);
+                selections.SelectedControl=string(ids.Control);
+            end
         end
 
         function exportCurrent(app)
@@ -846,7 +1297,7 @@ architectureArrow(ax,midX,midY,x2,y2,color,lineWidth,'-');
 architectureArrow(ax,midX,midY,x1,y1,color,lineWidth,'-');
 end
 
-function architectureBlock(ax,position,labelText,iconType,fillColor,edgeColor)
+function architectureBlock(ax,position,labelText,iconType,fillColor,edgeColor,clickCallback,componentKey)
 x=position(1); y=position(2); width=position(3); height=position(4);
 rectangle(ax,'Position',position,'Curvature',[0.12 0.12], ...
     'FaceColor',fillColor,'EdgeColor',edgeColor,'LineWidth',1.5);
@@ -964,6 +1415,42 @@ end
 text(ax,centerX,y+1.1,labelText,'HorizontalAlignment','center', ...
     'VerticalAlignment','bottom','FontSize',8,'FontWeight','bold', ...
     'Color',[0.12 0.20 0.27],'Interpreter','none');
+patch(ax,[x x+width x+width x],[y y y+height y+height],[1 1 1], ...
+    'FaceAlpha',0.001,'EdgeColor','none','HitTest','on','PickableParts','all', ...
+    'ButtonDownFcn',clickCallback,'Tag','ArchitectureBlockHitTarget', ...
+    'UserData',char(componentKey));
+end
+
+function [switchControl,container]=createColoredModeSwitch(parent,modeItems,initialValue,callback,tooltipText)
+%CREATECOLOREDMODESWITCH Native slider switch with explicit two-color labels.
+container=uigridlayout(parent,[1 3]);
+container.RowHeight={'fit'};
+container.ColumnWidth={'fit',44,'fit'};
+container.Padding=[0 0 0 0]; container.ColumnSpacing=5;
+leftLabel=uilabel(container,'Text',char(string(modeItems{1})), ...
+    'HorizontalAlignment','right');
+switchControl=uiswitch(container,'slider','Items',{'',''}, ...
+    'ItemsData',cellstr(string(modeItems)),'Value',char(string(initialValue)), ...
+    'Tooltip',tooltipText,'ValueChangedFcn',callback,'Tag','ColoredModeSwitch');
+rightLabel=uilabel(container,'Text',char(string(modeItems{2})), ...
+    'HorizontalAlignment','left');
+switchControl.UserData=struct('LeftLabel',leftLabel,'RightLabel',rightLabel, ...
+    'LeftValue',string(modeItems{1}),'RightValue',string(modeItems{2}));
+styleColoredModeSwitch(switchControl);
+end
+
+function styleColoredModeSwitch(switchControl)
+%STYLECOLOREDMODESWITCH Show selected mode in blue and unselected mode in gray.
+blue=[0.04 0.38 0.74]; gray=[0.45 0.49 0.53];
+style=switchControl.UserData;
+leftSelected=string(switchControl.Value)==style.LeftValue;
+if leftSelected
+    style.LeftLabel.FontColor=blue; style.LeftLabel.FontWeight='bold';
+    style.RightLabel.FontColor=gray; style.RightLabel.FontWeight='normal';
+else
+    style.LeftLabel.FontColor=gray; style.LeftLabel.FontWeight='normal';
+    style.RightLabel.FontColor=blue; style.RightLabel.FontWeight='bold';
+end
 end
 
 function theme=kpiTheme()

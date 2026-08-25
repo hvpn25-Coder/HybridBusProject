@@ -19,7 +19,7 @@
 | L01 | No thermal derating dynamics, ageing, aftertreatment, slip, lateral, or driveline compliance | Out of concept energy-analysis scope |
 | L02 | UIFigure app is delivered as source `.m` instead of binary `.mlapp` | Fully editable/run in R2025a; uses public App Designer-compatible components |
 | L03 | VECTO Urban, Suburban, and Coach cycles are representative EU missions, not GPS traces of named German routes | Appropriate European/German regulatory context, but not a timetable or geographic route study |
-| L04 | OSRM annotations contain no elevation, so long-route grade is set to zero | Mountain corridors will understate climbing energy and regeneration; add elevation before detailed design use |
+| L04 | OSRM annotations contain no elevation. Copernicus DEM GLO-90 heights are now cached for the 3D Route Map, but the simulation-grade channel remains zero | Mountain corridors still understate climbing energy and regeneration; derive and validate a road-aligned grade trace before detailed design use |
 | A13 | Battery-electric and conventional-diesel comparisons use transparent analytical screening assumptions | Appropriate for architecture discussion only; replace with calibrated reference-vehicle models for investment decisions |
 | A14 | Sensitivity results are deterministic one-at-a-time perturbations | They show local decision robustness but are not probability distributions or confidence intervals |
 | L05 | MATLAB and Simulink currently fail the declared signal-level equivalence gate | Reconcile wheel/motor transients, battery SOEs, genset scheduling, fuel, and energy residual before claiming equivalent implementations |

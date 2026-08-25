@@ -27,5 +27,7 @@ Each JSON file preserves the query URL, endpoint coordinates, retrieval time, ro
 duration, and per-segment distance/speed annotations. `download_europe_long_routes.m` refreshes the
 snapshot intentionally; `convert_osrm_coach_route.m` converts it to a bounded coach profile. The
 conversion caps speed at 100 km/h, inserts a 45-minute stationary break after each 4.5-hour driving
-block, and uses zero grade because the OSRM annotation has no elevation. These are real geographic
+block, and uses zero simulation grade because the OSRM annotation has no elevation. The Route Map
+adds a separate cached Copernicus DEM GLO-90 terrain-height channel for 3D visualization; it is not
+silently substituted into longitudinal dynamics. These are real geographic
 road corridors, but their speed traces are routing estimates rather than measured coach telemetry.

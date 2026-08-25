@@ -1,9 +1,11 @@
 rootFolder = "C:\TempData\Hybrid_Vehicle\HybridBusProject";
 assetFolder = fullfile(rootFolder,"tmp","pdfs","project_textbook");
 cd(rootFolder);
+addpath(fullfile(rootFolder,"src"),fullfile(rootFolder,"models"));
 
-Database = load_hybrid_bus_database(fullfile(rootFolder,"HybridBus_ComponentDatabase.xlsx"));
-Results = run_hybrid_bus_simulation(fullfile(rootFolder,"HybridBus_ComponentDatabase.xlsx"), ...
+databaseFile=fullfile(rootFolder,"data","HybridBus_ComponentDatabase.xlsx");
+Database = load_hybrid_bus_database(databaseFile);
+Results = run_hybrid_bus_simulation(databaseFile, ...
     struct,'SaveResults',false);
 
 sample = unique([1:10:numel(Results.Time),numel(Results.Time)]);
@@ -63,7 +65,7 @@ massID=strings(massCount,1); totalMass=zeros(massCount,1); costPerKm=zeros(massC
 gridEnergy=zeros(massCount,1); fuelLitres=zeros(massCount,1); unmetEnergy=zeros(massCount,1);
 for index=1:massCount
     massID(index)=Database.Bus_Mass_Catalog.ComponentID(index);
-    MassResult=run_hybrid_bus_simulation(fullfile(rootFolder,"HybridBus_ComponentDatabase.xlsx"), ...
+    MassResult=run_hybrid_bus_simulation(databaseFile, ...
         struct('SelectedMass',massID(index)),'SaveResults',false);
     totalMass(index)=MassResult.Summary.EstimatedVehicleMass_kg;
     costPerKm(index)=MassResult.Summary.CostPer_km;
@@ -84,7 +86,7 @@ finalB1=zeros(routeCount,1); finalB2=zeros(routeCount,1);
 for index=1:routeCount
     routeID(index)=longRoutes.RouteID(index); routeName(index)=longRoutes.RouteName(index);
     sourceDistance(index)=longRoutes.Distance_km(index);
-    LongResult=run_hybrid_bus_simulation(fullfile(rootFolder,"HybridBus_ComponentDatabase.xlsx"), ...
+    LongResult=run_hybrid_bus_simulation(databaseFile, ...
         struct('SelectedRoute',routeID(index)),'SaveResults',false);
     simulatedDistance(index)=LongResult.Summary.RouteDistance_km;
     routeCost(index)=LongResult.Summary.CostPer_km;
@@ -100,7 +102,7 @@ LongStudy=table(routeID,routeName,sourceDistance,simulatedDistance,routeCost,rou
 writetable(LongStudy,fullfile(assetFolder,'long_route_study.csv'));
 
 Optimization=optimize_hybrid_bus_configuration( ...
-    fullfile(rootFolder,"HybridBus_ComponentDatabase.xlsx"), ...
+    databaseFile, ...
     Vary=["Battery1","Motor"],MaxConfigurations=144,SaveResults=false);
 writetable(Optimization.TopConfigurations, ...
     fullfile(assetFolder,'current_top_configurations.csv'));

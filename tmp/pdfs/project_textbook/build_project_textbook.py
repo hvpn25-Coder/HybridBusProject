@@ -40,7 +40,7 @@ from reportlab.graphics.shapes import Circle, Drawing, Line, Polygon, PolyLine, 
 
 ROOT = Path(r"C:\TempData\Hybrid_Vehicle\HybridBusProject")
 ASSET = ROOT / "tmp" / "pdfs" / "project_textbook"
-OUTPUT = ROOT / "output" / "pdf" / "Hybrid_Electric_Bus_Project_Textbook_v2_0.pdf"
+OUTPUT = ROOT / "output" / "pdf" / "Hybrid_Electric_Bus_Project_Textbook_v2_1.pdf"
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
 NAVY = HexColor("#10263D")
@@ -710,7 +710,7 @@ equivalence_checks = pd.read_csv(ROOT / "results" / "MATLAB_Simulink_Equivalence
 concept_comparison = pd.read_csv(ROOT / "results" / "Powertrain_Concept_Comparison.csv")
 sensitivity_study = pd.read_csv(ROOT / "results" / "Sensitivity_Study.csv")
 
-wb = load_workbook(ROOT / "HybridBus_ComponentDatabase.xlsx", read_only=True, data_only=True)
+wb = load_workbook(ROOT / "data" / "HybridBus_ComponentDatabase.xlsx", read_only=True, data_only=True)
 dashboard = {}
 for row in wb["Dashboard"].iter_rows(min_row=2, values_only=True):
     if row[0] is not None:
@@ -726,16 +726,16 @@ story += [
     Spacer(1, 44 * mm),
     P("GRADUATE STUDY EDITION", "CoverKicker"),
     P("Hybrid-Electric Bus<br/>System Modeling", "CoverTitle"),
-    P("A MATLAB and Simulink textbook for backward-facing energy analysis,<br/>dual-battery supervisory control, route studies, and configuration optimization", "CoverSubtitle"),
+    P("A MATLAB and Simulink textbook for selectable hybrid and battery-electric<br/>architectures, route studies, supervisory control, and configuration optimization", "CoverSubtitle"),
     Spacer(1, 52 * mm),
-    P("Project database version 1.6.1<br/>Document revision 2.0<br/>MATLAB / Simulink R2025a<br/>Revised 15 August 2026", "CoverMeta"),
+    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.1<br/>MATLAB / Simulink R2025a<br/>Revised 23 August 2026", "CoverMeta"),
     PageBreak(),
 ]
 
 # Preface
 story += [
     P("Preface", "FrontTitle"),
-    P("This book explains a complete concept-level hybrid-electric bus study environment. It is written for graduate students who already know basic mechanics, electrical power, and MATLAB syntax, but who may be new to model-based design and energy-management architecture.", "Lead"),
+    P("This book explains a complete concept-level bus powertrain study environment with selectable hybrid-electric and battery-electric architectures. It is written for graduate students who already know basic mechanics, electrical power, and MATLAB syntax, but who may be new to model-based design and energy-management architecture.", "Lead"),
     P("The project combines a transparent backward-facing physical model, an editable Simulink representation, an engineer-maintained Excel database, a programmatic MATLAB app, a bounded configuration optimizer, and automated verification. Its purpose is educational and architectural: it shows how equations, assumptions, data, software interfaces, and test evidence must remain consistent across a system model.", "BodyTextBook"),
     callout("How to read this book", "Chapters 1-3 establish the system and data architecture. Chapters 4-10 derive the physical and supervisory models. Chapters 11-15 explain execution, optimization, routes, and validation. Chapters 16-17 interpret worked studies and define responsible extensions.", "note"),
     P("Learning outcomes", "FrontSubhead"),
@@ -743,6 +743,7 @@ story += [
         "Derive tractive force and wheel power from a prescribed route speed and grade.",
         "Separate the traction DC-bus path from the genset-to-standby charging path.",
         "Explain a deterministic 30% dual-battery role-swap strategy and constant-point genset control.",
+        "Configure a one- or two-pack BEV, explain parallel capability-based power sharing, and distinguish charge-depleting from charge-sustaining assessment.",
         "Derive the auxiliary-first, active-battery-second, resistor-bank-third regeneration allocation and verify its power balance.",
         "Distinguish energy accounting, equivalent replenishment, charge sustaining comparison, and true feasibility.",
         "Audit route provenance, component assumptions, numerical implementation, and validation evidence.",
@@ -806,11 +807,13 @@ story.append(callout("Interpretation boundary", "A backward model estimates the 
 section(story, "1.2", "Project deliverables")
 artifact_rows = [
     ["Artifact", "Role in the study"],
-    ["HybridBus_ComponentDatabase.xlsx", "Master selections, catalogs, maps, routes, prices, and control calibrations"],
-    ["HybridBus_BackwardModel.slx", "Editable ordinary-block Simulink representation with ten top-level subsystems"],
+    ["data/HybridBus_ComponentDatabase.xlsx", "Master selections, catalogs, maps, routes, prices, and control calibrations"],
+    ["models/HybridBus_BackwardModel.slx", "Editable ordinary-block hybrid Simulink representation"],
+    ["models/HybridBus_BEVModel.slx", "Separate editable BEV Simulink model with one- or two-pack parallel control and no genset"],
     ["simulate_hybrid_bus_core.m", "Detailed discrete reference kernel used by batch runs and optimization"],
     ["HybridBusApp.m", "Explorer app for selecting, simulating, plotting, optimizing, and exporting"],
-    ["tests/run_all_hybrid_bus_tests.m", "Twenty-two assertion-based physics, isolation, regeneration-priority, control, cost, and ranking tests"],
+    ["tests/run_all_hybrid_bus_tests.m", "Twenty-six assertion-based hybrid/BEV physics, isolation, regeneration, control, cost, and ranking tests"],
+    ["tests/optimizationWorkflowTest.m", "Three app-shaped integration tests for Hybrid/BEV candidate seeding and ranking"],
 ]
 story += [table_caption("1.1", "Primary project artifacts"), make_table(artifact_rows, [55*mm, 115*mm]), PageBreak()]
 section(story, "1.3", "Architecture at a glance")
@@ -818,7 +821,7 @@ story += [architecture_diagram(), figure_caption("1.1", "End-to-end project arch
 story.append(P("The Excel workbook is the single engineer-editable input source. The loader resolves stable IDs, the validator checks schema and physical ranges, and the input-preparation function resamples the selected route to a 1 s grid. Both the MATLAB kernel and the SLX model consume the same resolved parameter set.", "BodyTextBook"))
 
 # Chapter 2
-chapter(story, "2", "Hybrid-Electric System Architecture")
+chapter(story, "2", "Selectable Hybrid and Battery-Electric Architectures")
 section(story, "2.1", "Energy topology")
 story.append(P("The architecture contains two independent battery packs, two rear hub motors, a diesel engine-generator set, an auxiliary electrical load, and a resistor load bank. The topology has two deliberately separated electrical paths. Only the active battery connects to the traction DC bus; the genset connects only to the standby battery through a dedicated charger. The genset therefore cannot propel the vehicle or reduce active-battery traction demand. During braking, regenerated electrical power supplies auxiliaries first, charges only the active battery second, and is sent to the resistor load bank if the active battery cannot accept the remainder.", "BodyTextBook"))
 story += [energy_flow_diagram(), figure_caption("2.1", "Conceptual energy flow, isolated genset path, and regeneration priorities")]
@@ -840,11 +843,18 @@ subsystems = [
 story += [table_caption("2.1", "Top-level model responsibilities"), make_table(subsystems, [62*mm, 108*mm])]
 section(story, "2.3", "Reference kernel versus SLX")
 story.append(P("The ordinary-block SLX is intended for architecture inspection, signal tracing, and interactive simulation. The MATLAB kernel contains the complete deterministic limit handling and supervisory behavior used by batch studies and the optimizer. This separation keeps the teaching model editable while making the numerical reference path easy to test.", "BodyTextBook"))
+section(story, "2.4", "Battery-electric alternative")
+story.append(P("The Powertrain Architecture switch selects Hybrid or BEV without changing the component database. In BEV mode the diesel fuel, engine, generator, and isolated standby charger are absent. Battery 1 is always connected; Battery 2 is connected in parallel when Use both batteries is checked. Both packs start at the same SOE, 85% by default. With one battery selected, Battery 2 is electrically isolated and its energy state remains constant.", "BodyTextBook"))
+story += [image_flow(ROOT / "results" / "BEV_App_Dual_Battery_View.png", max_width=170*mm, max_height=102*mm), figure_caption("2.3", "Selectable BEV architecture with two connected batteries, external charging interface, and regenerative return")]
+story.append(P("For a requested signed DC power Pdc, the two-pack controller computes each pack's instantaneous charge or discharge capability from its SOE window, power rating, derating factor, efficiency, and remaining energy headroom. Accepted power is shared in proportion to those capabilities:", "BodyTextBook"))
+story += [equation("P<sub>1</sub> = P<sub>accepted</sub> C<sub>1</sub>/(C<sub>1</sub>+C<sub>2</sub>), &nbsp; P<sub>2</sub> = P<sub>accepted</sub> C<sub>2</sub>/(C<sub>1</sub>+C<sub>2</sub>)", "2.1")]
+story.append(P("Regeneration retains the same first-principles destination order: auxiliaries first, connected battery pack or packs second, and the resistor load bank third. The BEV kernel sets genset power, genset starts, fuel rate, and fuel use identically to zero. HybridBus_BEVModel.slx is a separate editable fixed-step representation using the same database-resolved route, motor, driveline, auxiliary, battery, vehicle, and economic parameters.", "BodyTextBook"))
+story += [image_flow(ROOT / "results" / "HybridBus_BEVModel_TopLevel.png", max_width=170*mm, max_height=68*mm), figure_caption("2.4", "Separate HybridBus_BEVModel.slx with parallel battery energy management and explicit zero fuel/genset path")]
 
 # Chapter 3
 chapter(story, "3", "Data Architecture and Reproducible Inputs")
 section(story, "3.1", "Workbook as engineering database")
-story.append(P(f"The version 1.6.1 workbook contains {len(sheet_names)} sheets. IDs rather than row numbers form the interfaces between the Dashboard, catalogs, input resolver, app, and optimizer. This is important: a stable ID survives sorting and insertion, while a row number does not.", "BodyTextBook"))
+story.append(P(f"The version {dashboard.get('DatabaseVersion')} workbook contains {len(sheet_names)} sheets. IDs rather than row numbers form the interfaces between the Dashboard, catalogs, input resolver, app, and optimizer. This is important: a stable ID survives sorting and insertion, while a row number does not.", "BodyTextBook"))
 sheet_rows = [["Sheet group", "Examples", "Purpose"],
               ["Selections", "Dashboard", "Chosen component IDs, SOEs, prices, fuel tank, and controls"],
               ["Component catalogs", "Battery, Motor, Genset, Tyre, Final Drive, Mass", "Ratings, efficiency, compatibility, and enable flags"],
@@ -922,7 +932,7 @@ for rpm in speeds:
 motor_fig = line_chart(speeds, [("Peak envelope", torques, BLUE)], f"{selected_motor['ComponentID']} torque-speed envelope", "Motor speed (rpm)", "Torque per motor (Nm)", y_min=0)
 story += [motor_fig, figure_caption("5.1", "Selected motor constant-torque and constant-power regions")]
 section(story, "5.3", "Directional efficiency and regeneration")
-story.append(P("Traction wheel power is divided by motor and final-drive motoring efficiencies to obtain DC demand. During braking, delivered negative wheel power is multiplied by regeneration efficiencies, producing negative motor DC power. Regeneration is limited by motor capability, fixed-drive direction, and the lower of the two pack regeneration ratings.", "BodyTextBook"))
+story.append(P("Traction wheel power is divided by motor and final-drive motoring efficiencies to obtain DC demand. During braking, delivered negative wheel power is multiplied by regeneration efficiencies, producing negative motor DC power. Regeneration is limited by motor capability and fixed-drive direction. The Hybrid limit uses the lower active-pack regeneration rating; BEV uses Battery 1 capability plus Battery 2 capability when the second pack is connected.", "BodyTextBook"))
 story += [
     equation("P<sub>motor,dc</sub> = P<sub>wheel</sub> / (η<sub>fd,mot</sub> η<sub>motor,mot</sub>)    for traction", "5.5"),
     equation("P<sub>motor,dc</sub> = P<sub>wheel</sub> η<sub>fd,reg</sub> η<sub>motor,reg</sub>    for regeneration", "5.6"),
@@ -940,8 +950,8 @@ story += [
 section(story, "6.2", "Three simultaneous limits")
 story.append(P("At every time step the battery helper applies the minimum of the requested power, catalog power limit including derating, and energy-implied power needed to remain within minimum or maximum SOE. Charge power is additionally bounded by the pack regeneration rating.", "BodyTextBook"))
 story.append(callout("Numerical safeguard", "The energy state is clamped to [MinSOE, MaxSOE] after each update. Regenerative power rejected by the active battery is assigned to the resistor load bank; a genset-charger mismatch remains a separately logged rejected-charge term. Unserved positive demand is recorded as unmet DC power.", "note"))
-section(story, "6.3", "Why one active traction pack?")
-story.append(P("The supervisor permits only one battery to discharge for traction. This is intentionally conservative: the active pack must be able to support residual DC demand by itself. The rule also creates a clean architecture for switching, standby charging, and deterministic regenerative routing.", "BodyTextBook"))
+section(story, "6.3", "Hybrid active/standby roles versus BEV parallel packs")
+story.append(P("The Hybrid supervisor permits only one battery to discharge for traction. This is intentionally conservative: the active pack must support residual DC demand by itself while the alternate pack remains available for standby charging and deterministic role switching. BEV mode removes those active/standby roles. Battery 1 and, optionally, Battery 2 connect to the same traction bus; each pack remains independently bounded by its SOE, energy headroom, power, derating, and efficiency limits.", "BodyTextBook"))
 battery_rows = [["Catalog range", "Minimum", "Maximum"]]
 for label, col, unit in [
     ("Usable energy", "UsableEnergy_kWh", "kWh"),
@@ -975,7 +985,7 @@ story.append(callout("Not an emissions model", "There is no engine warm-up, tran
 # Chapter 8
 chapter(story, "8", "Supervisory Energy Management")
 section(story, "8.1", "Control objectives")
-story.append(P("The deterministic supervisor has five priorities: keep the genset electrically isolated from traction; preserve exactly one active traction pack; swap roles at 30% SOE when the alternate pack is ready; recharge the depleted standby pack at constant best-efficiency genset power; and allocate regeneration strictly to auxiliaries, then the active battery, then the resistor load bank.", "BodyTextBook"))
+story.append(P("In Hybrid mode the deterministic supervisor has five priorities: keep the genset electrically isolated from traction; preserve exactly one active traction pack; swap roles at 30% SOE when the alternate pack is ready; recharge the depleted standby pack at constant best-efficiency genset power; and allocate regeneration strictly to auxiliaries, then the active battery, then the resistor load bank. BEV mode uses the separate policy in Section 8.6.", "BodyTextBook"))
 story += [supervisor_diagram(), figure_caption("8.1", "Supervisory operating modes and principal transitions")]
 story.append(PageBreak())
 section(story, "8.2", "Decision order")
@@ -1018,6 +1028,9 @@ mode_rows = [
     ["4", "B2 active; B1 charged", "Genset fixed output is routed only to standby B1"],
     ["6", "Regeneration", "Auxiliary first, active battery second, resistor load bank third"],
     ["7", "Protection", "Sources are clamped and unmet demand is recorded"],
+    ["8", "BEV one-pack traction", "Battery 1 supplies the traction bus; Battery 2 is disconnected"],
+    ["9", "BEV two-pack traction", "Battery 1 and Battery 2 share accepted DC power"],
+    ["10", "BEV regeneration", "Auxiliary first, connected pack(s) second, resistor bank third"],
 ]
 story += [table_caption("8.1", "Operating-mode interpretation"), make_table(mode_rows, [18*mm, 55*mm, 97*mm], alignments=["CENTER", "LEFT", "LEFT"])]
 section(story, "8.5", "Repeated-route depletion study")
@@ -1028,6 +1041,13 @@ story += [
     equation("E<sub>active</sub> &le; E<sub>active,min</sub> &nbsp; and &nbsp; SOE<sub>alternate</sub> &le; 30%", "8.6"),
 ]
 story.append(callout("Interpretation", "A repeated-route result is a controlled range estimate for the prescribed repeating mission. It is not a real timetable, charging plan, driver-hours model, thermal endurance result, or warranty prediction.", "warn"))
+section(story, "8.6", "BEV supervisory mode")
+story.append(P("BEV control bypasses the 30% Hybrid role-swap and every genset state. The controller reads the one/two-pack selection, forms total traction-node demand, computes instantaneous pack capabilities, and distributes accepted discharge or charge power. If requested positive DC power exceeds connected capability, the difference is logged as unmet DC power. During braking, the same auxiliary-battery-resistor priority is applied across the connected pack set.", "BodyTextBook"))
+story += [
+    equation("P<sub>BEV,accepted</sub> = min(|P<sub>request</sub>|, C<sub>1</sub> + u<sub>2</sub>C<sub>2</sub>)", "8.7"),
+    equation("u<sub>2</sub> = 1 &nbsp; for two packs; &nbsp; u<sub>2</sub> = 0 &nbsp; for Battery 1 only", "8.8"),
+]
+story.append(callout("BEV invariants", "Initial SOE is equal for both selected packs (85% by default). In one-pack mode Battery 2 power is exactly zero and its energy state is unchanged. In both BEV modes genset power, fuel rate, fuel consumption, runtime, and starts are exactly zero.", "note"))
 
 # Chapter 9
 chapter(story, "9", "Power, Energy, Cost, and Range Accounting")
@@ -1038,10 +1058,11 @@ story += [
     equation("P<sub>gen</sub> + P<sub>standby</sub> - P<sub>gen,rejected</sub> = 0", "9.1b"),
     equation("P<sub>gen</sub> + P<sub>B1</sub> + P<sub>B2</sub> - P<sub>motor,dc</sub> - P<sub>aux</sub> + P<sub>unmet</sub> - P<sub>dump</sub> - P<sub>gen,rejected</sub> = P<sub>residual</sub>", "9.1c"),
     equation("P<sub>rejected</sub> = P<sub>dump</sub> + P<sub>gen,rejected</sub>", "9.1d"),
+    equation("P<sub>B1</sub> + u<sub>2</sub>P<sub>B2</sub> - P<sub>motor,dc</sub> - P<sub>aux</sub> + P<sub>unmet</sub> - P<sub>dump</sub> = P<sub>residual</sub> &nbsp; (BEV)", "9.1e"),
 ]
 section(story, "9.2", "Equivalent grid replenishment")
 story += [
-    equation("E<sub>grid</sub> = [max(0,E<sub>1,0</sub>-E<sub>1,f</sub>) + max(0,E<sub>2,0</sub>-E<sub>2,f</sub>)] / η<sub>grid</sub>", "9.2"),
+    equation("E<sub>grid</sub> = Σ<sub>connected packs</sub> max(0,E<sub>i,0</sub>-E<sub>i,f</sub>) / η<sub>grid</sub>", "9.2"),
     equation("C<sub>total</sub> = V<sub>fuel</sub> c<sub>fuel</sub> + E<sub>grid</sub> c<sub>electricity</sub>", "9.3"),
     equation("C<sub>km</sub> = C<sub>total</sub> / d<sub>route</sub>", "9.4"),
 ]
@@ -1065,6 +1086,7 @@ cd('C:\\TempData\\Hybrid_Vehicle\\HybridBusProject')
 project = startup_hybrid_bus;
 Results = run_hybrid_bus_simulation;
 open_system('HybridBus_BackwardModel.slx')
+open_system('HybridBus_BEVModel.slx')
 app = HybridBusApp;
 """
 story.append(code_block(run_code))
@@ -1085,13 +1107,18 @@ story += [table_caption("10.1", "Simulation output contract"), make_table(result
 chapter(story, "11", "Using the Explorer App")
 section(story, "11.1", "Configuration panel")
 story.append(P("The programmatic UIFigure app presents route, battery, motor, genset, total-mass, and auxiliary selections in a fixed left sidebar. Initial battery SOEs are entered as percentages and converted to fractions only at the model boundary. Fuel and electricity price units are explicit. The Repeat route until depleted checkbox switches between a one-mission comparison and the range-to-depletion experiment defined in Section 8.5.", "BodyTextBook"))
-story.append(P("The Powertrain Architecture tab shows the isolated standby-charging chain, active-battery selector, traction DC bus, regenerative return, auxiliary-first branch, and resistor load bank. It is the quickest visual check that genset power has no direct route to the motors or auxiliaries and that the standby battery is not a regenerative-energy destination.", "BodyTextBook"))
+story.append(P("The Powertrain Architecture tab opens first and includes a blue/gray Hybrid-BEV switch. In Hybrid it shows the isolated standby-charging chain, active-battery selector, traction DC bus, regenerative return, auxiliary-first branch, and resistor load bank. In BEV it replaces the fuel and genset chain with an external charging interface and parallel battery contactor/BMS. Every component block is clickable: a non-modal window reports the selected catalog ID, ratings, units, implemented role, control rules, and concept-model limitations.", "BodyTextBook"))
 app_image = image_flow(ASSET / "hybrid_bus_app_results.png", max_width=170*mm, max_height=102*mm)
 story += [app_image, figure_caption("11.1", "Explorer app after running the default VECTO Urban case")]
 architecture_app_image = image_flow(ASSET / "hybrid_bus_app_architecture.png", max_width=170*mm, max_height=102*mm)
 story += [architecture_app_image, figure_caption("11.2", "Architecture tab with the wheel-to-inverter regenerative return and numbered destination priorities")]
+story += [image_flow(ROOT / "documentation" / "screenshots" / "architecture_clickable_blocks.png", max_width=170*mm, max_height=102*mm), figure_caption("11.3", "Clickable architecture blocks expose the underlying selected component specifications")]
 route_map_image = image_flow(ASSET / "app_mannheim_city_map.png", max_width=170*mm, max_height=102*mm)
-story += [route_map_image, figure_caption("11.3", "Route Map tab displaying stored latitude/longitude geometry and endpoint markers")]
+story += [route_map_image, figure_caption("11.4", "Route Map 2D view displaying stored latitude/longitude geometry and endpoint markers")]
+story.append(P("The Route Map switch preserves the geographic 2D view and reveals a second Elevation-Slope switch only in 3D mode. Elevation is plotted in metres from the stored route geometry. Slope is derived from successive elevation change divided by geographic path-distance change and displayed in percent. Blue identifies the selected side of every slider-style switch; gray identifies the alternative.", "BodyTextBook"))
+route_3d_views = Table([[image_flow(ROOT / "documentation" / "screenshots" / "route_map_3d_elevation_toggle.png", max_width=82*mm, max_height=58*mm), image_flow(ROOT / "documentation" / "screenshots" / "route_map_3d_slope_toggle.png", max_width=82*mm, max_height=58*mm)]], colWidths=[85*mm,85*mm])
+route_3d_views.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('LEFTPADDING',(0,0),(-1,-1),0),('RIGHTPADDING',(0,0),(-1,-1),0)]))
+story += [route_3d_views, figure_caption("11.5", "Route Map 3D quantity switch: elevation in metres (left) and road slope in percent (right)")]
 section(story, "11.2", "Manual-study workflow")
 story.append(numbered_list([
     "Select the database and confirm that the status reports a validated version.",
@@ -1104,39 +1131,41 @@ story.append(numbered_list([
 section(story, "11.3", "Management KPI dashboard")
 story.append(P("The KPIs tab replaces the former one-row summary table with twelve icon-led cards. The header identifies the route, total mass, battery selections, and feasibility state. Executive cards report distance, operating cost, fuel consumption, and source-energy intensity. Energy cards report grid-equivalent energy, regeneration, auxiliary energy, and fuel used. Battery and engineering-health cards report final pack SOEs, unmet traction energy, and energy-balance error. Every value carries an explicit unit; the card colors provide hierarchy rather than changing the numerical result.", "BodyTextBook"))
 kpi_dashboard_image = image_flow(ASSET / "kpi_dashboard.png", max_width=170*mm, max_height=102*mm)
-story += [kpi_dashboard_image, figure_caption("11.4", "Management KPI dashboard with icon-led values, units, configuration context, and feasibility status")]
+story += [kpi_dashboard_image, figure_caption("11.6", "Management KPI dashboard with icon-led values, units, configuration context, and feasibility status")]
 section(story, "11.4", "Simulation Analysis tab")
 story.append(P("Simulation Analysis is an interpretation layer, not another solver. Its energy-allocation chart compares grid-equivalent energy, genset electrical output, recovered regeneration, auxiliaries, battery throughput, and load-bank waste. The duty-share chart reports the fraction of simulated time for which each battery held the active traction role. The assessment table converts principal limits and balances into concise engineering statements covering mission completion, SOE windows, regeneration utilization, dump energy, genset runtime and starts, unmet demand, and conservation error.", "BodyTextBook"))
 analysis_image = image_flow(ASSET / "simulation_analysis.png", max_width=170*mm, max_height=102*mm)
-story += [analysis_image, figure_caption("11.5", "Simulation Analysis tab combining energy allocation, battery duty share, and engineering assessment")]
+story += [analysis_image, figure_caption("11.7", "Simulation Analysis tab combining energy allocation, battery duty share, and engineering assessment")]
 story.append(callout("Management versus engineering views", "Use the KPI dashboard to communicate outcomes quickly. Use Simulation Analysis to explain why those outcomes occurred and whether a limit, energy sink, or control transition requires attention.", "note"))
 section(story, "11.5", "Model Credibility tab")
 story.append(P("The Model Credibility tab prevents evidence from being compressed into one misleading green status. Concept verification, implementation equivalence, and measured-vehicle validation are separate gates. Requirements traceability, the behavioral suite, deterministic sensitivity screening, and analytical concept baselines may pass while MATLAB-Simulink equivalence fails and vehicle validation remains unavailable. The tab keeps every PASS, FAIL, NOT AVAILABLE, and NOT IMPLEMENTED state visible with its evidence and required decision.", "BodyTextBook"))
 credibility_image = image_flow(ASSET / "model_credibility.png", max_width=170*mm, max_height=102*mm)
-story += [credibility_image, figure_caption("11.6", "Model Credibility tab separating verified concept behavior from open implementation and validation gates")]
-section(story, "11.6", "Optimization tab")
-story.append(P("The optimization view ranks feasible configurations and keeps stable component IDs visible. The app holds the selected mission and economic assumptions fixed while it varies Battery 1, the motor pair, genset, and final-drive choice. Battery 2 remains at the sidebar selection. Cancellation is checked between simulations, so the bounded search remains responsive without requiring Parallel Computing Toolbox. Chapter 12 defines the complete search and interpretation workflow.", "BodyTextBook"))
+story += [credibility_image, figure_caption("11.8", "Model Credibility tab separating verified concept behavior from open implementation and validation gates")]
+section(story, "11.6", "Signals and Detailed Plot axes")
+story.append(P("Signals and Detailed Plot share a Time-Distance switch. Time remains the internal independent variable in seconds, but display units adapt to mission duration: minutes for missions shorter than two hours and hours for longer missions. Distance mode uses cumulative vehicle distance in kilometres, so users can relate power, SOE, torque, and speed events directly to route position. The Battery SOE axes are always displayed in percent.", "BodyTextBook"))
+story += [image_flow(ROOT / "documentation" / "screenshots" / "signals_distance_axis.png", max_width=170*mm, max_height=102*mm), figure_caption("11.9", "Signals tab using cumulative distance in kilometres as the common x-axis")]
+section(story, "11.7", "Optimization tab")
+story.append(P("The optimization view ranks feasible configurations and keeps stable component IDs visible. Hybrid mode varies Battery 1, the motor pair, genset, and final drive while Battery 2 remains fixed. BEV mode varies both batteries, the motor pair, and final drive; the genset is excluded. Cancellation is checked between simulations, so the bounded search remains responsive without requiring Parallel Computing Toolbox. Chapter 12 defines the complete search and interpretation workflow.", "BodyTextBook"))
 
 # Chapter 12
 chapter(story, "12", "Configuration Optimization")
 section(story, "12.1", "Purpose and study boundary")
 story.append(P("The optimizer is a deterministic design-screening tool. It answers: among the component combinations actually evaluated for one prescribed mission, which feasible combination has the lowest modeled operating cost per kilometre? It does not redesign components, tune continuous parameters, predict hardware life, or prove a global optimum.", "BodyTextBook"))
 fixed_varied_rows = [
-    ["Held fixed by the app", "Varied by the app"],
-    ["Route and its speed, grade, dwell, and auxiliary multipliers", "Battery 1 catalog selection"],
-    ["Total vehicle mass variant", "Rear hub-motor pair"],
-    ["Battery 2 catalog selection", "Engine-generator set"],
-    ["Initial Battery 1 and Battery 2 SOE", "Final-drive ratio"],
-    ["Auxiliary-load profile and environment", ""],
-    ["Fuel price and electricity price", ""],
+    ["Mode / held fixed by the app", "Varied by the app"],
+    ["Both: route, mass, auxiliaries, environment, prices", "Both: motor pair and final drive"],
+    ["Both: tyre, control calibration, fuel tank, repeat-route flag", "Hybrid: Battery 1 and genset"],
+    ["Hybrid: Battery 2 and both initial SOEs", "BEV: Battery 1 and Battery 2"],
+    ["BEV: equal initial SOE and one/two-pack selection", "BEV: no genset candidate"],
 ]
 story += [table_caption("12.1", "Study variables controlled by the Optimize button"), make_table(fixed_varied_rows, [85*mm, 85*mm])]
-story.append(callout("Why Battery 2 stays fixed", "The app deliberately uses the current Battery 2 selection while varying Battery 1. This supports asymmetric active/standby studies and keeps the search bounded. The underlying optimizer function can vary Battery 2 when called programmatically with a different Vary list.", "note"))
+story.append(callout("Mode-specific search", "Hybrid preserves the selected standby Battery 2 while varying Battery 1. BEV varies both pack selections because both may operate in parallel; the voltage-class compatibility rule is enforced before simulation.", "note"))
 
 section(story, "12.2", "Candidate set and mixed-radix enumeration")
 story.append(P("For every varied category, the optimizer reads stable component IDs from catalog rows marked OptimizationEnabled. If the four candidate counts are nB, nM, nG, and nF, the complete discrete search space is", "BodyTextBook"))
 story += [equation("N<sub>space</sub> = n<sub>B</sub> n<sub>M</sub> n<sub>G</sub> n<sub>F</sub>", "12.1")]
 story.append(P("A mixed-radix counter converts each linear evaluation index into one Battery 1, motor, genset, and final-drive combination. This avoids materializing a large Cartesian-product table in memory and gives repeatable ordering between runs with the same database.", "BodyTextBook"))
+story.append(P("Before enumeration, any currently displayed component ID supplied by the app is moved to the front of its candidate list. The first candidate is therefore the complete displayed configuration, including the selected final drive. This release fixed a handoff defect in which the hidden final-drive ID was omitted: the 40-case budget could be consumed by an incompatible FD-01 prefix before the displayed valid FD-08 was reached. The complete configuration handoff now includes tyre, final drive, environment, control calibration, initial active battery, auxiliary scalar, and fuel-tank capacity.", "BodyTextBook"))
 story += [optimization_diagram(), figure_caption("12.1", "Compatibility, simulation, feasibility, and ranking sequence")]
 
 section(story, "12.3", "Meaning of Max configurations")
@@ -1157,8 +1186,9 @@ story.append(bullet_list([
     "Battery-to-motor DC voltage class difference no greater than 50 V.",
     "Motor speed below maximum at the selected route speed, tyre radius, and final-drive ratio.",
     "Final-drive ratio inside the selected motor compatibility interval.",
-    "At least one selected battery has adequate continuous discharge rating for the motor rating.",
-    "Genset optimum power is within its rating and within either standby battery's charge-power capability.",
+    "Hybrid: at least one selected battery has adequate continuous discharge rating for the motor rating.",
+    "BEV: connected one- or two-pack discharge capability covers the pair's continuous motor rating.",
+    "Hybrid only: genset optimum power is within its rating and within either standby battery's charge-power capability.",
 ]))
 story.append(PageBreak())
 section(story, "12.5", "Simulation and feasibility gates")
@@ -1166,7 +1196,7 @@ story.append(P("Every compatible row is resolved into a complete model input and
 story += [equation("E<sub>unmet,traction</sub> &lt; 10<super>-3</super> kWh", "12.3")]
 story += [equation("E<sub>balance,error</sub> ≤ E<sub>balance,tolerance</sub>", "12.4")]
 story += [equation("|SOE<sub>combined,final</sub> - SOE<sub>combined,target</sub>| ≤ ΔSOE<sub>terminal</sub>", "12.5")]
-story.append(P("The first gate rejects component sets that cannot satisfy requested wheel demand. The second detects inconsistent source, sink, or loss accounting. The third prevents a configuration from appearing economical merely because it finishes with an excessive battery-energy deficit. A rejection reason is stored when terminal compliance fails or a simulation raises an error.", "BodyTextBook"))
+story.append(P("The first gate rejects component sets that cannot satisfy requested wheel demand. The second detects inconsistent source, sink, or loss accounting. The third is applied to the Hybrid charge-sustaining comparison so a configuration cannot appear economical merely because it finishes with an excessive battery-energy deficit. A BEV mission is intentionally charge depleting, so the Hybrid terminal-SOE gate is inapplicable; BEV feasibility is governed by delivered mission energy, battery limits, and energy conservation. A rejection reason is stored when an applicable gate fails or a simulation raises an error.", "BodyTextBook"))
 
 section(story, "12.6", "Objective, ranking, and tie-break")
 story += [equation("minimize C<sub>km</sub> = (C<sub>fuel</sub> + C<sub>grid-equivalent electricity</sub>) / d<sub>route</sub>", "12.6")]
@@ -1193,14 +1223,22 @@ opt_rows = [["Rank", "Battery 1", "Motor", "Cost (EUR/km)", "Electricity (kWh/km
 for i, row in top_configs.head(5).iterrows():
     opt_rows.append([i + 1, row["Battery1ID"], row["MotorID"], f"{row['CostPer_km']:.4f}", f"{row['Electrical_kWh_per_km']:.4f}"])
 story += [table_caption("12.3", "Top five feasible rows in the current 144-case study"), make_table(opt_rows, [16*mm, 34*mm, 34*mm, 43*mm, 43*mm], alignments=["CENTER", "CENTER", "CENTER", "RIGHT", "RIGHT"])]
+release_audit_rows = [
+    ["App-shaped release audit", "Evaluated", "Feasible", "Top sorted", "Best returned"],
+    ["Hybrid default", "40", "4", "Yes", "Yes"],
+    ["BEV, two batteries", "40", "2", "Yes", "Yes; fuel = 0"],
+    ["BEV, Battery 1 only", "1 smoke case", "1", "Yes", "Yes; Battery 2 power = 0"],
+]
+story += [table_caption("12.4", "Post-fix Optimize verification using the app's actual configuration handoff"), make_table(release_audit_rows, [58*mm, 25*mm, 25*mm, 30*mm, 32*mm], font_size=6.8, alignments=["LEFT","CENTER","CENTER","CENTER","CENTER"])]
 story.append(callout("Correct interpretation", "A first-ranked row is the best feasible row within the combinations that were actually evaluated, under the selected route, mass, prices, initial SOEs, component data, and terminal-energy rule. It is not automatically a production recommendation or a global optimum when the evaluation budget truncates the enabled search space.", "warn"))
 
 # Chapter 13
 chapter(story, "13", "Route Library and Provenance")
 section(story, "13.1", "Route categories")
 story.append(P(f"The database contains {len(route_catalog)} routes: three official EU VECTO passenger missions, eight geographic long-distance coach corridors, and nine geographic German city cycles for Mannheim, Stuttgart, Berlin, Munich, Hamburg, Frankfurt, Cologne, Dusseldorf, and Leipzig. The former synthetic concept routes have been removed. Route_Catalog records region, source basis, organization, URL, retrieval time, licence, distance, duration, maximum speed, geolocation availability, endpoint coordinates, and notes.", "BodyTextBook"))
-section(story, "13.2", "Geographic route geometry")
-story.append(P("Route_Geometry stores 20,257 ordered latitude/longitude samples for seventeen geographic routes, together with cumulative polyline distance, geometry source, and retrieval timestamp. Coordinates come from full GeoJSON route overviews returned by OSRM over OpenStreetMap road data. Each German city circuit uses project-defined urban waypoints snapped to the driving network, a 50 km/h cap, 1.0 m/s2 acceleration and 1.3 m/s2 braking limits, and 20-second dwell events at nominal 800 m passenger-stop spacing. VECTO declaration cycles are not tied to a unique real road, so coordinates are intentionally not fabricated for them.", "BodyTextBook"))
+section(story, "13.2", "Geographic route geometry and terrain")
+story.append(P("Route_Geometry stores 20,257 ordered latitude/longitude samples for seventeen geographic routes, together with cumulative polyline distance, geometry source, retrieval timestamp, cached elevation, and elevation provenance. Coordinates come from full GeoJSON route overviews returned by OSRM over OpenStreetMap road data. Terrain height is added as a separate Copernicus DEM GLO-90 channel for the 3D Route Map. The app can display either elevation in metres or derived slope in percent without removing the original 2D map. Elevation-derived slope is visualization evidence only: it is not silently substituted into the zero-grade long-route simulation channel.", "BodyTextBook"))
+story.append(P("Each German city circuit uses project-defined urban waypoints snapped to the driving network, a 50 km/h cap, 1.0 m/s2 acceleration and 1.3 m/s2 braking limits, and 20-second dwell events at nominal 800 m passenger-stop spacing. VECTO declaration cycles are not tied to a unique real road, so coordinates are intentionally not fabricated for them.", "BodyTextBook"))
 story += [image_flow(ASSET / "app_mannheim_city_map.png", max_width=170*mm, max_height=102*mm), figure_caption("13.1", "Mannheim geographic city circuit selected in the Route Map tab")]
 section(story, "13.3", "VECTO missions")
 story.append(P("The Urban, Suburban, and Coach declaration-mode mission cycles are unmodified source files from the European Commission VECTO repository. The converter applies a deterministic bus driver with 1.0 m/s2 acceleration and 1.3 m/s2 braking bounds, honors declared stops, preserves the raw distance-domain trace, and produces a 1 Hz time history for this model.", "BodyTextBook"))
@@ -1215,13 +1253,13 @@ long_rows = [["Route", "Countries", "Distance", "Adapted duration"]]
 for _, row in long_routes.iterrows():
     long_rows.append([row["RouteName"], row["Region"], f"{row['Distance_km']:.1f} km", f"{row['Duration_s']/3600:.2f} h"])
 story += [table_caption("13.1", "Long-route source distances and adapted mission durations"), make_table(long_rows, [67*mm, 51*mm, 24*mm, 28*mm], font_size=6.7, alignments=["LEFT", "LEFT", "RIGHT", "RIGHT"])]
-story.append(callout("Route fidelity warning", "OSRM supplies road-network distance and estimated segment durations but not elevation. Long-route speed is capped at 100 km/h, a 45-minute stationary break is inserted after each 4.5-hour driving block, and grade is set to zero. Mountain-route energy will therefore be understated until elevation is added.", "warn"))
+story.append(callout("Route fidelity warning", "OSRM supplies road-network distance and estimated segment durations but not elevation. Copernicus DEM GLO-90 now supports terrain visualization, but long-route simulation grade remains zero until a smoothed, road-aligned grade trace is derived and validated. Mountain-route energy is therefore still understated.", "warn"))
 
 # Chapter 14
 chapter(story, "14", "Verification, Validation, and Test Evidence")
 section(story, "14.1", "Layered evidence")
 story += [validation_pyramid(), figure_caption("14.1", "Verification pyramid used by the automated suite")]
-story.append(P("The automated suite combines analytical comparisons, behavioral tests, traction-isolation tests, constant genset-power checks, regeneration-priority and full-active-battery load-bank checks, route-geolocation integrity checks, saturation tests, data-validation failures, conservation checks, repeatability, terminal-cost checks, charge-sustaining logic, and optimizer ranking. All twenty-three scenarios currently pass.", "BodyTextBook"))
+story.append(P(f"The automated behavioral suite combines analytical comparisons, traction-isolation tests, constant genset-power checks, regeneration-priority and load-bank checks, route-geolocation integrity, saturation, validation failures, conservation, repeatability, terminal-cost logic, optimizer ranking, and BEV one/two-pack behavior. All {len(tests)} scenarios currently pass. A separate app-shaped optimization integration class adds three passing checks: displayed Hybrid configuration first, displayed BEV configuration first, and ascending feasible ranking.", "BodyTextBook"))
 section(story, "14.2", "Test matrix")
 test_rows = [["Test", "Purpose", "Result"]]
 for _, row in tests.iterrows():
@@ -1253,7 +1291,7 @@ story += [table_caption("14.4", "Transparent powertrain concept screening"), mak
 # Chapter 15
 chapter(story, "15", "Worked Example: Default VECTO Urban Case")
 section(story, "15.1", "Case definition")
-story.append(P(f"The default case uses the VECTO Urban route, two BAT-12 packs, two MOT-12 rear hub motors, GEN-05, a 19,000 kg total vehicle mass, {100*float(dashboard.get('InitialBattery1SOE')):.0f}% initial Battery 1 SOE, {100*float(dashboard.get('InitialBattery2SOE')):.0f}% initial Battery 2 SOE, 1.65 EUR/L diesel, and 0.18 EUR/kWh electricity.", "BodyTextBook"))
+story.append(P(f"The default Hybrid case uses the VECTO Urban route, two BAT-12 packs, two MOT-12 rear hub motors, GEN-05, a 19,000 kg total vehicle mass, {100*float(dashboard.get('InitialBattery1SOE')):.0f}% initial Battery 1 SOE, {100*float(dashboard.get('InitialBattery2SOE')):.0f}% initial Battery 2 SOE, {float(dashboard.get('FuelPrice')):.2f} EUR/L diesel, and {float(dashboard.get('ElectricityPrice')):.2f} EUR/kWh electricity.", "BodyTextBook"))
 section(story, "15.2", "Signal interpretation")
 sig_fig = line_chart(
     signals["Time_s"] / 60,
@@ -1330,7 +1368,7 @@ limitations = [
     ["Battery voltage/current and temperature", "Power and efficiency limits change with electrical and thermal state", "Equivalent-circuit and thermal network with calibrated maps"],
     ["Ageing", "Usable energy, resistance, and cost evolve with throughput and temperature", "Cycle/calendar degradation and life-cycle cost"],
     ["Closed-loop driver", "Backward demand may exceed trackable acceleration or actuator limits", "Driver controller and forward vehicle dynamics"],
-    ["Road elevation for long routes", "Mountain energy and regeneration are understated", "Map-matched elevation with smoothing and grade validation"],
+    ["Validated simulation grade for long routes", "Cached terrain supports 3D display, but zero dynamics grade still understates mountain energy", "Map-match, smooth, and validate an elevation-derived grade channel"],
     ["Engine transients and emissions", "Fuel and pollutants depend on warm-up and aftertreatment", "Dynamic engine/aftertreatment model and measured maps"],
     ["Wheel slip and lateral dynamics", "Traction limits and stability are not represented", "Tyre-road force limits and vehicle dynamics"],
     ["Supplier data", "Synthetic catalogs cannot support procurement", "Version-controlled, validated manufacturer maps"],
@@ -1345,6 +1383,7 @@ story.append(numbered_list([
     "Replace scalar motor efficiency with a two-dimensional torque-speed map and quantify the change in route energy.",
     "Add elevation to one OSM/OSRM route, validate grade smoothing, and compare energy with the zero-grade baseline.",
     "Design an alternative supervisor that allows controlled parallel discharge and define new safety/feasibility tests.",
+    "Compare one-pack and two-pack BEV operation, including pack capability sharing, route completion, and terminal SOE.",
     "Formulate a multi-objective search for cost, fuel, battery throughput, and component mass; produce a Pareto front.",
     "Create a charge-sustaining urban case by sizing battery energy and the fixed-point standby charger; keep the 30% role threshold unchanged.",
     "Add a simple battery thermal state and demonstrate a cold-weather power-derating scenario.",
@@ -1362,18 +1401,18 @@ story.append(numbered_list([
     "Open HybridBus_BackwardModel.slx and trace signals from route input to energy accounting.",
     "Launch app = HybridBusApp; repeat the default case and inspect all plot tabs.",
     "Change only one factor, such as mass or route, and explain every KPI change before running a second factor.",
-    "Run TestResults = run_all_hybrid_bus_tests; confirm 23 PASS results.",
+    "Run TestResults = run_all_hybrid_bus_tests; confirm 26 PASS results, then run runtests('tests/optimizationWorkflowTest.m') and confirm three integration PASS results.",
     "Run Credibility = generate_model_credibility_report; review every PASS, FAIL, NOT AVAILABLE, and NOT IMPLEMENTED gate before presenting a decision.",
 ]))
 story.append(code_block("""
-db = load_hybrid_bus_database("HybridBus_ComponentDatabase.xlsx");
+db = load_hybrid_bus_database(fullfile("data","HybridBus_ComponentDatabase.xlsx"));
 report = validate_hybrid_bus_database(db);
 assert(report.IsValid, strjoin(report.Errors,newline));
 
 overrides = struct('SelectedRoute',"EUR-BER-VIE", ...
                    'SelectedMass',"MASS-01");
 Results = run_hybrid_bus_simulation( ...
-    "HybridBus_ComponentDatabase.xlsx",overrides,'SaveResults',false);
+    fullfile("data","HybridBus_ComponentDatabase.xlsx"),overrides,'SaveResults',false);
 """))
 
 # Appendix B
@@ -1391,6 +1430,7 @@ signal_rows = [
     ["Genset", "ElectricalPower_kW / FuelRate_L_s", "kW, L/s", "constant standby-charger power and fuel flow"],
     ["Genset", "ChargeDestinationBattery", "integer", "standby pack receiving genset power; zero when off"],
     ["Controller", "ActiveBattery / StandbyBattery / Mode", "integer", "supervisory role and discrete mode"],
+    ["Controller", "ConnectedBatteryCount", "integer", "one in Hybrid/one-pack BEV; two in dual-pack BEV"],
     ["Energy", "BalanceResidual_kW", "kW", "power-conservation diagnostic"],
     ["Energy", "UnmetDCPower_kW / RejectedCharge_kW", "kW", "source/sink saturation accounting including load-bank power"],
     ["Energy", "RejectedGensetCharge_kW", "kW", "charger mismatch kept distinct from regenerative dissipation"],
@@ -1401,9 +1441,9 @@ param_rows = [
     ["Vehicle", "mass, gravity, Cd, frontal area, rolling resistance", "Mass / Tyre / Vehicle"],
     ["Route", "time, speed, grade, dwell, auxiliary multiplier", "Route sheets"],
     ["Hub drive", "wheel radius, ratio, efficiencies, torque/power/speed", "Tyre / Final Drive / Motor"],
-    ["Battery", "usable energy, SOE bounds, efficiencies, power, regen", "Battery + Dashboard"],
+    ["Battery", "usable energy, SOE bounds, efficiencies, power, regen, BEV connection count", "Battery + Dashboard/app"],
     ["Genset", "optimum/max power, minimum times, BSFC, efficiency", "Genset + maps"],
-    ["Supervisor", "fixed 30% role threshold, standby upper-SOE target, auxiliary-active-dump priority", "Architecture rule + control calibration"],
+    ["Supervisor", "Hybrid 30% role swap or BEV parallel capability sharing; auxiliary-battery-dump regen priority", "Architecture mode + control calibration"],
     ["Load bank", "regenerative surplus after active-pack limits", "Derived power sink"],
     ["Economics", "fuel tank, prices, grid efficiency, terminal method", "Dashboard / Vehicle / Prices / Optimization"],
 ]
@@ -1412,7 +1452,7 @@ story += [table_caption("B.2", "Principal parameter groups"), make_table(param_r
 # References
 chapter(story, "References", "Sources and Project Files")
 refs = [
-    "[1] HybridBusProject source tree, workbook, MATLAB functions, Simulink model, generated results, traceability matrix, and model-credibility evidence. Database version 1.6.1; textbook revision 2.0, revised 15 August 2026.",
+    f"[1] HybridBusProject source tree, workbook, MATLAB functions, Hybrid and BEV Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.1, revised 23 August 2026.",
     "[2] European Commission, Vehicle Energy Consumption Calculation Tool (VECTO), https://climate.ec.europa.eu/eu-action/transport-decarbonisation/road-transport/vehicle-energy-consumption-calculation-tool-vecto_en.",
     "[3] European Commission VECTO source repository, declaration mission cycles, commit d16ba783c1d8af0ea68797f5d7ed6cf01877d402, https://code.europa.eu/vecto/vecto.",
     "[4] Project OSRM API documentation, route service and annotation objects, https://project-osrm.org/docs/v5.24.0/api/.",

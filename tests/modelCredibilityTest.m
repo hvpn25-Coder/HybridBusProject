@@ -8,8 +8,12 @@ classdef modelCredibilityTest < matlab.unittest.TestCase
     methods (TestClassSetup)
         function locateProject(testCase)
             testCase.RootFolder=string(fileparts(fileparts(mfilename('fullpath'))));
-            testCase.DatabaseFile=fullfile(testCase.RootFolder,"HybridBus_ComponentDatabase.xlsx");
-            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(testCase.RootFolder));
+            testCase.DatabaseFile=fullfile(testCase.RootFolder,"data", ...
+                "HybridBus_ComponentDatabase.xlsx");
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture( ...
+                fullfile(testCase.RootFolder,"src")));
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture( ...
+                fullfile(testCase.RootFolder,"models")));
         end
     end
 

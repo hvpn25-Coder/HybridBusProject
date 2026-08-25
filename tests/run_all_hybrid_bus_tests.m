@@ -3,7 +3,8 @@ function TestResults=run_all_hybrid_bus_tests()
 root=fileparts(fileparts(mfilename('fullpath')));
 previousFolder=pwd; folderCleanup=onCleanup(@()cd(previousFolder));
 cd(root);
-databaseFile=fullfile(root,'HybridBus_ComponentDatabase.xlsx');
+addpath(fullfile(root,'src'),fullfile(root,'models'));
+databaseFile=fullfile(root,'data','HybridBus_ComponentDatabase.xlsx');
 DB=load_hybrid_bus_database(databaseFile);
 cases={
  'ConstantSpeedLevel','Constant-speed wheel power matches hand calculation',@testConstantSpeed;
@@ -29,6 +30,13 @@ cases={
  'TerminalCostCorrection','Grid-equivalent terminal correction matches hand calculation',@testCostCorrection;
  'ChargeSustainingComparison','Terminal combined-SOE tolerance is enforced',@testChargeSustaining;
  'OptimizationRanking','Feasible configurations are sorted by total cost per kilometre',@testOptimizationRanking};
+cases=[cases; {
+ 'BEVDualBattery','BEV uses both equal-SOE batteries in parallel with no fuel or genset',@testBEVDualBattery;
+ 'BEVSingleBattery','One-battery BEV electrically isolates Battery 2',@testBEVSingleBattery;
+ 'HybridDoubleBatterySet','Two Hybrid sets scale both role banks equally',@testHybridDoubleBatterySet;
+ 'BEVThreeBatterySet','A 1.5-set BEV connects three packs with deterministic bank allocation',@testBEVThreeBatterySet;
+ 'BatterySetValidation','Hybrid and BEV multipliers enforce their permitted increments',@testBatterySetValidation;
+ 'BEVRegeneration','BEV regeneration follows auxiliary, batteries, resistor priority',@testBEVRegeneration}];
 
 n=size(cases,1); names=strings(n,1); purposes=strings(n,1); actual=strings(n,1);
 status=strings(n,1); elapsed=zeros(n,1);
@@ -75,6 +83,8 @@ for routeID=geographicIDs'
     assert(height(geometry)>=2 && all(diff(geometry.Sequence)>0));
     assert(all(geometry.Latitude_deg>=-90 & geometry.Latitude_deg<=90));
     assert(all(geometry.Longitude_deg>=-180 & geometry.Longitude_deg<=180));
+    assert(all(isfinite(geometry.Elevation_m)));
+    assert(all(strlength(geometry.ElevationSource)>0));
     assert(all(diff(geometry.CumulativeDistance_km)>=0));
     assert(abs(geometry.Latitude_deg(1)-row.OriginLatitude_deg)<1e-9 && ...
         abs(geometry.Longitude_deg(end)-row.DestinationLongitude_deg)<1e-9);
@@ -235,6 +245,80 @@ O=optimize_hybrid_bus_configuration(string(file),Vary="Motor",MaxConfigurations=
     BaseOverrides=struct('SelectedRoute',"DE-MAN-CITY",'SelectedBattery1',"BAT-04", ...
     'SelectedBattery2',"BAT-04",'SelectedFinalDrive',"FD-05"),SaveResults=false);
 cost=O.TopConfigurations.CostPer_km; assert(~isempty(cost) && all(diff(cost)>=0)); text=sprintf('%d ranked feasible cases',height(O.TopConfigurations));
+end
+
+function text=testBEVDualBattery(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV", ...
+    'BatterySetMultiplier',1,'InitialBattery1SOE',0.85,'InitialBattery2SOE',0.20));
+R=simulate_hybrid_bus_core(I);
+assert(I.InitialBattery1SOE==0.85 && I.InitialBattery2SOE==0.85);
+assert(R.Summary.Fuel_L==0 && all(R.Signals.Genset.ElectricalPower_kW==0));
+assert(any(R.Signals.Battery1.Power_kW~=0) && any(R.Signals.Battery2.Power_kW~=0));
+assert(all(R.Signals.Controller.ConnectedBatteryCount==2));
+assert(R.Summary.EnergyBalanceError_kWh<1e-9);
+text=sprintf('two packs connected; final SOE %.3f / %.3f', ...
+    R.Summary.FinalBattery1SOE,R.Summary.FinalBattery2SOE);
+end
+
+function text=testBEVSingleBattery(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV", ...
+    'BatterySetMultiplier',0.5,'InitialBattery1SOE',0.85));
+R=simulate_hybrid_bus_core(I);
+assert(all(R.Signals.Battery2.Power_kW==0));
+assert(max(R.Signals.Battery2.Energy_kWh)-min(R.Signals.Battery2.Energy_kWh)==0);
+assert(all(R.Signals.Controller.ConnectedBatteryCount==1) && R.Summary.Fuel_L==0);
+text='Battery 1 supplied the mission; Battery 2 remained disconnected';
+end
+
+function text=testHybridDoubleBatterySet(DB,~)
+single=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"Hybrid", ...
+    'BatterySetMultiplier',1));
+doubleSet=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"Hybrid", ...
+    'BatterySetMultiplier',2));
+assert(doubleSet.Battery1PackCount==2 && doubleSet.Battery2PackCount==2);
+assert(doubleSet.TotalBatteryPackCount==4);
+assert(abs(doubleSet.Battery1.UsableEnergy_kWh-2*single.Battery1.UsableEnergy_kWh)<1e-12);
+assert(abs(doubleSet.Battery2.MaxDischarge_kW-2*single.Battery2.MaxDischarge_kW)<1e-12);
+text='two-pack active and standby banks; energy and power doubled';
+end
+
+function text=testBEVThreeBatterySet(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV", ...
+    'BatterySetMultiplier',1.5,'InitialBattery1SOE',0.85));
+assert(I.Battery1PackCount==2 && I.Battery2PackCount==1 && I.TotalBatteryPackCount==3);
+R=simulate_hybrid_bus_core(I);
+assert(all(R.Signals.Controller.ConnectedBatteryCount==3));
+assert(R.Summary.ConnectedBatteryCount==3 && R.Summary.BatterySetMultiplier==1.5);
+text='Battery 1 x2 plus Battery 2 x1 connected in parallel';
+end
+
+function text=testBatterySetValidation(DB,~)
+hybridRejected=false; bevRejected=false;
+try
+    prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"Hybrid",'BatterySetMultiplier',1.5));
+catch exception
+    hybridRejected=strcmp(exception.identifier,'HybridBus:InvalidHybridBatterySetMultiplier');
+end
+try
+    prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV",'BatterySetMultiplier',1.25));
+catch exception
+    bevRejected=strcmp(exception.identifier,'HybridBus:InvalidBEVBatterySetMultiplier');
+end
+assert(hybridRejected && bevRejected);
+text='Hybrid fractional and BEV quarter-set inputs rejected';
+end
+
+function text=testBEVRegeneration(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV", ...
+    'BatterySetMultiplier',1,'InitialBattery1SOE',0.70));
+t=(0:60)'; I=setRoute(I,t,36*ones(size(t)),-10*ones(size(t)));
+R=simulate_hybrid_bus_core(I); G=R.Signals.Regeneration;
+allocationError=G.Available_kW-G.ToAuxiliary_kW-G.ToActiveBattery_kW-G.ResistorLoadBank_kW;
+assert(max(abs(allocationError))<1e-9 && any(G.ToActiveBattery_kW>0));
+I.InitialBattery1SOE=I.Battery1.MaxSOE; I.InitialBattery2SOE=I.Battery2.MaxSOE;
+R=simulate_hybrid_bus_core(I);
+assert(any(R.Signals.Regeneration.ResistorLoadBank_kW>0));
+text='auxiliary > parallel packs > resistor allocation conserved';
 end
 
 function I=baseInput(DB)
