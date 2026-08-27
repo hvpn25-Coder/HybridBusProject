@@ -36,6 +36,8 @@ cases=[cases; {
  'HybridDoubleBatterySet','Two Hybrid sets scale both role banks equally',@testHybridDoubleBatterySet;
  'BEVThreeBatterySet','A 1.5-set BEV connects three packs with deterministic bank allocation',@testBEVThreeBatterySet;
  'BatterySetValidation','Hybrid and BEV multipliers enforce their permitted increments',@testBatterySetValidation;
+ 'HybridCalculatedMass','Hybrid mass includes base curb, all batteries, genset, and load',@testHybridCalculatedMass;
+ 'BEVCalculatedMass','BEV mass includes base curb, all batteries, and load but no genset',@testBEVCalculatedMass;
  'BEVRegeneration','BEV regeneration follows auxiliary, batteries, resistor priority',@testBEVRegeneration}];
 
 n=size(cases,1); names=strings(n,1); purposes=strings(n,1); actual=strings(n,1);
@@ -61,8 +63,6 @@ end
 
 function text=testConstantSpeed(DB,~)
 I=baseInput(DB); I=setRoute(I,(0:100)',36*ones(101,1),zeros(101,1)); R=simulate_hybrid_bus_core(I);
-assert(min(DB.Bus_Mass_Catalog.TotalVehicleMass_kg)==19000 && ...
-    max(DB.Bus_Mass_Catalog.TotalVehicleMass_kg)==60000);
 assert(R.Summary.EstimatedVehicleMass_kg==I.Mass.TotalVehicleMass_kg);
 v=10; vAir=v+I.Environment.Headwind_m_s; expected=(R.Summary.EstimatedVehicleMass_kg*I.Vehicle.Gravity_m_s2* ...
     I.Tyre.RollingResistanceCoefficient+0.5*I.Environment.AirDensity_kg_m3* ...
@@ -306,6 +306,31 @@ catch exception
 end
 assert(hybridRejected && bevRejected);
 text='Hybrid fractional and BEV quarter-set inputs rejected';
+end
+
+function text=testHybridCalculatedMass(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"Hybrid", ...
+    'BatterySetMultiplier',2,'LoadMass_t',5));
+expected=15000+2*I.BaseBattery1.Mass_kg+2*I.BaseBattery2.Mass_kg+ ...
+    I.Genset.Mass_kg+5000;
+assert(abs(I.Mass.CurbMass_kg-(expected-5000))<1e-9);
+assert(abs(I.Mass.TotalVehicleMass_kg-expected)<1e-9);
+R=simulate_hybrid_bus_core(I);
+assert(abs(R.Summary.EstimatedVehicleMass_kg-expected)<1e-9);
+text=sprintf('Hybrid curb %.3f t; total %.3f t',I.Mass.CurbMass_kg/1000,expected/1000);
+end
+
+function text=testBEVCalculatedMass(DB,~)
+I=prepare_hybrid_bus_inputs(DB,struct('PowertrainMode',"BEV", ...
+    'BatterySetMultiplier',1.5,'LoadMass_t',3));
+expected=15000+2*I.BaseBattery1.Mass_kg+I.BaseBattery2.Mass_kg+3000;
+assert(I.Mass.GensetMass_kg==0);
+assert(abs(I.Mass.TotalVehicleMass_kg-expected)<1e-9);
+[~,variables]=assign_hybrid_bus_model_workspace(DB.Filename,struct( ...
+    'PowertrainMode',"BEV",'BatterySetMultiplier',1.5,'LoadMass_t',3));
+assert(abs(variables.vehicle_mass_kg-expected)<1e-9);
+text=sprintf('BEV curb %.3f t; total %.3f t; genset excluded', ...
+    I.Mass.CurbMass_kg/1000,expected/1000);
 end
 
 function text=testBEVRegeneration(DB,~)

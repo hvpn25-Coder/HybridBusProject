@@ -17,7 +17,6 @@ motor=catalogRow(database.Motor_Catalog,selectedID(selections,"SelectedMotor"));
 genset=catalogRow(database.Genset_Catalog,selectedID(selections,"SelectedGenset"));
 tyre=catalogRow(database.Tyre_Catalog,selectedID(selections,"SelectedTyre"));
 drive=catalogRow(database.Final_Drive_Catalog,selectedID(selections,"SelectedFinalDrive"));
-mass=catalogRow(database.Bus_Mass_Catalog,selectedID(selections,"SelectedMass"));
 auxiliary=catalogRow(database.Aux_Load_Profiles,selectedID(selections,"SelectedAuxProfile"));
 control=catalogRow(database.Control_Calibration,selectedID(selections,"SelectedControl"));
 vehicle=database.Vehicle_Parameters(1,:);
@@ -32,6 +31,10 @@ else
     battery2Count=round(multiplier);
     totalPackCount=battery1Count+battery2Count;
 end
+loadMassTonnes=double(fieldValue(selections,"LoadMass_t",0));
+calculatedMass=calculate_vehicle_mass(battery1.Mass_kg,battery1Count, ...
+    battery2.Mass_kg,battery2Count,genset.Mass_kg, ...
+    string(fieldValue(selections,"PowertrainMode","Hybrid")),loadMassTonnes);
 
 suffix=extractAfter(string(genset.ComponentID),"-");
 engine=catalogRow(database.Engine_Catalog,"ENG-"+suffix);
@@ -186,10 +189,13 @@ switch key
     case "vehicle"
         specification=makeSpecification("Wheels and Vehicle", ...
             "Converts wheel torque into longitudinal motion against inertia, grade, drag, and rolling resistance",{
-            'Mass configuration',textValue(mass.ComponentID),'-';
-            'Total vehicle mass',numberValue(mass.TotalVehicleMass_kg,0),'kg';
-            'Curb mass',numberValue(mass.CurbMass_kg,0),'kg';
-            'Passenger count',numberValue(mass.PassengerCount,0),'-';
+            'Mass method','Calculated from installed hardware and load','-';
+            'Minimum base curb mass',numberValue(calculatedMass.BaseCurbMass_kg,0),'kg';
+            'Installed battery mass',numberValue(calculatedMass.BatteryMass_kg,0),'kg';
+            'Installed genset mass',numberValue(calculatedMass.GensetMass_kg,0),'kg';
+            'Calculated curb mass',numberValue(calculatedMass.CurbMass_kg,0),'kg';
+            'User-entered load',numberValue(calculatedMass.LoadMass_t,3),'t';
+            'Total vehicle mass',numberValue(calculatedMass.TotalVehicleMass_kg,0),'kg';
             'Tyre component',textValue(tyre.ComponentID),'-';
             'Loaded tyre radius',numberValue(tyre.LoadedRadius_m,3),'m';
             'Tyre maximum load',numberValue(tyre.MaxLoad_kg,0),'kg';

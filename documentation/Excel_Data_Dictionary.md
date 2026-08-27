@@ -12,7 +12,7 @@
 | Generator_Efficiency_Map | Normalized load to generator efficiency |
 | Tyre_Catalog | Loaded radius, rolling resistance, load capability |
 | Final_Drive_Catalog | Ratio and directional efficiency |
-| Bus_Mass_Catalog | Explicit total-vehicle-mass variants from 19,000 to 60,000 kg, plus informative curb/passenger/cargo fields |
+| Bus_Mass_Catalog | Legacy/reference total-mass variants from 19,000 to 60,000 kg; the app now calculates mass from the 15-tonne base curb, installed hardware, and editable load |
 | Vehicle_Parameters | Gravity, aero, tank, charger, filter, tolerance, sample time |
 | Aux_Load_Profiles | Base and temperature-sensitive auxiliary loads |
 | Route_Catalog | Route display name, type, region, source, version, licence, statistics, and enable flag |

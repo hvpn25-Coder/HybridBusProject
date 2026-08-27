@@ -32,6 +32,20 @@ classdef optimizationWorkflowTest < matlab.unittest.TestCase
             testCase.verifyNotEmpty(result.BestResult);
         end
 
+        function optimizerCarriesEditableLoadIntoCandidateMass(testCase)
+            overrides=appShapedOverrides(testCase.Database,"Hybrid",1);
+            overrides.LoadMass_t=4.25;
+            expectedInput=prepare_hybrid_bus_inputs(testCase.Database,overrides);
+            result=optimize_hybrid_bus_configuration(testCase.DatabaseFile, ...
+                Vary="Motor",MaxConfigurations=1,BaseOverrides=overrides,SaveResults=false);
+
+            first=result.EvaluatedConfigurations(1,:);
+            testCase.verifyEqual(first.EstimatedVehicleMass_kg, ...
+                expectedInput.Mass.TotalVehicleMass_kg,'AbsTol',1e-9);
+            testCase.verifyEqual(expectedInput.Mass.TotalVehicleMass_kg- ...
+                expectedInput.Mass.CurbMass_kg,4250,'AbsTol',1e-9);
+        end
+
         function defaultBEVStartsFromDisplayedConfiguration(testCase)
             overrides=appShapedOverrides(testCase.Database,"BEV",1);
             result=optimize_hybrid_bus_configuration(testCase.DatabaseFile, ...
@@ -80,6 +94,8 @@ overrides=struct('SelectedRoute',string(D.SelectedRoute), ...
     'RepeatUntilDepleted',false, ...
     'PowertrainMode',string(powertrainMode), ...
     'BatterySetMultiplier',double(batterySetMultiplier));
+if isfield(D,'LoadMass_t'), overrides.LoadMass_t=double(D.LoadMass_t);
+else, overrides.LoadMass_t=0; end
 if strcmpi(powertrainMode,"BEV")
     overrides.InitialBattery1SOE=0.85;
     overrides.InitialBattery2SOE=0.85;

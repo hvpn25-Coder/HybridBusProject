@@ -45,7 +45,9 @@ power and fuel use remain zero in BEV mode.
 
 In the app, choose a route and configuration, enter both initial battery SOEs in percent, then
 press **Run Manual Case**. Fuel and electricity prices are entered in `EUR/L` and `EUR/kWh`.
-The total-vehicle-mass selector provides 12 variants spanning 19,000 to 60,000 kg. Signals and
+Vehicle mass is calculated live: curb mass is a 15-tonne base vehicle plus installed battery
+packs and, in Hybrid mode, the selected genset assembly; total mass adds the editable load in
+tonnes. The historical 19,000-to-60,000 kg mass catalog remains reference data only. Signals and
 Detailed Plot provide synchronized **Time / Distance** switches. Time uses minutes for missions
 shorter than two hours and hours for longer missions; Distance uses cumulative kilometres. The
 simulation kernel continues to calculate in seconds and metres internally.
@@ -114,8 +116,10 @@ Git metadata remain at the root because those tools require them there.
 | `HybridBusApp.m` | R2025a programmatic App Designer-compatible UIFigure app |
 | `src/simulate_hybrid_bus_core.m` | Detailed discrete first-principles simulation used by batch runs and optimization |
 | `src/run_hybrid_bus_simulation.m` | Validate, prepare, simulate, and save a selected case |
+| `src/run_powertrain_sequence.m` | Deterministic selected-mode or BEV-then-Hybrid manual-run orchestration |
 | `src/optimize_hybrid_bus_configuration.m` | Compatibility-filtered bounded enumeration using base MATLAB loops |
-| `tests/run_all_hybrid_bus_tests.m` | Twenty-nine assertion-based hybrid/BEV physics, battery-set, isolation, control, limit, and ranking scenarios |
+| `tests/run_all_hybrid_bus_tests.m` | Thirty-one assertion-based hybrid/BEV physics, calculated-mass, battery-set, isolation, control, limit, and ranking scenarios |
+| `tests/powertrainSequenceTest.m` | Four ordered-run tests covering selected-only behavior, BEV-to-Hybrid sequencing, SOE handling, and multiplier validation |
 | `src/generate_model_credibility_report.m` | Release evidence orchestration and synchronized Markdown/CSV/MAT reports |
 | `src/assess_matlab_simulink_equivalence.m` | Signal-level independent implementation comparison with declared tolerances |
 | `src/compare_powertrain_concepts.m` | Transparent hybrid, battery-electric, and conventional-diesel concept screening |

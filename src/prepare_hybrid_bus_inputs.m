@@ -60,7 +60,16 @@ Input.Motor = select_row(Database.Motor_Catalog,Input.SelectedIDs.Motor);
 Input.Genset = select_row(Database.Genset_Catalog,Input.SelectedIDs.Genset);
 Input.Tyre = select_row(Database.Tyre_Catalog,Input.SelectedIDs.Tyre);
 Input.FinalDrive = select_row(Database.Final_Drive_Catalog,Input.SelectedIDs.FinalDrive);
-Input.Mass = select_row(Database.Bus_Mass_Catalog,Input.SelectedIDs.Mass);
+Input.LegacyMassSelection = select_row(Database.Bus_Mass_Catalog,Input.SelectedIDs.Mass);
+if isfield(D,'LoadMass_t')
+    Input.LoadMass_t=double(D.LoadMass_t);
+else
+    Input.LoadMass_t=0;
+end
+Input.Mass=calculate_vehicle_mass(Input.BaseBattery1.Mass_kg, ...
+    Input.Battery1PackCount,Input.BaseBattery2.Mass_kg, ...
+    Input.Battery2PackCount,Input.Genset.Mass_kg,Input.PowertrainMode, ...
+    Input.LoadMass_t);
 Input.Aux = select_row(Database.Aux_Load_Profiles,Input.SelectedIDs.Aux);
 Input.Environment = select_row(Database.Environment,Input.SelectedIDs.Environment);
 Input.Control = select_row(Database.Control_Calibration,Input.SelectedIDs.Control);

@@ -8,8 +8,10 @@ classdef HybridBusApp < handle
         Battery2DropDown matlab.ui.control.DropDown
         MotorDropDown matlab.ui.control.DropDown
         GensetDropDown matlab.ui.control.DropDown
-        MassDropDown matlab.ui.control.DropDown
         AuxDropDown matlab.ui.control.DropDown
+        LoadTonnesField matlab.ui.control.NumericEditField
+        CurbMassTonnesField matlab.ui.control.NumericEditField
+        TotalMassTonnesField matlab.ui.control.NumericEditField
         SOE1Field matlab.ui.control.NumericEditField
         SOE2Field matlab.ui.control.NumericEditField
         FuelPriceField matlab.ui.control.NumericEditField
@@ -17,10 +19,23 @@ classdef HybridBusApp < handle
         MaxConfigurationsField matlab.ui.control.NumericEditField
         BatterySetMultiplierField matlab.ui.control.NumericEditField
         RepeatRouteCheckBox matlab.ui.control.CheckBox
+        RunBEVThenHybridCheckBox matlab.ui.control.CheckBox
         StatusLabel matlab.ui.control.Label
         KPICards struct = struct
         KPIStatusLabel matlab.ui.control.Label
         KPIContextLabel matlab.ui.control.Label
+        KPIRunScopeLabel matlab.ui.control.Label
+        KPIRecommendationLabel matlab.ui.control.Label
+        KPIRecommendationDetailLabel matlab.ui.control.Label
+        KPIExecutiveTables struct = struct
+        KPIExecutiveInsightLabels struct = struct
+        KPIScorecardHeaderLabel matlab.ui.control.Label
+        KPIScorecardGateLabels struct = struct
+        KPIScorecardTable matlab.ui.control.Table
+        KPIRobustnessHeaderLabel matlab.ui.control.Label
+        KPIRobustnessAxes matlab.ui.control.UIAxes
+        KPIRobustnessTable matlab.ui.control.Table
+        KPIRobustnessSummaryLabel matlab.ui.control.Label
         AnalysisHeaderLabel matlab.ui.control.Label
         AnalysisEnergyAxes matlab.ui.control.UIAxes
         AnalysisDutyAxes matlab.ui.control.UIAxes
@@ -52,6 +67,7 @@ classdef HybridBusApp < handle
         ArchitectureNoteLabel matlab.ui.control.Label
         Database struct = struct
         CurrentResults = []
+        CurrentPowertrainSequence = []
         CurrentOptimization = []
         CancelRequested logical = false
         HybridSOE1Cache double = 85
@@ -80,8 +96,8 @@ classdef HybridBusApp < handle
             root.RowHeight={'1x','fit'}; root.ColumnWidth={350,'1x'};
             root.Padding=[0 0 0 0]; root.ColumnSpacing=8;
             side=uipanel(root,'Title','Configuration'); side.Layout.Row=1; side.Layout.Column=1;
-            sideGrid=uigridlayout(side,[17 2]);
-            sideGrid.RowHeight=[repmat({'fit'},1,16),{'1x'}];
+            sideGrid=uigridlayout(side,[18 2]);
+            sideGrid.RowHeight=[repmat({'fit'},1,17),{'1x'}];
             sideGrid.ColumnWidth={140,'1x'}; sideGrid.Padding=[10 10 10 10];
             addLabel(sideGrid,'Database',1); dbGrid=uigridlayout(sideGrid,[1 2]);
             dbGrid.Layout.Row=1; dbGrid.Layout.Column=2; dbGrid.ColumnWidth={'1x','fit'};
@@ -91,19 +107,30 @@ classdef HybridBusApp < handle
 
             missionPanel=uipanel(sideGrid,'Title','Mission Inputs');
             missionPanel.Layout.Row=2; missionPanel.Layout.Column=[1 2];
-            missionGrid=uigridlayout(missionPanel,[3 2]);
-            missionGrid.RowHeight={'fit','fit','fit'};
+            missionGrid=uigridlayout(missionPanel,[5 2]);
+            missionGrid.RowHeight={'fit','fit','fit','fit','fit'};
             missionGrid.ColumnWidth={120,'1x'};
             missionGrid.Padding=[8 6 8 6]; missionGrid.RowSpacing=5;
             app.RouteDropDown=app.addDropDown(missionGrid,'Route',1);
             app.RouteDropDown.ValueChangedFcn=@(~,~)app.updateRouteMap();
-            app.MassDropDown=app.addDropDown(missionGrid,'Total vehicle mass',2);
-            app.AuxDropDown=app.addDropDown(missionGrid,'Auxiliary',3);
+            app.LoadTonnesField=app.addNumber(missionGrid,'Load (tonnes)',2,0,[0 inf]);
+            app.LoadTonnesField.Tooltip='Passenger, luggage, and cargo load in metric tonnes.';
+            app.LoadTonnesField.ValueChangedFcn=@(~,~)app.updateCalculatedMass();
+            app.CurbMassTonnesField=app.addNumber(missionGrid,'Calculated curb (t)',3,15,[0 inf]);
+            app.CurbMassTonnesField.Editable='off';
+            app.CurbMassTonnesField.Tooltip='15 t base vehicle + installed batteries + Hybrid genset.';
+            app.TotalMassTonnesField=app.addNumber(missionGrid,'Total mass (t)',4,15,[0 inf]);
+            app.TotalMassTonnesField.Editable='off';
+            app.TotalMassTonnesField.Tooltip='Calculated curb mass + entered load.';
+            app.AuxDropDown=app.addDropDown(missionGrid,'Auxiliary',5);
 
             app.Battery1DropDown=app.addDropDown(sideGrid,'Battery 1',3);
             app.Battery2DropDown=app.addDropDown(sideGrid,'Battery 2',4);
             app.MotorDropDown=app.addDropDown(sideGrid,'Hub motor pair',5);
             app.GensetDropDown=app.addDropDown(sideGrid,'Genset',6);
+            app.Battery1DropDown.ValueChangedFcn=@(~,~)app.updateCalculatedMass();
+            app.Battery2DropDown.ValueChangedFcn=@(~,~)app.updateCalculatedMass();
+            app.GensetDropDown.ValueChangedFcn=@(~,~)app.updateCalculatedMass();
             app.BatterySetMultiplierField=app.addNumber(sideGrid,'Battery set multiplier',7,1,[0.5 inf]);
             app.BatterySetMultiplierField.Tooltip=[ ...
                 'Hybrid: positive whole sets; each set has one active and one standby pack. ' ...
@@ -120,7 +147,13 @@ classdef HybridBusApp < handle
                 'Value',false,'Tooltip',['Continuously repeat the selected route until the fuel tank ' ...
                 'is empty and both batteries reach their usable-energy limits.']);
             app.RepeatRouteCheckBox.Layout.Row=13; app.RepeatRouteCheckBox.Layout.Column=[1 2];
-            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[14 15];
+            app.RunBEVThenHybridCheckBox=uicheckbox(sideGrid, ...
+                'Text','Run BEV first, then Hybrid','Value',false, ...
+                'Tooltip',['When Run Manual is pressed, simulate BEV first and Hybrid second ' ...
+                'with the same mission configuration. Leave unchecked to run the slider selection.']);
+            app.RunBEVThenHybridCheckBox.Layout.Row=14;
+            app.RunBEVThenHybridCheckBox.Layout.Column=[1 2];
+            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[15 16];
             buttonGrid.Layout.Column=[1 2]; buttonGrid.ColumnWidth={'1x','1x'};
             buttonGrid.RowHeight={'fit','fit'}; buttonGrid.Padding=[0 0 0 0];
             uibutton(buttonGrid,'Text','Run Manual','ButtonPushedFcn',@(~,~)app.runManual());
@@ -128,7 +161,7 @@ classdef HybridBusApp < handle
             uibutton(buttonGrid,'Text','Cancel','ButtonPushedFcn',@(~,~)app.requestCancel());
             uibutton(buttonGrid,'Text','Export','ButtonPushedFcn',@(~,~)app.exportCurrent());
             app.StatusLabel=uilabel(sideGrid,'Text','Ready','WordWrap','on');
-            app.StatusLabel.Layout.Row=16; app.StatusLabel.Layout.Column=[1 2];
+            app.StatusLabel.Layout.Row=17; app.StatusLabel.Layout.Column=[1 2];
 
             tabs=uitabgroup(root); tabs.Layout.Row=1; tabs.Layout.Column=2;
             % Creation order defines the user-facing workflow and initial tab.
@@ -245,7 +278,7 @@ classdef HybridBusApp < handle
             app.ArchitectureNoteLabel.Layout.Row=2; app.ArchitectureNoteLabel.Layout.Column=1;
             app.ArchitectureAxes=uiaxes(architectureGrid);
             app.ArchitectureAxes.Layout.Row=3; app.ArchitectureAxes.Layout.Column=1;
-            app.drawPowertrainArchitecture();
+            app.updateCalculatedMass();
             app.buildKPIDashboard(summaryTab);
             app.buildSimulationAnalysis(analysisTab);
             app.buildCredibilityDashboard(credibilityTab);
@@ -294,10 +327,6 @@ classdef HybridBusApp < handle
                 app.Battery2DropDown.Items=cellstr(db.Battery_Catalog.ComponentID);
                 app.MotorDropDown.Items=cellstr(db.Motor_Catalog.ComponentID);
                 app.GensetDropDown.Items=cellstr(db.Genset_Catalog.ComponentID);
-                massLabels=compose('%.0f kg — %s',db.Bus_Mass_Catalog.TotalVehicleMass_kg, ...
-                    db.Bus_Mass_Catalog.ComponentID);
-                app.MassDropDown.Items=cellstr(massLabels);
-                app.MassDropDown.ItemsData=cellstr(db.Bus_Mass_Catalog.ComponentID);
                 app.AuxDropDown.Items=cellstr(db.Aux_Load_Profiles.ComponentID);
                 app.setDashboardSelections();
                 app.updateRouteMap();
@@ -314,8 +343,9 @@ classdef HybridBusApp < handle
             app.Battery2DropDown.Value=char(D.SelectedBattery2);
             app.MotorDropDown.Value=char(D.SelectedMotor);
             app.GensetDropDown.Value=char(D.SelectedGenset);
-            app.MassDropDown.Value=char(D.SelectedMass);
             app.AuxDropDown.Value=char(D.SelectedAuxProfile);
+            if isfield(D,'LoadMass_t'), app.LoadTonnesField.Value=double(D.LoadMass_t);
+            else, app.LoadTonnesField.Value=0; end
             app.SOE1Field.Value=100*double(D.InitialBattery1SOE);
             app.SOE2Field.Value=100*double(D.InitialBattery2SOE);
             app.FuelPriceField.Value=double(D.FuelPrice);
@@ -328,6 +358,7 @@ classdef HybridBusApp < handle
             app.LastValidBatterySetMultiplier=app.BatterySetMultiplierField.Value;
             app.HybridSOE1Cache=app.SOE1Field.Value;
             app.HybridSOE2Cache=app.SOE2Field.Value;
+            app.updateCalculatedMass();
         end
 
         function updatePowertrainMode(app)
@@ -359,7 +390,7 @@ classdef HybridBusApp < handle
                     'traction until 30% SOE. Regeneration supplies auxiliaries first, the active battery ' ...
                     'second, and the resistor load bank third. Click any block for specifications.'];
             end
-            app.drawPowertrainArchitecture();
+            app.updateCalculatedMass();
         end
 
         function updateBatterySetMultiplier(app)
@@ -378,6 +409,38 @@ classdef HybridBusApp < handle
                 return
             end
             app.LastValidBatterySetMultiplier=value;
+            app.updateCalculatedMass();
+        end
+
+        function mass=updateCalculatedMass(app)
+            mass=struct;
+            if isempty(fieldnames(app.Database)) || ...
+                    isempty(app.Battery1DropDown.Value) || isempty(app.Battery2DropDown.Value) || ...
+                    isempty(app.GensetDropDown.Value)
+                return
+            end
+            battery1=app.Database.Battery_Catalog( ...
+                app.Database.Battery_Catalog.ComponentID==string(app.Battery1DropDown.Value),:);
+            battery2=app.Database.Battery_Catalog( ...
+                app.Database.Battery_Catalog.ComponentID==string(app.Battery2DropDown.Value),:);
+            genset=app.Database.Genset_Catalog( ...
+                app.Database.Genset_Catalog.ComponentID==string(app.GensetDropDown.Value),:);
+            if isempty(battery1) || isempty(battery2) || isempty(genset), return; end
+            mode=string(app.PowertrainModeSwitch.Value);
+            multiplier=app.BatterySetMultiplierField.Value;
+            if mode=="BEV"
+                totalPacks=round(2*multiplier);
+                battery1Count=ceil(totalPacks/2);
+                battery2Count=floor(totalPacks/2);
+            else
+                battery1Count=round(multiplier);
+                battery2Count=round(multiplier);
+            end
+            mass=calculate_vehicle_mass(battery1.Mass_kg,battery1Count, ...
+                battery2.Mass_kg,battery2Count,genset.Mass_kg,mode, ...
+                app.LoadTonnesField.Value);
+            app.CurbMassTonnesField.Value=mass.CurbMass_kg/1000;
+            app.TotalMassTonnesField.Value=mass.TotalVehicleMass_kg/1000;
             app.drawPowertrainArchitecture();
         end
 
@@ -396,7 +459,7 @@ classdef HybridBusApp < handle
                 'SelectedGenset',string(app.GensetDropDown.Value), ...
                 'SelectedTyre',string(dashboard.SelectedTyre), ...
                 'SelectedFinalDrive',string(dashboard.SelectedFinalDrive), ...
-                'SelectedMass',string(app.MassDropDown.Value), ...
+                'SelectedMass',string(dashboard.SelectedMass), ...
                 'SelectedAuxProfile',string(app.AuxDropDown.Value), ...
                 'SelectedEnvironment',string(dashboard.SelectedEnvironment), ...
                 'SelectedControl',string(dashboard.SelectedControl), ...
@@ -407,7 +470,8 @@ classdef HybridBusApp < handle
                 'FuelTankCapacity',double(dashboard.FuelTankCapacity), ...
                 'FuelPrice',app.FuelPriceField.Value, ...
                 'ElectricityPrice',app.ElectricityPriceField.Value, ...
-                'RepeatUntilDepleted',app.RepeatRouteCheckBox.Value);
+                'RepeatUntilDepleted',app.RepeatRouteCheckBox.Value, ...
+                'LoadMass_t',app.LoadTonnesField.Value);
             O.PowertrainMode=string(app.PowertrainModeSwitch.Value);
             O.BatterySetMultiplier=app.BatterySetMultiplierField.Value;
             if O.PowertrainMode=="BEV", O.InitialBattery2SOE=O.InitialBattery1SOE; end
@@ -520,7 +584,11 @@ classdef HybridBusApp < handle
                 displayText='Not applicable';
                 elevationSource='Not applicable';
             end
-            try,geobasemap(ax,'streets-light');catch,geobasemap(ax,'none');end
+            try
+                geobasemap(ax,'streets-light');
+            catch
+                geobasemap(ax,'none');
+            end
             title(ax,char(row.RouteName+" - "+row.RouteType));
             hold(ax,'off');
             hold(ax3,'off');
@@ -571,18 +639,42 @@ classdef HybridBusApp < handle
         function runManual(app)
             app.CancelRequested=false; app.StatusLabel.Text='Running manual configuration...'; drawnow;
             try
-                app.CurrentResults=run_hybrid_bus_simulation(string(app.DatabaseField.Value), ...
-                    app.gatherOverrides(),SaveResults=false);
+                app.CurrentPowertrainSequence=[];
+                app.CurrentPowertrainSequence=run_powertrain_sequence(app.Database, ...
+                    app.gatherOverrides(),app.RunBEVThenHybridCheckBox.Value, ...
+                    ProgressFcn=@(mode,index,total)app.powertrainSequenceProgress(mode,index,total), ...
+                    CancelFcn=@()app.CancelRequested);
+                app.CurrentResults=app.CurrentPowertrainSequence.SelectedResult;
                 app.updateResults(app.CurrentResults);
-                app.StatusLabel.Text=sprintf('Complete: %.4f cost/km',app.CurrentResults.Summary.CostPer_km);
+                if app.RunBEVThenHybridCheckBox.Value
+                    bev=app.CurrentPowertrainSequence.BEV.Summary;
+                    hybrid=app.CurrentPowertrainSequence.Hybrid.Summary;
+                    app.StatusLabel.Text=sprintf( ...
+                        'Comparison complete (BEV -> Hybrid): %.4f vs %.4f EUR/km', ...
+                        bev.CostPer_km,hybrid.CostPer_km);
+                    app.AnalysisHeaderLabel.Text=sprintf([ ...
+                        'BEV -> HYBRID COMPARISON | BEV %.4f EUR/km, %.1f kWh grid equivalent | ' ...
+                        'Hybrid %.4f EUR/km, %.1f L fuel | plots show Hybrid'], ...
+                        bev.CostPer_km,bev.GridEquivalentEnergy_kWh, ...
+                        hybrid.CostPer_km,hybrid.Fuel_L);
+                else
+                    app.StatusLabel.Text=sprintf('Complete: %.4f cost/km', ...
+                        app.CurrentResults.Summary.CostPer_km);
+                end
             catch exception
                 app.StatusLabel.Text='Run failed'; uialert(app.Figure,exception.message,'Simulation error');
             end
         end
 
+        function powertrainSequenceProgress(app,mode,index,total)
+            app.StatusLabel.Text=sprintf('Running %s (%d/%d)...',mode,index,total);
+            drawnow;
+        end
+
         function runOptimization(app)
             app.CancelRequested=false; app.StatusLabel.Text='Optimizing...'; drawnow;
             try
+                app.CurrentPowertrainSequence=[];
                 if strcmpi(string(app.PowertrainModeSwitch.Value),"BEV")
                     varyComponents=["Battery1","Battery2","Motor","FinalDrive"];
                 else
@@ -776,46 +868,149 @@ classdef HybridBusApp < handle
 
         function buildKPIDashboard(app,parent)
             theme=kpiTheme();
-            dashboard=uigridlayout(parent,[4 4]);
-            dashboard.RowHeight={72,'1x','1x','1x'};
-            dashboard.ColumnWidth={'1x','1x','1x','1x'};
-            dashboard.Padding=[16 14 16 16];
-            dashboard.RowSpacing=12; dashboard.ColumnSpacing=12;
+            host=uigridlayout(parent,[1 1]); host.Padding=[0 0 0 0];
+            subTabs=uitabgroup(host);
+            executiveTab=uitab(subTabs,'Title','Executive Decision');
+            scorecardTab=uitab(subTabs,'Title','Engineering Scorecard');
+            robustnessTab=uitab(subTabs,'Title','Robustness');
+
+            dashboard=uigridlayout(executiveTab,[4 2]);
+            dashboard.RowHeight={68,82,'1x',132};
+            dashboard.ColumnWidth={'1x','1x'};
+            dashboard.Padding=[14 12 14 14];
+            dashboard.RowSpacing=10; dashboard.ColumnSpacing=10;
 
             header=uipanel(dashboard,'BorderType','line','HighlightColor',theme.border);
-            header.Layout.Row=1; header.Layout.Column=[1 4];
+            header.Layout.Row=1; header.Layout.Column=[1 2];
             headerGrid=uigridlayout(header,[2 2]);
             headerGrid.RowHeight={'fit','1x'}; headerGrid.ColumnWidth={'1x','fit'};
-            headerGrid.Padding=[16 8 16 8];
-            titleLabel=uilabel(headerGrid,'Text','MISSION PERFORMANCE', ...
-                'FontWeight','bold','FontSize',17,'FontColor',theme.primary);
+            headerGrid.Padding=[14 7 14 7];
+            titleLabel=uilabel(headerGrid,'Text','ARCHITECTURE DECISION FOR THE SELECTED MISSION', ...
+                'FontWeight','bold','FontSize',16,'FontColor',theme.primary);
             titleLabel.Layout.Row=1; titleLabel.Layout.Column=1;
             app.KPIStatusLabel=uilabel(headerGrid,'Text','AWAITING RUN', ...
                 'FontWeight','bold','HorizontalAlignment','center', ...
                 'FontColor',theme.warning);
             app.KPIStatusLabel.Layout.Row=1; app.KPIStatusLabel.Layout.Column=2;
             app.KPIContextLabel=uilabel(headerGrid, ...
-                'Text','Run a manual case or optimization to populate the dashboard.', ...
+                'Text','Run a manual case or optimization to populate the decision views.', ...
                 'FontSize',11,'WordWrap','on');
-            app.KPIContextLabel.Layout.Row=2; app.KPIContextLabel.Layout.Column=[1 2];
+            app.KPIContextLabel.Layout.Row=2; app.KPIContextLabel.Layout.Column=1;
+            app.KPIRunScopeLabel=uilabel(headerGrid,'Text','No simulation evidence', ...
+                'FontSize',10,'FontWeight','bold','FontColor',[0.40 0.44 0.48], ...
+                'HorizontalAlignment','right');
+            app.KPIRunScopeLabel.Layout.Row=2; app.KPIRunScopeLabel.Layout.Column=2;
 
-            cards={ ...
-                'distance','Route distance','km','route',theme.primary; ...
-                'cost','Operating cost','EUR/km','cost',theme.success; ...
-                'fuelRate','Fuel consumption','L/100 km','fuel',theme.warning; ...
-                'sourceEnergy','Source energy','kWh/km','energy',theme.secondary; ...
-                'gridEnergy','Grid-equivalent energy','kWh','grid',theme.primary; ...
-                'regenEnergy','Regenerated energy','kWh','regen',theme.success; ...
-                'auxEnergy','Auxiliary energy','kWh','aux',theme.secondary; ...
-                'fuelUsed','Fuel used','L','fuel',theme.warning; ...
-                'battery1','Final Battery 1 SOE','%','battery',theme.primary; ...
-                'battery2','Final Battery 2 SOE','%','battery',theme.primary; ...
-                'unmet','Unmet traction energy','kWh','alert',theme.error; ...
-                'balance','Energy-balance error','kWh','balance',theme.success};
-            for index=1:size(cards,1)
-                row=2+floor((index-1)/4); column=1+mod(index-1,4);
-                app.createKPICard(dashboard,row,column,cards{index,:});
+            recommendation=uipanel(dashboard,'BorderType','line','HighlightColor',theme.primary);
+            recommendation.Layout.Row=2; recommendation.Layout.Column=[1 2];
+            recommendationGrid=uigridlayout(recommendation,[2 1]);
+            recommendationGrid.RowHeight={'fit','1x'}; recommendationGrid.Padding=[16 8 16 8];
+            app.KPIRecommendationLabel=uilabel(recommendationGrid,'Text','RUN A STUDY', ...
+                'FontSize',20,'FontWeight','bold','FontColor',theme.primary);
+            app.KPIRecommendationDetailLabel=uilabel(recommendationGrid, ...
+                'Text','A cross-architecture recommendation requires both BEV and Hybrid results.', ...
+                'WordWrap','on','FontSize',11);
+
+            modes={'BEV','Hybrid'};
+            colors={theme.success,theme.primary};
+            for index=1:2
+                mode=modes{index};
+                panel=uipanel(dashboard,'Title',upper(mode),'FontWeight','bold', ...
+                    'ForegroundColor',colors{index},'HighlightColor',colors{index});
+                panel.Layout.Row=3; panel.Layout.Column=index;
+                panelGrid=uigridlayout(panel,[1 1]); panelGrid.Padding=[8 6 8 8];
+                resultTable=uitable(panelGrid,'ColumnName',{'Metric','Value','Unit'}, ...
+                    'ColumnWidth',{175,105,'auto'},'RowName',{});
+                resultTable.Data={'Run status','NOT RUN',''};
+                app.KPIExecutiveTables.(mode)=resultTable;
             end
+
+            insightGrid=uigridlayout(dashboard,[1 3]);
+            insightGrid.Layout.Row=4; insightGrid.Layout.Column=[1 2];
+            insightGrid.ColumnWidth={'1x','1x','1x'}; insightGrid.Padding=[0 0 0 0];
+            insightGrid.ColumnSpacing=10;
+            insightKeys={'Why','Alternative','Limits'};
+            insightTitles={'WHY THIS RESULT','ALTERNATIVE VALUE','DECISION LIMITS'};
+            insightColors={theme.success,theme.primary,theme.warning};
+            for index=1:3
+                panel=uipanel(insightGrid,'Title',insightTitles{index}, ...
+                    'FontWeight','bold','ForegroundColor',insightColors{index}, ...
+                    'HighlightColor',insightColors{index});
+                panel.Layout.Column=index;
+                panelGrid=uigridlayout(panel,[1 1]); panelGrid.Padding=[10 8 10 8];
+                label=uilabel(panelGrid,'Text','Awaiting simulation evidence.', ...
+                    'WordWrap','on','VerticalAlignment','top','FontSize',10);
+                app.KPIExecutiveInsightLabels.(insightKeys{index})=label;
+            end
+
+            scoreLayout=uigridlayout(scorecardTab,[3 1]);
+            scoreLayout.RowHeight={64,174,'1x'}; scoreLayout.Padding=[14 12 14 14];
+            scoreLayout.RowSpacing=10;
+            scoreHeader=uipanel(scoreLayout,'BorderType','line','HighlightColor',theme.border);
+            scoreHeader.Layout.Row=1;
+            scoreHeaderGrid=uigridlayout(scoreHeader,[1 1]); scoreHeaderGrid.Padding=[14 7 14 7];
+            app.KPIScorecardHeaderLabel=uilabel(scoreHeaderGrid, ...
+                'Text','FIRST-PRINCIPLES GATES — feasibility precedes economics', ...
+                'FontSize',14,'FontWeight','bold','FontColor',theme.primary,'WordWrap','on');
+            gateGrid=uigridlayout(scoreLayout,[1 4]); gateGrid.Layout.Row=2;
+            gateGrid.ColumnWidth={'1x','1x','1x','1x'}; gateGrid.Padding=[0 0 0 0];
+            gateGrid.ColumnSpacing=10;
+            gateKeys={'Completion','Power','Energy','Economics'};
+            gateTitles={'1  CAN IT COMPLETE?','2  CAN IT DELIVER POWER?', ...
+                '3  DOES ENERGY BALANCE?','4  WHAT DOES IT COST?'};
+            gateCriteria={'Mission or depletion endpoint','No unintended propulsion shortfall', ...
+                'Conservation and terminal condition','Finite modeled operating cost'};
+            for index=1:4
+                panel=uipanel(gateGrid,'Title',gateTitles{index},'FontWeight','bold', ...
+                    'HighlightColor',theme.border);
+                panel.Layout.Column=index;
+                panelGrid=uigridlayout(panel,[3 1]);
+                panelGrid.RowHeight={'1x','fit','fit'}; panelGrid.Padding=[10 8 10 8];
+                uilabel(panelGrid,'Text',gateCriteria{index},'WordWrap','on', ...
+                    'VerticalAlignment','top','FontSize',10);
+                bevLabel=uilabel(panelGrid,'Text','BEV   NOT RUN','FontWeight','bold', ...
+                    'FontColor',[0.45 0.49 0.53]);
+                hybridLabel=uilabel(panelGrid,'Text','HYBRID   NOT RUN','FontWeight','bold', ...
+                    'FontColor',[0.45 0.49 0.53]);
+                app.KPIScorecardGateLabels.(gateKeys{index})=struct( ...
+                    'BEV',bevLabel,'Hybrid',hybridLabel);
+            end
+            app.KPIScorecardTable=uitable(scoreLayout, ...
+                'ColumnName',{'Metric','Unit','Preference','BEV','Hybrid'}, ...
+                'ColumnWidth',{185,105,145,120,120},'RowName',{});
+            app.KPIScorecardTable.Layout.Row=3;
+
+            robustnessLayout=uigridlayout(robustnessTab,[3 2]);
+            robustnessLayout.RowHeight={64,'1x',180};
+            robustnessLayout.ColumnWidth={'3x','2x'};
+            robustnessLayout.Padding=[14 12 14 14];
+            robustnessLayout.RowSpacing=10; robustnessLayout.ColumnSpacing=10;
+            robustnessHeader=uipanel(robustnessLayout,'BorderType','line', ...
+                'HighlightColor',theme.border);
+            robustnessHeader.Layout.Row=1; robustnessHeader.Layout.Column=[1 2];
+            robustnessHeaderGrid=uigridlayout(robustnessHeader,[1 1]);
+            robustnessHeaderGrid.Padding=[14 7 14 7];
+            app.KPIRobustnessHeaderLabel=uilabel(robustnessHeaderGrid, ...
+                'Text','MISSION ROBUSTNESS — nominal evidence and unassessed scenarios', ...
+                'FontSize',14,'FontWeight','bold','FontColor',theme.primary,'WordWrap','on');
+            app.KPIRobustnessAxes=uiaxes(robustnessLayout);
+            app.KPIRobustnessAxes.Layout.Row=2; app.KPIRobustnessAxes.Layout.Column=1;
+            title(app.KPIRobustnessAxes,'Operating cost vs source energy');
+            xlabel(app.KPIRobustnessAxes,'Source energy (kWh/km) — lower is better');
+            ylabel(app.KPIRobustnessAxes,'Operating cost (EUR/km) — lower is better');
+            grid(app.KPIRobustnessAxes,'on');
+            app.KPIRobustnessTable=uitable(robustnessLayout, ...
+                'ColumnName',{'Scenario','BEV','Hybrid'}, ...
+                'ColumnWidth',{'auto','auto','auto'},'RowName',{});
+            app.KPIRobustnessTable.Layout.Row=2; app.KPIRobustnessTable.Layout.Column=2;
+            summaryPanel=uipanel(robustnessLayout,'Title','WHAT MANAGEMENT SHOULD KNOW', ...
+                'FontWeight','bold','HighlightColor',theme.primary);
+            summaryPanel.Layout.Row=3; summaryPanel.Layout.Column=[1 2];
+            summaryGrid=uigridlayout(summaryPanel,[1 1]); summaryGrid.Padding=[12 8 12 8];
+            app.KPIRobustnessSummaryLabel=uilabel(summaryGrid, ...
+                'Text',['Choose by mission feasibility first, then operating economics, ' ...
+                'then robustness and evidence confidence.'],'WordWrap','on', ...
+                'VerticalAlignment','top','FontSize',11);
         end
 
         function createKPICard(app,parent,row,column,key,titleText,unitText,iconType,accent)
@@ -879,33 +1074,331 @@ classdef HybridBusApp < handle
         end
 
         function updateKPIDashboard(app,R)
-            S=R.Summary;
-            values=struct( ...
-                'distance',sprintf('%.1f',S.RouteDistance_km), ...
-                'cost',sprintf('%.3f',S.CostPer_km), ...
-                'fuelRate',sprintf('%.2f',S.Fuel_L_per_100km), ...
-                'sourceEnergy',sprintf('%.3f',S.TotalSourceEnergy_kWh_per_km), ...
-                'gridEnergy',sprintf('%.1f',S.GridEquivalentEnergy_kWh), ...
-                'regenEnergy',sprintf('%.1f',S.RegeneratedEnergy_kWh), ...
-                'auxEnergy',sprintf('%.1f',S.AuxiliaryEnergy_kWh), ...
-                'fuelUsed',sprintf('%.1f',S.Fuel_L), ...
-                'battery1',sprintf('%.1f',100*S.FinalBattery1SOE), ...
-                'battery2',sprintf('%.1f',100*S.FinalBattery2SOE), ...
-                'unmet',sprintf('%.3f',S.UnmetTractionEnergy_kWh), ...
-                'balance',formatSmallKPI(S.EnergyBalanceError_kWh));
-            names=fieldnames(values);
-            for index=1:numel(names)
-                app.KPICards.(names{index}).Value.Text=values.(names{index});
-            end
+            [bev,hybrid,scope]=app.resolveKPIResults(R);
+            isRepeat=app.kpiRepeatMode(R);
             routeName=string(app.RouteDropDown.Value);
-            app.KPIContextLabel.Text=sprintf('%s  |  %.0f kg total vehicle mass  |  %s + %s', ...
-                routeName,S.EstimatedVehicleMass_kg,string(app.Battery1DropDown.Value),string(app.Battery2DropDown.Value));
+            app.KPIContextLabel.Text=sprintf('%s  |  %.2f t total mass  |  %s  |  %s', ...
+                routeName,R.Summary.EstimatedVehicleMass_kg/1000, ...
+                string(app.AuxDropDown.Value),scope);
+            app.KPIRunScopeLabel.Text=scope;
+            app.KPIExecutiveTables.BEV.Data=app.executiveKPIData(bev,isRepeat);
+            app.KPIExecutiveTables.Hybrid.Data=app.executiveKPIData(hybrid,isRepeat);
+
+            [headline,detail,whyText,alternativeText]=app.kpiDecision(bev,hybrid,isRepeat);
+            app.KPIRecommendationLabel.Text=headline;
+            app.KPIRecommendationDetailLabel.Text=detail;
+            app.KPIExecutiveInsightLabels.Why.Text=whyText;
+            app.KPIExecutiveInsightLabels.Alternative.Text=alternativeText;
+            app.KPIExecutiveInsightLabels.Limits.Text=[ ...
+                'Concept-screening limits: charging/refuelling turnaround, battery thermal ageing, ' ...
+                'emissions, weather derating, traffic variability, and measured-vehicle validation ' ...
+                'are not yet complete decision evidence.'];
+
+            app.KPIScorecardHeaderLabel.Text=sprintf( ...
+                'FIRST-PRINCIPLES GATES | %s | feasibility precedes economics',scope);
+            gateKeys={'Completion','Power','Energy','Economics'};
+            for index=1:numel(gateKeys)
+                key=gateKeys{index};
+                bevStatus=app.kpiGateStatus(bev,key,isRepeat);
+                hybridStatus=app.kpiGateStatus(hybrid,key,isRepeat);
+                app.setGateLabel(app.KPIScorecardGateLabels.(key).BEV,'BEV',bevStatus);
+                app.setGateLabel(app.KPIScorecardGateLabels.(key).Hybrid,'HYBRID',hybridStatus);
+            end
+            app.KPIScorecardTable.Data=app.scorecardKPIData(bev,hybrid,isRepeat);
+
+            app.KPIRobustnessHeaderLabel.Text=sprintf( ...
+                'MISSION ROBUSTNESS | %s | only executed cases are treated as evidence',scope);
+            app.updateKPITradeSpace(bev,hybrid);
+            app.KPIRobustnessTable.Data=app.robustnessKPIData(bev,hybrid,isRepeat);
+            if isRepeat
+                app.KPIRobustnessSummaryLabel.Text=[ ...
+                    'Repeat-until-depleted is a controlled range study. Compare achieved range, ' ...
+                    'source energy, and operating cost; low terminal SOE or a final depletion event ' ...
+                    'is the intended endpoint, not an ordinary route-feasibility failure. ' ...
+                    'Cold-weather, high-auxiliary, and infrastructure cases remain NOT ASSESSED.'];
+            elseif isempty(bev) || isempty(hybrid)
+                app.KPIRobustnessSummaryLabel.Text=[ ...
+                    'Only one architecture was simulated. The dashboard can assess that result, ' ...
+                    'but it cannot make a defensible BEV-versus-Hybrid recommendation until the ordered ' ...
+                    'comparison is run. Non-nominal scenarios remain NOT ASSESSED.'];
+            else
+                app.KPIRobustnessSummaryLabel.Text=[ ...
+                    'Both architectures were simulated on the same selected mission. Choose by ' ...
+                    'feasibility first, then operating economics and source energy. Operational ' ...
+                    'infrastructure and non-nominal scenarios remain separate evidence gaps.'];
+            end
+
             theme=kpiTheme();
-            if R.Validation.IsFeasible
-                app.KPIStatusLabel.Text='FEASIBLE'; app.KPIStatusLabel.FontColor=theme.success;
+            if isRepeat
+                app.KPIStatusLabel.Text='RANGE STUDY'; app.KPIStatusLabel.FontColor=theme.primary;
+            elseif ~isempty(bev) && ~isempty(hybrid)
+                app.KPIStatusLabel.Text='COMPARISON COMPLETE'; app.KPIStatusLabel.FontColor=theme.success;
+            elseif R.Validation.IsFeasible
+                app.KPIStatusLabel.Text='SINGLE MODE ASSESSED'; app.KPIStatusLabel.FontColor=theme.primary;
             else
                 app.KPIStatusLabel.Text='ENGINEERING ATTENTION'; app.KPIStatusLabel.FontColor=theme.error;
             end
+        end
+
+        function [bev,hybrid,scope]=resolveKPIResults(app,R)
+            bev=[]; hybrid=[];
+            sequence=app.CurrentPowertrainSequence;
+            if ~isempty(sequence) && isstruct(sequence) && isfield(sequence,'Results')
+                if isfield(sequence,'BEV'), bev=sequence.BEV; end
+                if isfield(sequence,'Hybrid'), hybrid=sequence.Hybrid; end
+            else
+                mode=string(R.Summary.PowertrainMode);
+                if strcmpi(mode,'BEV'), bev=R; else, hybrid=R; end
+            end
+            if ~isempty(bev) && ~isempty(hybrid)
+                scope='ORDERED BEV -> HYBRID';
+            elseif ~isempty(bev)
+                scope='BEV ONLY';
+            else
+                scope='HYBRID ONLY';
+            end
+            if app.kpiRepeatMode(R), scope=[scope ' | REPEAT TO DEPLETION']; end
+        end
+
+        function tf=kpiRepeatMode(~,R)
+            tf=isfield(R,'InputParameters') && isfield(R.InputParameters,'RepeatUntilDepleted') && ...
+                logical(R.InputParameters.RepeatUntilDepleted);
+        end
+
+        function data=executiveKPIData(app,R,isRepeat)
+            if isempty(R)
+                data={'Run status','NOT RUN','';'Mission evidence','Unavailable',''};
+                return
+            end
+            S=R.Summary;
+            if isRepeat, distanceName='Achieved range'; else, distanceName='Mission distance'; end
+            data={ ...
+                'Run status',app.kpiGateStatus(R,'Completion',isRepeat),''; ...
+                distanceName,sprintf('%.1f',S.RouteDistance_km),'km'; ...
+                'Operating cost',sprintf('%.3f',S.CostPer_km),'EUR/km'; ...
+                'Source energy',sprintf('%.3f',S.TotalSourceEnergy_kWh_per_km),'kWh/km'; ...
+                'Fuel use',sprintf('%.2f',S.Fuel_L_per_100km),'L/100 km'; ...
+                'Terminal battery reserve',sprintf('%.1f',app.combinedReservePercent(R)),'%'; ...
+                'Unmet traction/DC energy',formatSmallKPI(S.UnmetTractionEnergy_kWh),'kWh'; ...
+                'Energy-balance error',formatSmallKPI(S.EnergyBalanceError_kWh),'kWh'};
+        end
+
+        function [headline,detail,whyText,alternativeText]=kpiDecision(app,bev,hybrid,isRepeat)
+            if isempty(bev) || isempty(hybrid)
+                if ~isempty(bev), mode='BEV'; result=bev; else, mode='HYBRID'; result=hybrid; end
+                if isRepeat
+                    headline=[mode ' RANGE RESULT'];
+                    detail=sprintf('%.1f km achieved before the controlled depletion endpoint. Comparison was not run.', ...
+                        result.Summary.RouteDistance_km);
+                    whyText='This view reports achieved range, energy intensity, and endpoint evidence for the selected architecture.';
+                else
+                    headline=[mode ' RESULT — COMPARISON NOT RUN'];
+                    detail='The selected architecture has been assessed, but the alternative has no result for this mission.';
+                    whyText='Use its feasibility gates, operating cost, source energy, and terminal reserve as a single-design assessment.';
+                end
+                alternativeText=['Run BEV first, then Hybrid to create a like-for-like decision. ' ...
+                    'The unrun architecture is shown as NOT RUN, never estimated.'];
+                return
+            end
+
+            if isRepeat
+                bevRange=bev.Summary.RouteDistance_km; hybridRange=hybrid.Summary.RouteDistance_km;
+                if abs(bevRange-hybridRange)<=0.01*max([bevRange,hybridRange,eps])
+                    if bev.Summary.CostPer_km<=hybrid.Summary.CostPer_km, winner='BEV'; else, winner='HYBRID'; end
+                    reason='Ranges are within 1%; lower modeled cost per kilometre is the tie-break.';
+                elseif bevRange>hybridRange
+                    winner='BEV'; reason='It achieves the longer controlled range-to-depletion.';
+                else
+                    winner='HYBRID'; reason='It achieves the longer controlled range-to-depletion.';
+                end
+                headline=['RANGE LEADER: ' winner];
+                detail=sprintf('BEV %.1f km | Hybrid %.1f km. %s',bevRange,hybridRange,reason);
+                whyText='Range is the primary repeat-study outcome; cost and source energy explain the operational trade-off.';
+                alternativeText='The shorter-range architecture may still be preferable where charging/refuelling access, emissions, or duty scheduling dominate.';
+                return
+            end
+
+            bevFeasible=app.normalMissionFeasible(bev);
+            hybridFeasible=app.normalMissionFeasible(hybrid);
+            if bevFeasible && ~hybridFeasible
+                winner='BEV'; reason='BEV passes the mission gates while Hybrid requires engineering attention.';
+            elseif hybridFeasible && ~bevFeasible
+                winner='HYBRID'; reason='Hybrid passes the mission gates while BEV requires engineering attention.';
+            elseif ~bevFeasible && ~hybridFeasible
+                headline='NO FEASIBLE CHOICE';
+                detail='Neither architecture satisfies the current mission gates. Resolve capability or energy shortfalls before comparing cost.';
+                whyText='Feasibility is a hard gate; low modeled cost cannot compensate for undelivered traction/DC energy.';
+                alternativeText='Review battery multiplier, motor sizing, vehicle load, auxiliaries, route severity, and energy replenishment.';
+                return
+            elseif bev.Summary.CostPer_km<=hybrid.Summary.CostPer_km
+                winner='BEV'; reason='Both pass; BEV has the lower modeled operating cost per kilometre.';
+            else
+                winner='HYBRID'; reason='Both pass; Hybrid has the lower modeled operating cost per kilometre.';
+            end
+            headline=['RECOMMENDED FOR THIS MISSION: ' winner];
+            detail=sprintf('%s BEV %.3f EUR/km | Hybrid %.3f EUR/km.', ...
+                reason,bev.Summary.CostPer_km,hybrid.Summary.CostPer_km);
+            whyText='The recommendation applies a feasibility-first rule, followed by modeled operating cost. Source energy and reserve remain visible supporting evidence.';
+            alternativeText='The non-selected architecture remains relevant if infrastructure, turnaround, resilience, emissions, or validation evidence changes the operating case.';
+        end
+
+        function tf=normalMissionFeasible(~,R)
+            tf=~isempty(R) && R.Validation.IsFeasible && ...
+                R.Summary.UnmetTractionEnergy_kWh<=1e-3;
+        end
+
+        function status=kpiGateStatus(app,R,gate,isRepeat)
+            if isempty(R), status='NOT RUN'; return; end
+            S=R.Summary;
+            switch gate
+                case 'Completion'
+                    if isRepeat
+                        status='RANGE ESTABLISHED';
+                    elseif app.normalMissionFeasible(R)
+                        status='PASS';
+                    else
+                        status='ATTENTION';
+                    end
+                case 'Power'
+                    if isRepeat
+                        status='CONTROLLED ENDPOINT';
+                    elseif S.UnmetTractionEnergy_kWh<=1e-3
+                        status='PASS';
+                    else
+                        status='SHORTFALL';
+                    end
+                case 'Energy'
+                    tolerance=R.InputParameters.Vehicle.EnergyBalanceTolerance_kWh;
+                    if S.EnergyBalanceError_kWh<=tolerance
+                        if isRepeat, status='BALANCED / DEPLETED'; else, status='PASS'; end
+                    else
+                        status='RESIDUAL';
+                    end
+                otherwise
+                    if isfinite(S.CostPer_km), status='AVAILABLE'; else, status='REVIEW'; end
+            end
+        end
+
+        function setGateLabel(~,label,mode,status)
+            label.Text=sprintf('%s   %s',mode,status);
+            theme=kpiTheme();
+            if any(contains(status,{'PASS','AVAILABLE','ESTABLISHED','BALANCED'}))
+                label.FontColor=theme.success;
+            elseif any(contains(status,{'ATTENTION','SHORTFALL','RESIDUAL','REVIEW'}))
+                label.FontColor=theme.error;
+            elseif any(contains(status,{'ENDPOINT','DEPLETED'}))
+                label.FontColor=theme.primary;
+            else
+                label.FontColor=[0.45 0.49 0.53];
+            end
+        end
+
+        function data=scorecardKPIData(app,bev,hybrid,isRepeat)
+            if isRepeat, distanceMetric='Achieved range'; distancePreference='Higher';
+            else, distanceMetric='Mission distance'; distancePreference='Complete selected route'; end
+            data={ ...
+                distanceMetric,'km',distancePreference,app.kpiValue(bev,'RouteDistance_km','%.1f'),app.kpiValue(hybrid,'RouteDistance_km','%.1f'); ...
+                'Total vehicle mass','t','Context',app.kpiValue(bev,'EstimatedVehicleMass_kg','%.2f',1/1000),app.kpiValue(hybrid,'EstimatedVehicleMass_kg','%.2f',1/1000); ...
+                'Operating cost','EUR/km','Lower',app.kpiValue(bev,'CostPer_km','%.3f'),app.kpiValue(hybrid,'CostPer_km','%.3f'); ...
+                'Source energy','kWh/km','Lower',app.kpiValue(bev,'TotalSourceEnergy_kWh_per_km','%.3f'),app.kpiValue(hybrid,'TotalSourceEnergy_kWh_per_km','%.3f'); ...
+                'Fuel consumption','L/100 km','Lower',app.kpiValue(bev,'Fuel_L_per_100km','%.2f'),app.kpiValue(hybrid,'Fuel_L_per_100km','%.2f'); ...
+                'Terminal battery reserve','%','Higher in normal mission',app.kpiReserveValue(bev),app.kpiReserveValue(hybrid); ...
+                'Unmet traction/DC energy','kWh','Zero except controlled endpoint',app.kpiValue(bev,'UnmetTractionEnergy_kWh','%.3f'),app.kpiValue(hybrid,'UnmetTractionEnergy_kWh','%.3f'); ...
+                'Energy-balance error','kWh','Within tolerance',app.kpiValue(bev,'EnergyBalanceError_kWh','%.3g'),app.kpiValue(hybrid,'EnergyBalanceError_kWh','%.3g')};
+        end
+
+        function value=kpiValue(~,R,fieldName,format,scale)
+            if nargin<5, scale=1; end
+            if isempty(R), value='NOT RUN'; return; end
+            value=sprintf(format,scale*R.Summary.(fieldName));
+        end
+
+        function value=kpiReserveValue(app,R)
+            if isempty(R), value='NOT RUN'; else, value=sprintf('%.1f',app.combinedReservePercent(R)); end
+        end
+
+        function reserve=combinedReservePercent(~,R)
+            S=R.Summary; I=R.InputParameters;
+            count1=max(0,S.Battery1PackCount); count2=max(0,S.Battery2PackCount);
+            capacity1=count1*I.Battery1.UsableEnergy_kWh;
+            capacity2=count2*I.Battery2.UsableEnergy_kWh;
+            reserve=100*(capacity1*S.FinalBattery1SOE+capacity2*S.FinalBattery2SOE)/ ...
+                max(capacity1+capacity2,eps);
+        end
+
+        function updateKPITradeSpace(app,bev,hybrid)
+            ax=app.KPIRobustnessAxes; cla(ax); hold(ax,'on');
+            theme=kpiTheme(); plotted=false; xValues=[]; yValues=[];
+            if ~isempty(bev)
+                scatter(ax,bev.Summary.TotalSourceEnergy_kWh_per_km,bev.Summary.CostPer_km, ...
+                    110,theme.success,'filled');
+                text(ax,bev.Summary.TotalSourceEnergy_kWh_per_km,bev.Summary.CostPer_km, ...
+                    '  BEV','FontWeight','bold','Color',theme.success, ...
+                    'VerticalAlignment','bottom');
+                xValues(end+1)=bev.Summary.TotalSourceEnergy_kWh_per_km;
+                yValues(end+1)=bev.Summary.CostPer_km;
+                plotted=true;
+            end
+            if ~isempty(hybrid)
+                scatter(ax,hybrid.Summary.TotalSourceEnergy_kWh_per_km,hybrid.Summary.CostPer_km, ...
+                    110,theme.primary,'filled');
+                text(ax,hybrid.Summary.TotalSourceEnergy_kWh_per_km,hybrid.Summary.CostPer_km, ...
+                    '  Hybrid','FontWeight','bold','Color',theme.primary, ...
+                    'VerticalAlignment','top');
+                xValues(end+1)=hybrid.Summary.TotalSourceEnergy_kWh_per_km;
+                yValues(end+1)=hybrid.Summary.CostPer_km;
+                plotted=true;
+            end
+            hold(ax,'off'); grid(ax,'on'); box(ax,'on');
+            title(ax,'Operating cost vs source energy — nominal executed results');
+            xlabel(ax,'Source energy (kWh/km) — lower is better');
+            ylabel(ax,'Operating cost (EUR/km) — lower is better');
+            if plotted
+                xSpan=max(xValues)-min(xValues); ySpan=max(yValues)-min(yValues);
+                xMargin=max(0.05,0.12*max(xSpan,max(abs(xValues))));
+                yMargin=max(0.05,0.12*max(ySpan,max(abs(yValues))));
+                xlim(ax,[max(0,min(xValues)-xMargin),max(xValues)+xMargin]);
+                ylim(ax,[max(0,min(yValues)-yMargin),max(yValues)+yMargin]);
+            else
+                text(ax,0.5,0.5,'Run a study to populate the trade space', ...
+                    'Units','normalized','HorizontalAlignment','center');
+            end
+        end
+
+        function data=robustnessKPIData(app,bev,hybrid,isRepeat)
+            data={ ...
+                'Nominal executed mission',app.robustnessNominalStatus(bev,isRepeat),app.robustnessNominalStatus(hybrid,isRepeat); ...
+                'Repeat-to-depletion endpoint',app.robustnessRepeatStatus(bev,isRepeat),app.robustnessRepeatStatus(hybrid,isRepeat); ...
+                'Cold-weather battery capability',app.unassessedStatus(bev),app.unassessedStatus(hybrid); ...
+                'High auxiliary-load scenario',app.unassessedStatus(bev),app.unassessedStatus(hybrid); ...
+                'Charging / refuelling turnaround',app.unassessedStatus(bev),app.unassessedStatus(hybrid); ...
+                'Measured-vehicle validation',app.unassessedStatus(bev),app.unassessedStatus(hybrid)};
+        end
+
+        function status=robustnessNominalStatus(app,R,isRepeat)
+            if isempty(R)
+                status='NOT RUN';
+            elseif isRepeat
+                status='RANGE';
+            elseif app.normalMissionFeasible(R)
+                status='PASS';
+            else
+                status='ATTENTION';
+            end
+        end
+
+        function status=robustnessRepeatStatus(~,R,isRepeat)
+            if isempty(R)
+                status='NOT RUN';
+            elseif isRepeat
+                status='ACTIVE';
+            else
+                status='NOT REQUESTED';
+            end
+        end
+
+        function status=unassessedStatus(~,R)
+            if isempty(R), status='NOT RUN'; else, status='NOT ASSESSED'; end
         end
 
         function updateDetailedPlot(app)
@@ -1249,8 +1742,9 @@ classdef HybridBusApp < handle
             selections.SelectedBattery2=string(app.Battery2DropDown.Value);
             selections.SelectedMotor=string(app.MotorDropDown.Value);
             selections.SelectedGenset=string(app.GensetDropDown.Value);
-            selections.SelectedMass=string(app.MassDropDown.Value);
+            selections.SelectedMass=string(app.Database.Dashboard.SelectedMass);
             selections.SelectedAuxProfile=string(app.AuxDropDown.Value);
+            selections.LoadMass_t=app.LoadTonnesField.Value;
             selections.InitialBattery1SOE=app.SOE1Field.Value/100;
             selections.InitialBattery2SOE=app.SOE2Field.Value/100;
             selections.PowertrainMode=string(app.PowertrainModeSwitch.Value);
@@ -1289,12 +1783,6 @@ end
 function architectureArrow(ax,x1,y1,x2,y2,color,lineWidth,lineStyle)
 quiver(ax,x1,y1,x2-x1,y2-y1,0,'Color',color,'LineWidth',lineWidth, ...
     'LineStyle',lineStyle,'MaxHeadSize',0.55,'AutoScale','off');
-end
-
-function architectureBidirectionalArrow(ax,x1,y1,x2,y2,color,lineWidth)
-midX=(x1+x2)/2; midY=(y1+y2)/2;
-architectureArrow(ax,midX,midY,x2,y2,color,lineWidth,'-');
-architectureArrow(ax,midX,midY,x1,y1,color,lineWidth,'-');
 end
 
 function architectureBlock(ax,position,labelText,iconType,fillColor,edgeColor,clickCallback,componentKey)

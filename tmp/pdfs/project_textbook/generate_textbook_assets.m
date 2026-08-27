@@ -59,14 +59,18 @@ PrioritySignals=table(PriorityResults.Time, ...
 writetable(PrioritySignals,fullfile(assetFolder,'regen_priority_case.csv'));
 
 % Refresh the studies quoted later in the textbook so all reported metrics
-% use the same regeneration policy as the default case.
+% use the calculated-mass model and current regeneration policy.
 massCount=height(Database.Bus_Mass_Catalog);
 massID=strings(massCount,1); totalMass=zeros(massCount,1); costPerKm=zeros(massCount,1);
 gridEnergy=zeros(massCount,1); fuelLitres=zeros(massCount,1); unmetEnergy=zeros(massCount,1);
+baseInput=prepare_hybrid_bus_inputs(Database);
+baseCurbMass=baseInput.Mass.CurbMass_kg;
 for index=1:massCount
     massID(index)=Database.Bus_Mass_Catalog.ComponentID(index);
+    targetMass=Database.Bus_Mass_Catalog.TotalVehicleMass_kg(index);
+    loadMass_t=max(0,(targetMass-baseCurbMass)/1000);
     MassResult=run_hybrid_bus_simulation(databaseFile, ...
-        struct('SelectedMass',massID(index)),'SaveResults',false);
+        struct('LoadMass_t',loadMass_t),'SaveResults',false);
     totalMass(index)=MassResult.Summary.EstimatedVehicleMass_kg;
     costPerKm(index)=MassResult.Summary.CostPer_km;
     gridEnergy(index)=MassResult.Summary.GridEquivalentEnergy_kWh;
@@ -77,6 +81,32 @@ MassStudy=table(massID,totalMass,costPerKm,gridEnergy,fuelLitres,unmetEnergy, ..
     'VariableNames',{'MassID','TotalVehicleMass_kg','CostPer_km','GridEnergy_kWh', ...
     'Fuel_L','UnmetEnergy_kWh'});
 writetable(MassStudy,fullfile(assetFolder,'mass_sweep.csv'));
+
+% Ordered side-by-side manual comparison used by the app's new checkbox.
+comparisonOverrides=struct('PowertrainMode',"Hybrid",'BatterySetMultiplier',1, ...
+    'InitialBattery1SOE',Database.Dashboard.InitialBattery1SOE, ...
+    'InitialBattery2SOE',Database.Dashboard.InitialBattery2SOE, ...
+    'LoadMass_t',Database.Dashboard.LoadMass_t,'RepeatUntilDepleted',false);
+Sequence=run_powertrain_sequence(Database,comparisonOverrides,true);
+mode=["BEV";"Hybrid"];
+comparisonResults={Sequence.BEV;Sequence.Hybrid};
+vehicleMass=zeros(2,1); costPerKm=zeros(2,1); fuelL=zeros(2,1);
+gridEnergy=zeros(2,1); finalB1=zeros(2,1); finalB2=zeros(2,1); feasible=false(2,1);
+for index=1:2
+    result=comparisonResults{index}; summaryRow=result.Summary;
+    vehicleMass(index)=summaryRow.EstimatedVehicleMass_kg;
+    costPerKm(index)=summaryRow.CostPer_km;
+    fuelL(index)=summaryRow.Fuel_L;
+    gridEnergy(index)=summaryRow.GridEquivalentEnergy_kWh;
+    finalB1(index)=100*summaryRow.FinalBattery1SOE;
+    finalB2(index)=100*summaryRow.FinalBattery2SOE;
+    feasible(index)=result.Validation.IsFeasible;
+end
+PowertrainComparison=table(mode,vehicleMass,costPerKm,fuelL,gridEnergy, ...
+    finalB1,finalB2,feasible,'VariableNames',{'Mode','VehicleMass_kg', ...
+    'CostPer_km','Fuel_L','GridEquivalentEnergy_kWh','FinalB1SOE_pct', ...
+    'FinalB2SOE_pct','Feasible'});
+writetable(PowertrainComparison,fullfile(assetFolder,'powertrain_comparison.csv'));
 
 longRoutes=Database.Route_Catalog(Database.Route_Catalog.RouteType=="Long-distance coach",:);
 routeCount=height(longRoutes); routeID=strings(routeCount,1); routeName=strings(routeCount,1);
@@ -121,6 +151,10 @@ try
     drawnow;
     figures = findall(groot,'Type','figure','Name','Hybrid-Electric Bus Configuration Explorer');
     if ~isempty(figures)
+        comparisonBox=findall(figures(1),'Type','uicheckbox', ...
+            'Text','Run BEV first, then Hybrid');
+        if ~isempty(comparisonBox), comparisonBox.Value=true; end
+        drawnow;
         exportapp(figures(1),fullfile(assetFolder,'hybrid_bus_app.png'));
         architectureTab=findall(figures(1),'Type','uitab','Title','Powertrain Architecture');
         if ~isempty(architectureTab)
