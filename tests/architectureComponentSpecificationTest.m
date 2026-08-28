@@ -15,7 +15,8 @@ classdef architectureComponentSpecificationTest < matlab.unittest.TestCase
             selections=database.Dashboard;
             keys=["fuel","engine","generator","charger","standby_selector", ...
                 "battery1","active_selector","battery2","traction_bus", ...
-                "motors","reduction","vehicle","auxiliary","resistor","controller"];
+                "motors","reduction","vehicle","auxiliary","resistor", ...
+                "friction_brake","controller"];
             for key=keys
                 specification=architecture_component_specification(database,selections,key);
                 testCase.verifyNotEmpty(specification.Title,key);

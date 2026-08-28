@@ -225,6 +225,19 @@ switch key
             'Temperature dynamics','Not represented','-';
             'Model treatment','Unbounded concept-level energy sink','-';
             'Engineering requirement','Size and thermally validate before hardware design','-'});
+    case "friction_brake"
+        specification=makeSpecification("Pneumatic Friction Braking", ...
+            "Supplies wheel-braking demand that exceeds regenerative-braking capability",{
+            'Braking strategy','Regenerative braking first; pneumatic braking supplies residual','-';
+            'Implemented command','max(0, wheel braking demand - regenerative wheel braking)','kW';
+            'Energy destination','Mechanical braking energy converted to friction heat','-';
+            'Actuation model','Ideal residual-demand actuator in prescribed-speed backward model','-';
+            'Rated braking power','Not parameterized','kW';
+            'Pneumatic pressure dynamics','Not represented','-';
+            'ABS / EBS modulation','Not represented','-';
+            'Tyre adhesion and axle split','Not represented','-';
+            'Thermal fade, wear and temperature','Not represented','-';
+            'Engineering requirement','Size and validate in a forward-dynamics brake model','-'});
     case "controller"
         specification=makeSpecification("Supervisory Energy Manager", ...
             "Coordinates battery roles, standby charging, regeneration allocation, and genset hysteresis",{

@@ -12,6 +12,7 @@ cases={
  'LevelAcceleration','Acceleration increases wheel demand',@testAcceleration;
  'PositiveGrade','Positive grade increases wheel power',@testPositiveGrade;
  'DownhillRegeneration','Negative grade produces regenerative DC power',@testRegeneration;
+ 'PneumaticBrakeBlending','Friction brakes supply braking demand beyond regeneration',@testPneumaticBrakeBlending;
  'RegenerationPriority','Regeneration supplies auxiliaries, then the active battery, then the load bank',@testRegenerationPriority;
  'BatterySwitching','Low active pack deterministically switches to standby pack',@testSwitching;
  'StandbyGensetCharge','Genset charges only the standby battery',@testStandbyCharge;
@@ -115,6 +116,24 @@ end
 function text=testRegeneration(DB,~)
 I=baseInput(DB); t=(0:60)'; I=setRoute(I,t,36*ones(size(t)),-8*ones(size(t))); R=simulate_hybrid_bus_core(I);
 assert(any(R.Signals.Motors.ElectricalPower_kW<0)); text=sprintf('regen %.2f kWh',R.Summary.RegeneratedEnergy_kWh);
+end
+
+function text=testPneumaticBrakeBlending(DB,~)
+I=baseInput(DB); t=(0:20)';
+I=setRoute(I,t,linspace(120,20,numel(t))',zeros(size(t)));
+R=simulate_hybrid_bus_core(I); W=R.Signals.Wheel;
+braking=W.BrakingDemand_kW>1e-9;
+balance=W.BrakingDemand_kW-W.RegenerativeBraking_kW- ...
+    W.FrictionBrakePower_kW-W.UnmetBraking_kW;
+assert(any(braking) && any(W.FrictionBrakePower_kW>1e-6));
+assert(max(abs(balance))<1e-9);
+assert(all(W.FrictionBrakePower_kW(~braking)==0));
+assert(all(W.FrictionBrakePower_kW>=0) && all(W.UnmetBraking_kW>=0));
+expected=sum(W.FrictionBrakePower_kW.*[diff(R.Time);0])/3600;
+assert(abs(expected-R.Summary.FrictionBrakeEnergy_kWh)<1e-12);
+assert(R.Summary.UnmetBrakingEnergy_kWh<1e-12);
+text=sprintf('friction %.3f kWh; peak %.1f kW; braking balance closed', ...
+    R.Summary.FrictionBrakeEnergy_kWh,max(W.FrictionBrakePower_kW));
 end
 
 function text=testRegenerationPriority(DB,~)

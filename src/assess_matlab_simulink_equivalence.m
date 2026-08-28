@@ -8,7 +8,11 @@ end
 
 [Input,variables]=assign_hybrid_bus_model_workspace(databaseFile,overrides);
 MatlabResult=simulate_hybrid_bus_core(Input);
-modelName="HybridBus_BackwardModel";
+if strcmpi(string(Input.PowertrainMode),"BEV")
+    modelName="HybridBus_BEVModel";
+else
+    modelName="HybridBus_BackwardModel";
+end
 in=Simulink.SimulationInput(modelName);
 names=fieldnames(variables);
 for index=1:numel(names)
@@ -23,6 +27,8 @@ checks={ ...
     'Vehicle speed','log_vehicle_speed',MatlabResult.Signals.Vehicle.Speed_m_s,0.02,'m/s'; ...
     'Wheel demand','log_wheel_power',MatlabResult.Signals.Wheel.Demand_kW,5.0,'kW'; ...
     'Motor DC power','log_motor_dc_power',MatlabResult.Signals.Motors.ElectricalPower_kW,8.0,'kW'; ...
+    'Pneumatic friction brake','log_friction_brake_power', ...
+        MatlabResult.Signals.Wheel.FrictionBrakePower_kW,5.0,'kW'; ...
     'Auxiliary power','log_aux_power',MatlabResult.Signals.Auxiliary.Power_kW,0.05,'kW'; ...
     'Battery 1 SOE','log_battery1_soe',MatlabResult.Signals.Battery1.SOE,0.025,'fraction'; ...
     'Battery 2 SOE','log_battery2_soe',MatlabResult.Signals.Battery2.SOE,0.025,'fraction'; ...
@@ -64,9 +70,19 @@ end
 function values=sampleOutput(out,name,targetTime)
 series=out.get(name);
 if isa(series,'timeseries')
-    values=interp1(series.Time(:),double(series.Data(:)),targetTime,'previous','extrap');
+    sourceTime=series.Time(:); sourceData=double(series.Data(:));
+    if isscalar(sourceTime)
+        values=repmat(sourceData(1),size(targetTime));
+    else
+        values=interp1(sourceTime,sourceData,targetTime,'previous','extrap');
+    end
 elseif isstruct(series) && isfield(series,'time') && isfield(series,'signals')
-    values=interp1(series.time(:),double(series.signals.values(:)),targetTime,'previous','extrap');
+    sourceTime=series.time(:); sourceData=double(series.signals.values(:));
+    if isscalar(sourceTime)
+        values=repmat(sourceData(1),size(targetTime));
+    else
+        values=interp1(sourceTime,sourceData,targetTime,'previous','extrap');
+    end
 else
     error('HybridBus:EquivalenceOutput','Unsupported Simulink output format for %s.',name);
 end

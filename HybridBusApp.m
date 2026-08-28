@@ -203,7 +203,8 @@ classdef HybridBusApp < handle
             plotItems={'Vehicle Acceleration (m/s^2)','Vehicle Speed (km/h)', ...
                 'Vehicle Distance (km)','Net Torque at the Wheels','Motor Torques', ...
                 'Reduction Gear Torques','Wheel Power','Motor Power', ...
-                'Battery Power','Engine Power'};
+                'Battery Power','Engine Power','Blended Braking Power', ...
+                'Pneumatic Brake Power'};
             app.DetailedPlotDropDown=uidropdown(selectorGrid,'Items',plotItems, ...
                 'Value',plotItems{1},'ValueChangedFcn',@(~,~)app.updateDetailedPlot());
             uilabel(selectorGrid,'Text','X-axis:','HorizontalAlignment','right', ...
@@ -274,6 +275,7 @@ classdef HybridBusApp < handle
                 'alone supports traction until 30% SOE. Regeneration returns from the wheels through the ' ...
                 'fixed reduction and motor-inverters, then supplies auxiliaries first, charges the active ' ...
                 'battery second, and dissipates surplus power in the resistor load bank third. ' ...
+                'Pneumatic friction brakes supply wheel-braking demand beyond regenerative capability. ' ...
                 'Click any component block to inspect its selected specification and implemented role.']);
             app.ArchitectureNoteLabel.Layout.Row=2; app.ArchitectureNoteLabel.Layout.Column=1;
             app.ArchitectureAxes=uiaxes(architectureGrid);
@@ -376,10 +378,11 @@ classdef HybridBusApp < handle
                 app.GensetDropDown.Enable='off';
                 app.ArchitectureNoteLabel.Text=[ ...
                     'Battery-electric view: the battery set multiplier connects two packs per set; half-set ' ...
-                    'increments represent one additional pack. All connected packs start at the same SOE ' ...
+                'increments represent one additional pack. All connected packs start at the same SOE ' ...
                     '(85% by default), and the BMS shares power within each bank''s limits. Regeneration ' ...
                     'supplies auxiliaries first, charges the connected battery pack(s) second, and sends ' ...
-                    'surplus to the resistor load bank third. Click any block for specifications.'];
+                    'surplus to the resistor load bank third. Pneumatic friction brakes supply wheel-braking ' ...
+                    'demand beyond regenerative capability. Click any block for specifications.'];
             else
                 app.SOE1Field.Value=app.HybridSOE1Cache;
                 app.SOE2Field.Value=app.HybridSOE2Cache;
@@ -388,7 +391,8 @@ classdef HybridBusApp < handle
                     'First-principles view: the genset is isolated from the traction DC bus and charges only ' ...
                     'the standby battery bank at constant best-efficiency power. The active battery bank supports ' ...
                     'traction until 30% SOE. Regeneration supplies auxiliaries first, the active battery ' ...
-                    'second, and the resistor load bank third. Click any block for specifications.'];
+                    'second, and the resistor load bank third. Pneumatic friction brakes supply residual ' ...
+                    'wheel-braking demand. Click any block for specifications.'];
             end
             app.updateCalculatedMass();
         end
@@ -717,8 +721,10 @@ classdef HybridBusApp < handle
             xtickformat(app.SpeedAxes,tickFormat);
             plot(app.PowerAxes,x,R.Signals.Wheel.Demand_kW,x,R.Signals.Motors.ElectricalPower_kW, ...
                 x,R.Signals.Auxiliary.Power_kW,x,R.Signals.Regeneration.ResistorLoadBank_kW, ...
+                x,R.Signals.Wheel.FrictionBrakePower_kW, ...
                 'LineWidth',1.0);
-            legend(app.PowerAxes,{'Wheel','Motor DC','Auxiliary','Resistor load bank'}, ...
+            legend(app.PowerAxes,{'Wheel demand','Motor DC','Auxiliary', ...
+                'Resistor load bank','Pneumatic brake'}, ...
                 'Location','best');
             xlabel(app.PowerAxes,xLabel); ylabel(app.PowerAxes,'kW');
             xtickformat(app.PowerAxes,tickFormat);
@@ -818,10 +824,11 @@ classdef HybridBusApp < handle
         function updateSimulationAnalysis(app,R)
             S=R.Summary; theme=kpiTheme();
             ax=app.AnalysisEnergyAxes; cla(ax);
-            labels={'Grid equivalent','Genset output','Regenerated','Auxiliary','Battery throughput','Load-bank waste'};
+            labels={'Grid equivalent','Genset output','Regenerated','Auxiliary', ...
+                'Battery throughput','Load-bank waste','Friction braking'};
             energy=[S.GridEquivalentEnergy_kWh,S.GensetElectricalEnergy_kWh, ...
                 S.RegeneratedEnergy_kWh,S.AuxiliaryEnergy_kWh,S.BatteryThroughput_kWh, ...
-                S.ResistorLoadBankEnergy_kWh];
+                S.ResistorLoadBankEnergy_kWh,S.FrictionBrakeEnergy_kWh];
             bar(ax,categorical(labels,labels),energy,'FaceColor',theme.primary);
             ylabel(ax,'Energy (kWh)'); title(ax,'Mission energy allocation'); grid(ax,'on');
             ax.XTickLabelRotation=18;
@@ -849,6 +856,10 @@ classdef HybridBusApp < handle
             if S.EnergyBalanceError_kWh>1e-6, balanceAssessment='Review numerical energy residual'; end
             loadAssessment='No surplus regeneration was wasted';
             if S.ResistorLoadBankEnergy_kWh>1e-3, loadAssessment='Surplus regen safely dissipated after aux and battery limits'; end
+            brakeAssessment='Regeneration and pneumatic braking satisfy the prescribed wheel demand';
+            if S.UnmetBrakingEnergy_kWh>1e-6
+                brakeAssessment='Braking demand is not fully satisfied; review actuator limits';
+            end
             app.AnalysisTable.Data={ ...
                 'Mission distance',sprintf('%.1f',S.RouteDistance_km),'km',routeAssessment; ...
                 'Battery 1 final SOE',sprintf('%.1f',100*S.FinalBattery1SOE),'%',b1Assessment; ...
@@ -856,6 +867,7 @@ classdef HybridBusApp < handle
                 'Regeneration utilization',sprintf('%.1f',regenUtilization),'%', ...
                     'Auxiliary-first and active-battery-second recovery'; ...
                 'Resistor load bank',sprintf('%.2f',S.ResistorLoadBankEnergy_kWh),'kWh',loadAssessment; ...
+                'Pneumatic friction braking',sprintf('%.2f',S.FrictionBrakeEnergy_kWh),'kWh',brakeAssessment; ...
                 'Genset operation',sprintf('%.1f / %d',runtimeMinutes,S.GensetStarts),'min / starts', ...
                     'Standby-only charging at the selected efficiency point'; ...
                 'Unmet traction energy',sprintf('%.3f',S.UnmetTractionEnergy_kWh),'kWh',unmetAssessment; ...
@@ -1463,8 +1475,9 @@ classdef HybridBusApp < handle
                         yLabel='Power (kW)';
                     end
                 case "Wheel Power"
-                    values=[S.Wheel.Demand_kW,S.Wheel.Delivered_kW];
-                    labels=["Demand","Delivered"];
+                    values=[S.Wheel.Demand_kW,S.Wheel.Delivered_kW, ...
+                        S.Wheel.TotalDelivered_kW];
+                    labels=["Demand","Motor/regen path","Total with friction brake"];
                     yLabel='Power (kW)';
                 case "Battery Power"
                     values=[S.Battery1.Power_kW,S.Battery2.Power_kW, ...
@@ -1475,6 +1488,15 @@ classdef HybridBusApp < handle
                     values=[S.Genset.MechanicalPower_kW,S.Genset.ElectricalPower_kW];
                     labels=["Engine mechanical","Generator electrical"];
                     yLabel='Power (kW)';
+                case "Blended Braking Power"
+                    values=[S.Wheel.BrakingDemand_kW,S.Wheel.RegenerativeBraking_kW, ...
+                        S.Wheel.FrictionBrakePower_kW,S.Wheel.UnmetBraking_kW];
+                    labels=["Braking demand","Regenerative braking", ...
+                        "Pneumatic friction braking","Unmet braking"];
+                    yLabel='Braking power magnitude (kW)';
+                case "Pneumatic Brake Power"
+                    values=S.Wheel.FrictionBrakePower_kW;
+                    yLabel='Friction-brake power (kW)';
                 otherwise
                     error('HybridBus:DetailedPlot','Unsupported detailed plot selection: %s',selection);
             end
@@ -1521,6 +1543,7 @@ classdef HybridBusApp < handle
             control=[0.38 0.44 0.50]; road=[0.16 0.50 0.35];
             charge=[0.92 0.48 0.08];
             dump=[0.72 0.26 0.12];
+            friction=[0.62 0.25 0.16];
 
             % Subtle lanes keep the two energy domains visually separate.
             plot(ax,[2 140],[35 35],'Color',[0.86 0.89 0.91],'LineWidth',0.8);
@@ -1569,6 +1592,10 @@ classdef HybridBusApp < handle
             architectureArrow(ax,109.5,15,109.5,13,regen,1.8,'-');
             plot(ax,[103 103 91.5],[24.5 15 15],'Color',dump,'LineWidth',1.6);
             architectureArrow(ax,91.5,15,91.5,13,dump,1.6,'-');
+            % Mechanical blended-braking branch at the wheels: motor
+            % regeneration acts first; pneumatic friction brakes supply the residual.
+            plot(ax,[137.5 137.5 132.5],[18 15 15],'Color',friction,'LineWidth',1.7);
+            architectureArrow(ax,132.5,15,132.5,13,friction,1.7,'-');
 
             % Only two command links are needed: one for each selector.
             architectureArrow(ax,61,51.5,61,48,control,1.0,'--');
@@ -1609,14 +1636,17 @@ classdef HybridBusApp < handle
                 "auxiliary");
             architectureBlock(ax,[86 5 11 8],sprintf('3  Resistor\nload bank'),'resistor', ...
                 [1.00 0.92 0.89],dump,@(~,~)app.showArchitectureSpecification("resistor"),"resistor");
+            architectureBlock(ax,[125 5 15 8],sprintf('Pneumatic\nfriction brakes'),'brake', ...
+                [1.00 0.93 0.90],friction,@(~,~)app.showArchitectureSpecification("friction_brake"), ...
+                "friction_brake");
             architectureBlock(ax,[53 51.5 24 7],sprintf('Supervisory energy manager\n30%% role-swap rule'),'controller', ...
                 [0.94 0.95 0.96],control,@(~,~)app.showArchitectureSpecification("controller"), ...
                 "controller");
 
             % Compact key stays outside the flow lanes.
-            legendY=56; legendX=[73 83.5 94 105 116 127];
-            legendColors={fuel,mechanical,electric,regen,dump,control};
-            legendLabels={'Fuel','Shaft','Traction','Regen','Dump','Control'};
+            legendY=59; legendX=[70 79.5 89 98.5 108 117.5 127];
+            legendColors={fuel,mechanical,electric,regen,dump,friction,control};
+            legendLabels={'Fuel','Shaft','Traction','Regen','Dump','Brake','Control'};
             for index=1:numel(legendX)
                 lineStyle='-';
                 if index==6,lineStyle='--';end
@@ -1624,7 +1654,7 @@ classdef HybridBusApp < handle
                     'Color',legendColors{index},'LineWidth',2, ...
                     'LineStyle',lineStyle);
                 text(ax,legendX(index)+3,legendY,legendLabels{index}, ...
-                    'VerticalAlignment','middle','FontSize',7.5,'Color',[0.18 0.23 0.28]);
+                    'VerticalAlignment','middle','FontSize',7,'Color',[0.18 0.23 0.28]);
             end
             hold(ax,'off');
         end
@@ -1636,6 +1666,7 @@ classdef HybridBusApp < handle
             electric=[0.02 0.49 0.50]; regen=[0.10 0.38 0.78];
             mechanical=[0.49 0.24 0.74]; road=[0.16 0.50 0.35];
             control=[0.38 0.44 0.50]; dump=[0.72 0.26 0.12]; gridColor=[0.05 0.45 0.72];
+            friction=[0.62 0.25 0.16];
             multiplier=app.BatterySetMultiplierField.Value;
             totalPacks=max(1,round(2*multiplier));
             battery1Count=ceil(totalPacks/2);
@@ -1676,6 +1707,8 @@ classdef HybridBusApp < handle
             architectureArrow(ax,71,15,71,13,electric,1.7,'-');
             plot(ax,[76 76 88],[28 15 15],'Color',dump,'LineWidth',1.5);
             architectureArrow(ax,88,15,88,13,dump,1.5,'-');
+            plot(ax,[124 124 120.5],[20 15 15],'Color',friction,'LineWidth',1.7);
+            architectureArrow(ax,120.5,15,120.5,13,friction,1.7,'-');
             plot(ax,[64 64],[47 32],'Color',control,'LineStyle','--','LineWidth',1.0);
 
             architectureBlock(ax,[3 33 10 8],sprintf('Grid / depot\ncharger'),'charger', ...
@@ -1700,6 +1733,9 @@ classdef HybridBusApp < handle
                 [0.91 0.97 0.95],electric,@(~,~)app.showArchitectureSpecification("auxiliary"),"auxiliary");
             architectureBlock(ax,[82 5 13 8],sprintf('3  Resistor\nload bank'),'resistor', ...
                 [1.00 0.92 0.89],dump,@(~,~)app.showArchitectureSpecification("resistor"),"resistor");
+            architectureBlock(ax,[112 5 17 8],sprintf('Pneumatic\nfriction brakes'),'brake', ...
+                [1.00 0.93 0.90],friction,@(~,~)app.showArchitectureSpecification("friction_brake"), ...
+                "friction_brake");
             architectureBlock(ax,[52 47 24 7],sprintf('BEV supervisory controller\nparallel power sharing'),'controller', ...
                 [0.94 0.95 0.96],control,@(~,~)app.showArchitectureSpecification("bev_controller"),"bev_controller");
             hold(ax,'off');
@@ -1710,29 +1746,127 @@ classdef HybridBusApp < handle
                 selections=app.architectureSelections();
                 specification=architecture_component_specification( ...
                     app.Database,selections,string(componentKey));
+                runtime=architecture_component_runtime_data( ...
+                    app.CurrentResults,string(componentKey));
+                if ~isempty(app.CurrentPowertrainSequence) && ...
+                        app.CurrentPowertrainSequence.IsComparison
+                    runtime.ScopeText="Hybrid displayed result | second result of ordered BEV then Hybrid run";
+                end
                 existing=findall(groot,'Type','figure','Tag','HybridBusComponentSpecification');
                 if ~isempty(existing),delete(existing);end
-                dialog=uifigure('Name',char(specification.Title+" Specifications"), ...
-                    'Tag','HybridBusComponentSpecification','Position',[420 180 720 590], ...
+                dialog=uifigure('Name',char(specification.Title+" Component Inspector"), ...
+                    'Tag','HybridBusComponentSpecification','Position',[320 110 900 700], ...
                     'Resize','on');
-                layout=uigridlayout(dialog,[4 1]);
-                layout.RowHeight={'fit','fit','1x','fit'};
+                layout=uigridlayout(dialog,[2 1]);
+                layout.RowHeight={'1x','fit'};
                 layout.ColumnWidth={'1x'}; layout.Padding=[18 16 18 14];
-                uilabel(layout,'Text',char(specification.Title), ...
+
+                tabs=uitabgroup(layout);
+                tabs.Layout.Row=1;
+                specificationTab=uitab(tabs,'Title','Specification Information');
+                kpiTab=uitab(tabs,'Title','Component KPIs');
+                signalTab=uitab(tabs,'Title','Physical Signals');
+
+                specificationLayout=uigridlayout(specificationTab,[3 1]);
+                specificationLayout.RowHeight={'fit','fit','1x'};
+                specificationLayout.ColumnWidth={'1x'};
+                specificationLayout.Padding=[14 14 14 14];
+                uilabel(specificationLayout,'Text',char(specification.Title), ...
                     'FontSize',20,'FontWeight','bold','FontColor',[0.12 0.25 0.36]);
-                role=uilabel(layout,'Text',char(specification.Role),'WordWrap','on', ...
+                role=uilabel(specificationLayout,'Text',char(specification.Role),'WordWrap','on', ...
                     'FontSize',11,'FontColor',[0.28 0.34 0.39]);
                 role.Layout.Row=2;
-                tableView=uitable(layout,'Data',specification.Rows, ...
+                tableView=uitable(specificationLayout,'Data',specification.Rows, ...
                     'ColumnName',specification.ColumnNames,'RowName',{}, ...
                     'ColumnWidth',{245,330,85});
                 tableView.Layout.Row=3;
+
+                kpiLayout=uigridlayout(kpiTab,[3 1]);
+                kpiLayout.RowHeight={'fit','fit','1x'};
+                kpiLayout.ColumnWidth={'1x'}; kpiLayout.Padding=[14 14 14 14];
+                uilabel(kpiLayout,'Text',char(specification.Title+" — simulation KPIs"), ...
+                    'FontSize',18,'FontWeight','bold','FontColor',[0.12 0.25 0.36]);
+                scope=uilabel(kpiLayout,'Text',char(runtime.ScopeText),'WordWrap','on', ...
+                    'FontSize',11,'FontColor',[0.30 0.38 0.44]);
+                scope.Layout.Row=2;
+                kpiTable=uitable(kpiLayout,'Data',runtime.KPIRows, ...
+                    'ColumnName',{'Metric','Value','Unit','Interpretation'},'RowName',{}, ...
+                    'ColumnWidth',{205,190,85,300});
+                kpiTable.Layout.Row=3;
+
+                signalLayout=uigridlayout(signalTab,[6 1]);
+                signalLayout.RowHeight={'fit','fit','fit','1x','fit','1x'};
+                signalLayout.ColumnWidth={'1x'}; signalLayout.Padding=[14 12 14 12];
+                uilabel(signalLayout,'Text',char(specification.Title+" — physical signals"), ...
+                    'FontSize',18,'FontWeight','bold','FontColor',[0.12 0.25 0.36]);
+                signalNote=uilabel(signalLayout,'Text',char(runtime.SignalNote), ...
+                    'WordWrap','on','FontSize',10,'FontColor',[0.30 0.38 0.44]);
+                signalNote.Layout.Row=2;
+                signalItems=cellstr(string({runtime.SignalOptions.Title}));
+                signalItemData=num2cell(1:numel(runtime.SignalOptions));
+                firstSelector=uidropdown(signalLayout,'Items',signalItems, ...
+                    'ItemsData',signalItemData,'Value',1, ...
+                    'Tooltip','Select the physical signal shown in the upper plot');
+                firstSelector.Layout.Row=3;
+                firstAxes=uiaxes(signalLayout); firstAxes.Layout.Row=4;
+                secondDefault=min(2,numel(runtime.SignalOptions));
+                secondSelector=uidropdown(signalLayout,'Items',signalItems, ...
+                    'ItemsData',signalItemData,'Value',secondDefault, ...
+                    'Tooltip','Select the physical signal shown in the lower plot');
+                secondSelector.Layout.Row=5;
+                secondAxes=uiaxes(signalLayout); secondAxes.Layout.Row=6;
+                firstSelector.ValueChangedFcn=@(source,~) ...
+                    app.plotArchitectureRuntimeSignal(firstAxes, ...
+                    runtime.SignalOptions(source.Value));
+                secondSelector.ValueChangedFcn=@(source,~) ...
+                    app.plotArchitectureRuntimeSignal(secondAxes, ...
+                    runtime.SignalOptions(source.Value));
+                if ~runtime.HasResult
+                    firstSelector.Enable='off'; secondSelector.Enable='off';
+                end
+                app.plotArchitectureRuntimeSignal(firstAxes, ...
+                    runtime.SignalOptions(firstSelector.Value));
+                app.plotArchitectureRuntimeSignal(secondAxes, ...
+                    runtime.SignalOptions(secondSelector.Value));
+
                 closeButton=uibutton(layout,'push','Text','Close', ...
                     'ButtonPushedFcn',@(~,~)delete(dialog));
-                closeButton.Layout.Row=4;
+                closeButton.Layout.Row=2;
                 movegui(dialog,'center');
             catch exception
                 uialert(app.Figure,exception.message,'Specification unavailable');
+            end
+        end
+
+        function plotArchitectureRuntimeSignal(app,ax,group)
+            cla(ax);
+            if isempty(app.CurrentResults) || ~group.Available
+                ax.Visible='off';
+                text(ax,0.5,0.55,char(group.Title),'Units','normalized', ...
+                    'HorizontalAlignment','center','FontWeight','bold', ...
+                    'Color',[0.18 0.29 0.38]);
+                text(ax,0.5,0.40,char(group.Message),'Units','normalized', ...
+                    'HorizontalAlignment','center','VerticalAlignment','top', ...
+                    'Color',[0.42 0.47 0.52]);
+                return
+            end
+            values=group.Values;
+            R=app.CurrentResults;
+            if size(values,1)~=numel(R.Time)
+                ax.Visible='off';
+                text(ax,0.5,0.5,'Signal length does not match the displayed result.', ...
+                    'Units','normalized','HorizontalAlignment','center');
+                return
+            end
+            ax.Visible='on';
+            [x,xLabel,tickFormat]=select_plot_x_axis(R.Time(:), ...
+                R.Signals.Vehicle.Distance_m(:),"Time");
+            plot(ax,x,values,'LineWidth',1.25);
+            title(ax,char(group.Title),'FontWeight','bold');
+            xlabel(ax,char(xLabel)); ylabel(ax,char(group.YLabel));
+            grid(ax,'on'); xtickformat(ax,char(tickFormat));
+            if numel(group.Names)>1
+                legend(ax,cellstr(group.Names),'Location','best');
             end
         end
 
@@ -1887,6 +2021,14 @@ switch iconType
             'Color',edgeColor,'LineWidth',1.2);
         plot(ax,[centerX+2.5 centerX+3],[iconY iconY], ...
             'Color',edgeColor,'LineWidth',1.2);
+    case 'brake'
+        rectangle(ax,'Position',[centerX-1.55 iconY-1.55 3.1 3.1], ...
+            'Curvature',[1 1],'EdgeColor',edgeColor,'LineWidth',1.3);
+        rectangle(ax,'Position',[centerX-0.65 iconY-0.65 1.3 1.3], ...
+            'Curvature',[1 1],'EdgeColor',edgeColor,'LineWidth',1.0);
+        plot(ax,[centerX+1.35 centerX+2.15 centerX+2.15 centerX+1.35], ...
+            [iconY+1.05 iconY+0.8 iconY-0.8 iconY-1.05], ...
+            'Color',edgeColor,'LineWidth',2.0);
     case 'controller'
         rectangle(ax,'Position',[centerX-2.6 iconY-1.2 5.2 2.4], ...
             'EdgeColor',edgeColor,'LineWidth',1.2);

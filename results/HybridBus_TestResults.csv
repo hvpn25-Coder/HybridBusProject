@@ -1,32 +1,33 @@
 Test,Purpose,Inputs,Expected,Actual,Status,Elapsed_s
-ConstantSpeedLevel,"Constant-speed wheel power matches hand calculation",See test function,Assertion passes,"18764 kg: actual 20.542 kW, hand 20.542 kW",PASS,0.3999202
-StationaryAuxiliary,"Auxiliary load consumes battery energy at zero speed",See test function,Assertion passes,"battery delta 0.258636 kWh",PASS,0.0691012
-LevelAcceleration,"Acceleration increases wheel demand",See test function,Assertion passes,"peak 179.2 kW",PASS,0.0511193
-PositiveGrade,"Positive grade increases wheel power",See test function,Assertion passes,"grade demand increased",PASS,0.0872024
-DownhillRegeneration,"Negative grade produces regenerative DC power",See test function,Assertion passes,"regen 1.82 kWh",PASS,0.0770375
-RegenerationPriority,"Regeneration supplies auxiliaries, then the active battery, then the load bank",See test function,Assertion passes,"auxiliary first; 2.197 kWh diverted to resistor bank at full active SOE",PASS,0.0474308
-BatterySwitching,"Low active pack deterministically switches to standby pack",See test function,Assertion passes,"battery 2 became active immediately below 30%",PASS,0.4991848
-StandbyGensetCharge,"Genset charges only the standby battery",See test function,Assertion passes,"B1 supplied auxiliaries while genset charged B2; fuel 1.4915 L",PASS,0.0336638
-GensetTractionIsolation,"Genset output never offsets traction-bus demand",See test function,Assertion passes,"active-battery traction power is identical with genset enabled and disabled",PASS,0.0379293
-GensetHysteresis,"Genset starts for low standby SOE without chattering",See test function,Assertion passes,"1 deliberate start(s), 1 well-spaced transition(s)",PASS,0.4342832
-BatteryUpperLimit,"Battery energy never exceeds upper limit",See test function,Assertion passes,"upper SOE limits respected",PASS,0.0240458
-BatteryLowerLimit,"Battery energy never falls below lower limit",See test function,Assertion passes,"lower limit clamped with unmet power",PASS,0.0375137
-MotorSaturation,"Motor saturation reports unmet wheel power",See test function,Assertion passes,"unmet 0.703 kWh",PASS,0.0418134
-GensetBestEfficiencyPoint,"Genset runs at one constant optimum power",See test function,Assertion passes,"constant at 123.2 kW",PASS,0.3561597
-RouteGeolocation,"Every geographic corridor has ordered valid latitude and longitude geometry",See test function,Assertion passes,"17 geographic routes, 20257 coordinate rows",PASS,0.1710197
-RouteValidationFailure,"Duplicate route time is rejected",See test function,Assertion passes,"duplicate time rejected",PASS,0.3207674
-IncompatibleSelection,"Compatibility filter records rejection reason",See test function,Assertion passes,"voltage mismatch recorded",PASS,12.6638952
-EnergyConservation,"Cumulative DC residual remains within tolerance",See test function,Assertion passes,"residual < 1e-9 kWh",PASS,0.3316321
-Repeatability,"Identical inputs produce identical scalar KPIs",See test function,Assertion passes,"bitwise-identical cost KPI",PASS,0.7579148
-ZeroSpeedStability,"Zero-speed calculation remains finite",See test function,Assertion passes,"all signals finite",PASS,0.0153523
-TerminalCostCorrection,"Grid-equivalent terminal correction matches hand calculation",See test function,Assertion passes,"grid correction 68.6952 kWh",PASS,0.3132955
-ChargeSustainingComparison,"Terminal combined-SOE tolerance is enforced",See test function,Assertion passes,"deviation 0.210131",PASS,0.3106473
-OptimizationRanking,"Feasible configurations are sorted by total cost per kilometre",See test function,Assertion passes,"5 ranked feasible cases",PASS,11.0811116
-BEVDualBattery,"BEV uses both equal-SOE batteries in parallel with no fuel or genset",See test function,Assertion passes,"two packs connected; final SOE 0.690 / 0.690",PASS,0.1184252
-BEVSingleBattery,"One-battery BEV electrically isolates Battery 2",See test function,Assertion passes,"Battery 1 supplied the mission; Battery 2 remained disconnected",PASS,0.1072557
-HybridDoubleBatterySet,"Two Hybrid sets scale both role banks equally",See test function,Assertion passes,"two-pack active and standby banks; energy and power doubled",PASS,0.0340733
-BEVThreeBatterySet,"A 1.5-set BEV connects three packs with deterministic bank allocation",See test function,Assertion passes,"Battery 1 x2 plus Battery 2 x1 connected in parallel",PASS,0.1050734
-BatterySetValidation,"Hybrid and BEV multipliers enforce their permitted increments",See test function,Assertion passes,"Hybrid fractional and BEV quarter-set inputs rejected",PASS,0.0122131
-HybridCalculatedMass,"Hybrid mass includes base curb, all batteries, genset, and load",See test function,Assertion passes,"Hybrid curb 21.664 t; total 26.664 t",PASS,0.3165224
-BEVCalculatedMass,"BEV mass includes base curb, all batteries, and load but no genset",See test function,Assertion passes,"BEV curb 19.350 t; total 22.350 t; genset excluded",PASS,10.0140754
-BEVRegeneration,"BEV regeneration follows auxiliary, batteries, resistor priority",See test function,Assertion passes,"auxiliary > parallel packs > resistor allocation conserved",PASS,0.0472617
+ConstantSpeedLevel,"Constant-speed wheel power matches hand calculation",See test function,Assertion passes,"18764 kg: actual 20.542 kW, hand 20.542 kW",PASS,0.0805735
+StationaryAuxiliary,"Auxiliary load consumes battery energy at zero speed",See test function,Assertion passes,"battery delta 0.258636 kWh",PASS,0.0172257
+LevelAcceleration,"Acceleration increases wheel demand",See test function,Assertion passes,"peak 179.2 kW",PASS,0.0168116
+PositiveGrade,"Positive grade increases wheel power",See test function,Assertion passes,"grade demand increased",PASS,0.0313074
+DownhillRegeneration,"Negative grade produces regenerative DC power",See test function,Assertion passes,"regen 1.82 kWh",PASS,0.0309655
+PneumaticBrakeBlending,"Friction brakes supply braking demand beyond regeneration",See test function,Assertion passes,"friction 1.508 kWh; peak 604.7 kW; braking balance closed",PASS,0.0207991
+RegenerationPriority,"Regeneration supplies auxiliaries, then the active battery, then the load bank",See test function,Assertion passes,"auxiliary first; 2.197 kWh diverted to resistor bank at full active SOE",PASS,0.0339355
+BatterySwitching,"Low active pack deterministically switches to standby pack",See test function,Assertion passes,"battery 2 became active immediately below 30%",PASS,0.4606039
+StandbyGensetCharge,"Genset charges only the standby battery",See test function,Assertion passes,"B1 supplied auxiliaries while genset charged B2; fuel 1.4915 L",PASS,0.0282211
+GensetTractionIsolation,"Genset output never offsets traction-bus demand",See test function,Assertion passes,"active-battery traction power is identical with genset enabled and disabled",PASS,0.0234171
+GensetHysteresis,"Genset starts for low standby SOE without chattering",See test function,Assertion passes,"1 deliberate start(s), 1 well-spaced transition(s)",PASS,0.4268917
+BatteryUpperLimit,"Battery energy never exceeds upper limit",See test function,Assertion passes,"upper SOE limits respected",PASS,0.0271002
+BatteryLowerLimit,"Battery energy never falls below lower limit",See test function,Assertion passes,"lower limit clamped with unmet power",PASS,0.0249707
+MotorSaturation,"Motor saturation reports unmet wheel power",See test function,Assertion passes,"unmet 0.703 kWh",PASS,0.0159011
+GensetBestEfficiencyPoint,"Genset runs at one constant optimum power",See test function,Assertion passes,"constant at 123.2 kW",PASS,0.3195212
+RouteGeolocation,"Every geographic corridor has ordered valid latitude and longitude geometry",See test function,Assertion passes,"17 geographic routes, 20257 coordinate rows",PASS,0.0481141
+RouteValidationFailure,"Duplicate route time is rejected",See test function,Assertion passes,"duplicate time rejected",PASS,0.1623222
+IncompatibleSelection,"Compatibility filter records rejection reason",See test function,Assertion passes,"voltage mismatch recorded",PASS,11.5746544
+EnergyConservation,"Cumulative DC residual remains within tolerance",See test function,Assertion passes,"residual < 1e-9 kWh",PASS,0.3257651
+Repeatability,"Identical inputs produce identical scalar KPIs",See test function,Assertion passes,"bitwise-identical cost KPI",PASS,0.6441473
+ZeroSpeedStability,"Zero-speed calculation remains finite",See test function,Assertion passes,"all signals finite",PASS,0.0122504
+TerminalCostCorrection,"Grid-equivalent terminal correction matches hand calculation",See test function,Assertion passes,"grid correction 68.6952 kWh",PASS,0.305916
+ChargeSustainingComparison,"Terminal combined-SOE tolerance is enforced",See test function,Assertion passes,"deviation 0.210131",PASS,0.3220276
+OptimizationRanking,"Feasible configurations are sorted by total cost per kilometre",See test function,Assertion passes,"5 ranked feasible cases",PASS,10.5080825
+BEVDualBattery,"BEV uses both equal-SOE batteries in parallel with no fuel or genset",See test function,Assertion passes,"two packs connected; final SOE 0.690 / 0.690",PASS,0.1348232
+BEVSingleBattery,"One-battery BEV electrically isolates Battery 2",See test function,Assertion passes,"Battery 1 supplied the mission; Battery 2 remained disconnected",PASS,0.1126826
+HybridDoubleBatterySet,"Two Hybrid sets scale both role banks equally",See test function,Assertion passes,"two-pack active and standby banks; energy and power doubled",PASS,0.0262929
+BEVThreeBatterySet,"A 1.5-set BEV connects three packs with deterministic bank allocation",See test function,Assertion passes,"Battery 1 x2 plus Battery 2 x1 connected in parallel",PASS,0.1229156
+BatterySetValidation,"Hybrid and BEV multipliers enforce their permitted increments",See test function,Assertion passes,"Hybrid fractional and BEV quarter-set inputs rejected",PASS,0.0022065
+HybridCalculatedMass,"Hybrid mass includes base curb, all batteries, genset, and load",See test function,Assertion passes,"Hybrid curb 21.664 t; total 26.664 t",PASS,0.3545221
+BEVCalculatedMass,"BEV mass includes base curb, all batteries, and load but no genset",See test function,Assertion passes,"BEV curb 19.350 t; total 22.350 t; genset excluded",PASS,9.3356327
+BEVRegeneration,"BEV regeneration follows auxiliary, batteries, resistor priority",See test function,Assertion passes,"auxiliary > parallel packs > resistor allocation conserved",PASS,0.0158885

@@ -40,12 +40,15 @@ variables.frontal_area_m2=Input.Vehicle.FrontalArea_m2;
 variables.final_drive_ratio=F.Ratio;
 variables.tyre_radius_m=Input.Tyre.LoadedRadius_m;
 variables.motor_max_speed_rpm=M.MaxSpeed_rpm;
+variables.motor_peak_power_kw=M.PeakPower_kW;
+variables.motor_peak_torque_nm=M.PeakTorque_Nm;
 variables.motor_traction_limit_kw=2*M.PeakPower_kW*F.MotoringEfficiency;
 if strcmpi(Input.PowertrainMode,"BEV")
     batteryRegen=B1.MaxRegen_kW+variables.BEVUseTwoBatteries*B2.MaxRegen_kW;
 else
     batteryRegen=min(B1.MaxRegen_kW,B2.MaxRegen_kW);
 end
+variables.battery_regen_limit_kw=batteryRegen;
 variables.motor_regen_limit_kw=min(2*M.PeakPower_kW*F.RegenEfficiency,batteryRegen);
 variables.final_drive_motoring_efficiency=F.MotoringEfficiency;
 variables.final_drive_regen_efficiency=F.RegenEfficiency;
