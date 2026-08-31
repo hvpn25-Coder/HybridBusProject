@@ -113,6 +113,7 @@ routeCount=height(longRoutes); routeID=strings(routeCount,1); routeName=strings(
 sourceDistance=zeros(routeCount,1); simulatedDistance=zeros(routeCount,1);
 routeCost=zeros(routeCount,1); routeFuel=zeros(routeCount,1); routeUnmet=zeros(routeCount,1);
 finalB1=zeros(routeCount,1); finalB2=zeros(routeCount,1);
+routeFeasible=false(routeCount,1);
 for index=1:routeCount
     routeID(index)=longRoutes.RouteID(index); routeName(index)=longRoutes.RouteName(index);
     sourceDistance(index)=longRoutes.Distance_km(index);
@@ -124,11 +125,12 @@ for index=1:routeCount
     routeUnmet(index)=LongResult.Summary.UnmetTractionEnergy_kWh;
     finalB1(index)=100*LongResult.Summary.FinalBattery1SOE;
     finalB2(index)=100*LongResult.Summary.FinalBattery2SOE;
+    routeFeasible(index)=LongResult.Validation.IsFeasible;
 end
 LongStudy=table(routeID,routeName,sourceDistance,simulatedDistance,routeCost,routeFuel, ...
-    routeUnmet,finalB1,finalB2,'VariableNames',{'RouteID','RouteName','SourceDistance_km', ...
+    routeUnmet,finalB1,finalB2,routeFeasible,'VariableNames',{'RouteID','RouteName','SourceDistance_km', ...
     'SimDistance_km','CostPer_km','Fuel_L','UnmetEnergy_kWh','FinalB1SOE_pct', ...
-    'FinalB2SOE_pct'});
+    'FinalB2SOE_pct','Feasible'});
 writetable(LongStudy,fullfile(assetFolder,'long_route_study.csv'));
 
 Optimization=optimize_hybrid_bus_configuration( ...

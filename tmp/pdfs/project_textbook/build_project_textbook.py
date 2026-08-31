@@ -465,7 +465,7 @@ def pipeline_diagram():
     d = Drawing(485, 145)
     d.add(Rect(0, 0, 485, 145, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
     stages = [
-        (10, "Source\ntraces"), (88, "Route\nconversion"), (174, "Excel\ndatabase"),
+        (10, "Source\ntraces"), (88, "Route\nconversion"), (174, "Workbook +\nmodular data"),
         (260, "Schema +\nphysics checks"), (355, "Resolved\nInput struct"), (430, "1 s\nroute")
     ]
     widths = [60, 68, 68, 76, 62, 45]
@@ -678,7 +678,7 @@ def image_flow(path, max_width=170 * mm, max_height=100 * mm):
 
 def chapter(story, number, title):
     story.append(PageBreak())
-    story.append(P(f"{number}  {title}", "Heading1"))
+    story.append(P(f"{number}  {title}".strip(), "Heading1"))
     story.append(HRFlowable(width="100%", thickness=1.2, color=TEAL, spaceAfter=10))
 
 
@@ -1381,21 +1381,23 @@ mass_cost_fig = line_chart(
 story += [mass_cost_fig, figure_caption("16.1", "Cost trend must be read together with unmet traction energy")]
 story.append(P(f"At {mass_sweep.iloc[0]['TotalVehicleMass_kg']/1000:.0f} tonnes the default route has {mass_sweep.iloc[0]['UnmetEnergy_kWh']:.3f} kWh unmet traction energy. The entered payload is increased at each study point while the selected hardware-dependent curb mass remains fixed; unmet energy reaches {mass_sweep.iloc[-1]['UnmetEnergy_kWh']:.3f} kWh at {mass_sweep.iloc[-1]['TotalVehicleMass_kg']/1000:.0f} tonnes. A cost trend alone therefore mixes feasible and infeasible cases; the feasibility flag is governing.", "BodyTextBook"))
 section(story, "16.2", "European long-route study")
-unmet_fig = horizontal_bar_chart(
+minimum_terminal_soe = long_study[["FinalB1SOE_pct", "FinalB2SOE_pct"]].min(axis=1)
+reserve_fig = horizontal_bar_chart(
     [x.replace("EUR-", "") for x in long_study["RouteID"]],
-    list(long_study["UnmetEnergy_kWh"]),
-    f"Unmet energy with the default {summary['EstimatedVehicleMass_kg']/1000:.3f}-tonne component set", " kWh", max_value=1200,
-    colors_list=[RED] * len(long_study),
+    list(minimum_terminal_soe),
+    f"Minimum terminal battery SOE with the default {summary['EstimatedVehicleMass_kg']/1000:.3f}-tonne component set", " %", max_value=100,
+    colors_list=[BLUE] * len(long_study),
 )
-story += [unmet_fig, figure_caption("16.2", "All long-route default cases are infeasible despite apparently low reported costs")]
-story.append(P(f"The long missions integrate correctly, but the current default architecture cannot supply the complete requested traction/DC energy after stored energy is depleted. Unmet energy ranges from {long_study['UnmetEnergy_kWh'].min():.0f} to {long_study['UnmetEnergy_kWh'].max():.0f} kWh. The low cost values in these runs are therefore not design candidates; they are examples of why feasibility must precede economics.", "Lead"))
-long_result_rows = [["Route", "Simulated km", "Fuel (L)", "Unmet (kWh)", "Feasible?"]]
+story += [reserve_fig, figure_caption("16.2", "Minimum terminal pack SOE after one prescribed long-route pass")]
+served_count = int(long_study["Feasible"].astype(bool).sum())
+story.append(P(f"All {served_count} of {len(long_study)} long-route cases serve the prescribed backward-demand trace without unmet traction/DC energy; unmet energy ranges from {long_study['UnmetEnergy_kWh'].min():.0f} to {long_study['UnmetEnergy_kWh'].max():.0f} kWh. This is an energy-accounting result, not proof of achieved-speed performance. Terminal battery reserve and fuel use vary materially, and the long-route dynamics grade remains zero until road-aligned elevation-derived grade is validated. These cases therefore support screening only and must not be presented as validated vehicle capability.", "Lead"))
+long_result_rows = [["Route", "Simulated km", "Fuel (L)", "Unmet (kWh)", "Demand served?"]]
 for _, row in long_study.iterrows():
     long_result_rows.append([
         row["RouteID"], f"{row['SimDistance_km']:.1f}", f"{row['Fuel_L']:.1f}",
-        f"{row['UnmetEnergy_kWh']:.1f}", "No",
+        f"{row['UnmetEnergy_kWh']:.1f}", "Yes" if bool(row["Feasible"]) else "No",
     ])
-story += [table_caption("16.1", "Default-component long-route outcomes"), make_table(long_result_rows, [39*mm, 32*mm, 30*mm, 38*mm, 31*mm], alignments=["LEFT", "RIGHT", "RIGHT", "RIGHT", "CENTER"])]
+story += [table_caption("16.1", "Default-component long-route demand-service outcomes"), make_table(long_result_rows, [39*mm, 32*mm, 30*mm, 38*mm, 31*mm], alignments=["LEFT", "RIGHT", "RIGHT", "RIGHT", "CENTER"])]
 section(story, "16.3", "How to make a long-route study meaningful")
 story.append(numbered_list([
     "Increase motor and active-pack capability, add sufficient battery energy, or schedule external charging; do not count genset output as traction power.",
@@ -1498,7 +1500,7 @@ param_rows = [
 story += [table_caption("B.2", "Principal parameter groups"), make_table(param_rows, [34*mm, 88*mm, 48*mm], font_size=6.8)]
 
 # References
-chapter(story, "References", "Sources and Project Files")
+chapter(story, "", "References, Sources, and Project Files")
 refs = [
     f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.3, revised 31 August 2026.",
     "[2] European Commission, Vehicle Energy Consumption Calculation Tool (VECTO), https://climate.ec.europa.eu/eu-action/transport-decarbonisation/road-transport/vehicle-energy-consumption-calculation-tool-vecto_en.",
