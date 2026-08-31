@@ -1,4 +1,4 @@
 Concept,Fuel_L,GridEnergy_kWh,OperatingCost_EUR,Cost_EUR_per_km,SourceEnergy_kWh_per_km,EvidenceLevel
-Proposed dual-battery hybrid,43.6239719900664,69.1756641165981,119.280606825779,2.99798307253981,5.85475050971121,Implemented model
-Battery-electric screening baseline,0,65.8906934020898,26.3562773608359,0.662435206239023,1.65608801559756,Analytical screening
-Conventional-diesel screening baseline,23.9303491866536,0,50.2537332919726,1.263070718288,5.89433001867732,Analytical screening
+Proposed dual-battery hybrid,71.5583542380117,66.0602315657531,176.696636526126,4.44107000607211,9.06258316694958,Implemented model
+Battery-electric screening baseline,0,62.7174653658917,25.0869861463567,0.630533007915281,1.5763325197882,Analytical screening
+Conventional-diesel screening baseline,23.7303619167798,0,49.8337600252377,1.25251516547773,5.84507077222939,Analytical screening

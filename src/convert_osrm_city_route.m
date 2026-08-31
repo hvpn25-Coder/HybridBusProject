@@ -31,9 +31,9 @@ for stopIndex=1:numel(stopDistance)
     future=missionTime>shiftedStopTime; missionTime(future)=missionTime(future)+dwellTime;
     insertIndex=find(missionTime>=shiftedStopTime,1);
     missionTime=[missionTime(1:insertIndex-1);shiftedStopTime; ...
-        shiftedStopTime+dwellTime;missionTime(insertIndex:end)]; %#ok<AGROW>
+        shiftedStopTime+dwellTime;missionTime(insertIndex:end)];
     missionDistance=[missionDistance(1:insertIndex-1);stopDistance(stopIndex); ...
-        stopDistance(stopIndex);missionDistance(insertIndex:end)]; %#ok<AGROW>
+        stopDistance(stopIndex);missionDistance(insertIndex:end)];
 end
 [missionTime,uniqueIndex]=unique(missionTime,'stable'); missionDistance=missionDistance(uniqueIndex);
 time=(0:1:ceil(missionTime(end)))';

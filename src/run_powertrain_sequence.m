@@ -47,7 +47,7 @@ for index=1:numel(runOrder)
         modeOverrides.InitialBattery2SOE=initialSOE;
     end
     input=prepare_hybrid_bus_inputs(Database,modeOverrides);
-    result=simulate_hybrid_bus_core(input);
+    result=simulate_hybrid_bus(input);
     result.Validation.Database=validation;
     results{index}=result;
     if mode=="BEV", sequenceBEV=result;

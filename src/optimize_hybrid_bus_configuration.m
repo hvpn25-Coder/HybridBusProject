@@ -61,7 +61,7 @@ for linearIndex=0:attemptLimit-1
     if compatible
         try
             Input=prepare_hybrid_bus_inputs(Database,overrides);
-            result=simulate_hybrid_bus_core(Input);
+            result=simulate_hybrid_bus(Input);
             row=fill_row(row,result);
             comparison=evaluate_hybrid_bus_comparison(result, ...
                 string(Database.Optimization_Settings.ComparisonMethod(1)), ...
@@ -70,8 +70,25 @@ for linearIndex=0:attemptLimit-1
             % A BEV mission is intentionally charge-depleting; the hybrid
             % charge-sustaining terminal-SOE gate is therefore inapplicable.
             terminalOK=isBEV || comparison.TerminalSOECompliant;
-            row.Feasible=result.Summary.UnmetTractionEnergy_kWh<1e-3 && ...
+            isAchievedSpeed=isfield(result.Summary,'SimulationFormulation') && ...
+                any(strcmpi(string(result.Summary.SimulationFormulation), ...
+                ["ConstrainedBackward","ForwardPerformance"]));
+            if isAchievedSpeed
+                propulsionOK=result.Summary.RouteCompleted || Input.RepeatUntilDepleted;
+            else
+                % In the backward formulation the speed trace is prescribed,
+                % so feasibility is established by meeting its traction demand.
+                propulsionOK=result.Summary.UnmetTractionEnergy_kWh<1e-3;
+            end
+            row.Feasible=propulsionOK && ...
                 result.Summary.EnergyBalanceError_kWh<=Input.Vehicle.EnergyBalanceTolerance_kWh && terminalOK;
+            if ~propulsionOK
+                if isAchievedSpeed
+                    row.RejectionReason="Component-limited mission was not completed";
+                else
+                    row.RejectionReason="Prescribed traction demand was not met";
+                end
+            end
             if ~terminalOK, row.RejectionReason="Terminal combined-SOE tolerance violated"; end
             if row.Feasible, feasibleResults{end+1,1}=result; end %#ok<AGROW>
         catch exception
@@ -134,22 +151,33 @@ if F.Ratio<M.MinReductionRatio || F.Ratio>M.MaxReductionRatio
     reason="Reduction ratio outside motor compatibility"; return
 end
 if isBEV
-    availablePower=count1*B1.MaxDischarge_kW+count2*B2.MaxDischarge_kW;
+    availablePower=count1*reference_terminal_power(B1,false)+ ...
+        count2*reference_terminal_power(B2,false);
     if availablePower<2*M.ContinuousPower_kW
         reason="Connected BEV battery continuous-power shortfall"; return
     end
 else
-    if max(count1*B1.MaxDischarge_kW,count2*B2.MaxDischarge_kW)<M.ContinuousPower_kW
+    if max(count1*reference_terminal_power(B1,false), ...
+            count2*reference_terminal_power(B2,false))<M.ContinuousPower_kW
         reason="Active battery continuous-power shortfall"; return
     end
     if G.OptimumPower_kW>G.MaxPower_kW
         reason="Genset optimum point exceeds rated power"; return
     end
-    if G.OptimumPower_kW>min(count1*B1.MaxCharge_kW,count2*B2.MaxCharge_kW)
+    if G.OptimumPower_kW>min(count1*reference_terminal_power(B1,true), ...
+            count2*reference_terminal_power(B2,true))
         reason="Genset optimum charging power exceeds standby battery charge capability"; return
     end
 end
 ok=true;
+end
+
+function power_kW=reference_terminal_power(B,isCharge)
+if isCharge
+    power_kW=1.02*B.NominalVoltage_V*B.ReferenceChargeCurrent_A/1000;
+else
+    power_kW=0.98*B.NominalVoltage_V*B.ReferenceDischargeCurrent_A/1000;
+end
 end
 
 function S=getrow(T,id)

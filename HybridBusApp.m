@@ -20,6 +20,7 @@ classdef HybridBusApp < handle
         BatterySetMultiplierField matlab.ui.control.NumericEditField
         RepeatRouteCheckBox matlab.ui.control.CheckBox
         RunBEVThenHybridCheckBox matlab.ui.control.CheckBox
+        SimulationFormulationSwitch matlab.ui.control.DropDown
         StatusLabel matlab.ui.control.Label
         KPICards struct = struct
         KPIStatusLabel matlab.ui.control.Label
@@ -32,6 +33,11 @@ classdef HybridBusApp < handle
         KPIScorecardHeaderLabel matlab.ui.control.Label
         KPIScorecardGateLabels struct = struct
         KPIScorecardTable matlab.ui.control.Table
+        KPIPerformanceHeaderLabel matlab.ui.control.Label
+        KPIPerformanceSpeedAxes matlab.ui.control.UIAxes
+        KPIPerformanceComparisonAxes matlab.ui.control.UIAxes
+        KPIPerformanceTable matlab.ui.control.Table
+        KPIPerformanceAssessmentLabel matlab.ui.control.Label
         KPIRobustnessHeaderLabel matlab.ui.control.Label
         KPIRobustnessAxes matlab.ui.control.UIAxes
         KPIRobustnessTable matlab.ui.control.Table
@@ -96,8 +102,8 @@ classdef HybridBusApp < handle
             root.RowHeight={'1x','fit'}; root.ColumnWidth={350,'1x'};
             root.Padding=[0 0 0 0]; root.ColumnSpacing=8;
             side=uipanel(root,'Title','Configuration'); side.Layout.Row=1; side.Layout.Column=1;
-            sideGrid=uigridlayout(side,[18 2]);
-            sideGrid.RowHeight=[repmat({'fit'},1,17),{'1x'}];
+            sideGrid=uigridlayout(side,[19 2]);
+            sideGrid.RowHeight=[repmat({'fit'},1,18),{'1x'}];
             sideGrid.ColumnWidth={140,'1x'}; sideGrid.Padding=[10 10 10 10];
             addLabel(sideGrid,'Database',1); dbGrid=uigridlayout(sideGrid,[1 2]);
             dbGrid.Layout.Row=1; dbGrid.Layout.Column=2; dbGrid.ColumnWidth={'1x','fit'};
@@ -143,17 +149,26 @@ classdef HybridBusApp < handle
             app.FuelPriceField=app.addNumber(sideGrid,'Fuel price (EUR/L)',10,2.10,[0 inf]);
             app.ElectricityPriceField=app.addNumber(sideGrid,'Electricity (EUR/kWh)',11,0.40,[0 inf]);
             app.MaxConfigurationsField=app.addNumber(sideGrid,'Max configurations',12,40,[1 1000]);
+            addLabel(sideGrid,'Simulation formulation',13);
+            app.SimulationFormulationSwitch=uidropdown(sideGrid, ...
+                'Items',{'Backward','Constrained','Performance'},'Value','Backward', ...
+                'ValueChangedFcn',@(~,~)app.updateSimulationFormulation(), ...
+                'Tooltip',['Backward prescribes route speed. Constrained performs one fast route-time ' ...
+                'pass with current/torque/force-limited achieved speed. Performance continues the ' ...
+                'detailed forward mission calculation.']);
+            app.SimulationFormulationSwitch.Layout.Row=13;
+            app.SimulationFormulationSwitch.Layout.Column=2;
             app.RepeatRouteCheckBox=uicheckbox(sideGrid,'Text','Repeat route until depleted', ...
                 'Value',false,'Tooltip',['Continuously repeat the selected route until the fuel tank ' ...
                 'is empty and both batteries reach their usable-energy limits.']);
-            app.RepeatRouteCheckBox.Layout.Row=13; app.RepeatRouteCheckBox.Layout.Column=[1 2];
+            app.RepeatRouteCheckBox.Layout.Row=14; app.RepeatRouteCheckBox.Layout.Column=[1 2];
             app.RunBEVThenHybridCheckBox=uicheckbox(sideGrid, ...
                 'Text','Run BEV first, then Hybrid','Value',false, ...
                 'Tooltip',['When Run Manual is pressed, simulate BEV first and Hybrid second ' ...
                 'with the same mission configuration. Leave unchecked to run the slider selection.']);
-            app.RunBEVThenHybridCheckBox.Layout.Row=14;
+            app.RunBEVThenHybridCheckBox.Layout.Row=15;
             app.RunBEVThenHybridCheckBox.Layout.Column=[1 2];
-            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[15 16];
+            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[16 17];
             buttonGrid.Layout.Column=[1 2]; buttonGrid.ColumnWidth={'1x','1x'};
             buttonGrid.RowHeight={'fit','fit'}; buttonGrid.Padding=[0 0 0 0];
             uibutton(buttonGrid,'Text','Run Manual','ButtonPushedFcn',@(~,~)app.runManual());
@@ -161,7 +176,7 @@ classdef HybridBusApp < handle
             uibutton(buttonGrid,'Text','Cancel','ButtonPushedFcn',@(~,~)app.requestCancel());
             uibutton(buttonGrid,'Text','Export','ButtonPushedFcn',@(~,~)app.exportCurrent());
             app.StatusLabel=uilabel(sideGrid,'Text','Ready','WordWrap','on');
-            app.StatusLabel.Layout.Row=17; app.StatusLabel.Layout.Column=[1 2];
+            app.StatusLabel.Layout.Row=18; app.StatusLabel.Layout.Column=[1 2];
 
             tabs=uitabgroup(root); tabs.Layout.Row=1; tabs.Layout.Column=2;
             % Creation order defines the user-facing workflow and initial tab.
@@ -334,6 +349,9 @@ classdef HybridBusApp < handle
                 app.updateRouteMap();
                 app.StatusLabel.Text=sprintf('Validated database %s',db.Version);
             catch exception
+                app.Figure.Visible='on';
+                app.StatusLabel.Text='Database validation failed';
+                drawnow;
                 uialert(app.Figure,exception.message,'Database validation error');
             end
         end
@@ -360,7 +378,27 @@ classdef HybridBusApp < handle
             app.LastValidBatterySetMultiplier=app.BatterySetMultiplierField.Value;
             app.HybridSOE1Cache=app.SOE1Field.Value;
             app.HybridSOE2Cache=app.SOE2Field.Value;
+            app.SimulationFormulationSwitch.Value='Backward';
+            app.RepeatRouteCheckBox.Enable='on';
             app.updateCalculatedMass();
+        end
+
+        function updateSimulationFormulation(app)
+            switch string(app.SimulationFormulationSwitch.Value)
+                case "Constrained"
+                    app.RepeatRouteCheckBox.Value=false;
+                    app.RepeatRouteCheckBox.Enable='off';
+                    app.StatusLabel.Text=[ ...
+                        'Fast constrained mode: one route-time pass with current, torque, power, force, ' ...
+                        'grade, and energy-limited achieved speed.'];
+                case "Performance"
+                    app.RepeatRouteCheckBox.Enable='on';
+                    app.StatusLabel.Text= ...
+                        'Forward performance mode: route speed is a target; actual speed follows available traction.';
+                otherwise
+                    app.RepeatRouteCheckBox.Enable='on';
+                    app.StatusLabel.Text='Backward demand mode: route speed is prescribed.';
+            end
         end
 
         function updatePowertrainMode(app)
@@ -474,11 +512,23 @@ classdef HybridBusApp < handle
                 'FuelTankCapacity',double(dashboard.FuelTankCapacity), ...
                 'FuelPrice',app.FuelPriceField.Value, ...
                 'ElectricityPrice',app.ElectricityPriceField.Value, ...
+                'SimulationFormulation',app.formulationValue(), ...
                 'RepeatUntilDepleted',app.RepeatRouteCheckBox.Value, ...
                 'LoadMass_t',app.LoadTonnesField.Value);
             O.PowertrainMode=string(app.PowertrainModeSwitch.Value);
             O.BatterySetMultiplier=app.BatterySetMultiplierField.Value;
             if O.PowertrainMode=="BEV", O.InitialBattery2SOE=O.InitialBattery1SOE; end
+        end
+
+        function value=formulationValue(app)
+            switch string(app.SimulationFormulationSwitch.Value)
+                case "Constrained"
+                    value="ConstrainedBackward";
+                case "Performance"
+                    value="ForwardPerformance";
+                otherwise
+                    value="BackwardDemand";
+            end
         end
 
         function updateRouteMap(app)
@@ -716,7 +766,15 @@ classdef HybridBusApp < handle
             tSeconds=R.Time(:);
             [x,xLabel,tickFormat]=select_plot_x_axis(tSeconds, ...
                 R.Signals.Vehicle.Distance_m(:),string(app.SignalsXAxisSwitch.Value));
-            plot(app.SpeedAxes,x,R.Signals.Vehicle.Speed_m_s*3.6,'LineWidth',1.2);
+            if isfield(R.Signals.Vehicle,'DesiredSpeed_m_s') && ...
+                    any(abs(R.Signals.Vehicle.DesiredSpeed_m_s-R.Signals.Vehicle.Speed_m_s)>1e-9)
+                plot(app.SpeedAxes,x,R.Signals.Vehicle.DesiredSpeed_m_s*3.6,'--', ...
+                    x,R.Signals.Vehicle.Speed_m_s*3.6,'LineWidth',1.2);
+                legend(app.SpeedAxes,{'Desired','Achieved'},'Location','best');
+            else
+                plot(app.SpeedAxes,x,R.Signals.Vehicle.Speed_m_s*3.6,'LineWidth',1.2);
+                legend(app.SpeedAxes,{'Vehicle speed'},'Location','best');
+            end
             xlabel(app.SpeedAxes,xLabel); ylabel(app.SpeedAxes,'km/h');
             xtickformat(app.SpeedAxes,tickFormat);
             plot(app.PowerAxes,x,R.Signals.Wheel.Demand_kW,x,R.Signals.Motors.ElectricalPower_kW, ...
@@ -847,7 +905,12 @@ classdef HybridBusApp < handle
             regenUtilization=100*regenAccepted/max(S.RegeneratedEnergy_kWh,eps);
             runtimeMinutes=S.GensetRuntime_s/60;
             routeAssessment='Completed selected route';
-            if S.UnmetTractionEnergy_kWh>1e-3, routeAssessment='Demand exceeded available propulsion energy'; end
+            if isfield(S,'RouteCompleted') && ~S.RouteCompleted
+                routeAssessment=sprintf('Incomplete: %.1f%% covered; %s', ...
+                    S.RouteCompletion_pct,S.TerminationReason);
+            elseif S.UnmetTractionEnergy_kWh>1e-3
+                routeAssessment='Demand exceeded available propulsion energy';
+            end
             b1Assessment=soeAssessment(S.FinalBattery1SOE,R.Signals.Controller.BatteryRoleSwitchSOE(1));
             b2Assessment=soeAssessment(S.FinalBattery2SOE,R.Signals.Controller.BatteryRoleSwitchSOE(1));
             unmetAssessment='No material unmet traction/DC energy';
@@ -860,7 +923,21 @@ classdef HybridBusApp < handle
             if S.UnmetBrakingEnergy_kWh>1e-6
                 brakeAssessment='Braking demand is not fully satisfied; review actuator limits';
             end
-            app.AnalysisTable.Data={ ...
+            performanceRows=cell(0,4);
+            if isfield(S,'SimulationFormulation') && ...
+                    ~strcmpi(string(S.SimulationFormulation),"BackwardDemand")
+                trackingAssessment='Target speed was achieved within the configured tolerance';
+                if S.TimeBelowTarget_s>0
+                    trackingAssessment=sprintf('Dominant limit: %s',S.PerformanceLimitingCause);
+                end
+                performanceRows={ ...
+                    'Route completion',sprintf('%.1f',S.RouteCompletion_pct),'%',routeAssessment; ...
+                    'Distance shortfall',sprintf('%.2f',S.DistanceShortfall_km),'km',S.TerminationReason; ...
+                    'Maximum achieved speed',sprintf('%.1f',S.MaximumAchievedSpeed_kmh),'km/h','Forward plant response'; ...
+                    'RMS speed tracking error',sprintf('%.2f',S.RMSSpeedError_kmh),'km/h',trackingAssessment; ...
+                    'Time below target',sprintf('%.1f',S.TimeBelowTarget_s/60),'min',trackingAssessment};
+            end
+            app.AnalysisTable.Data=[performanceRows; { ...
                 'Mission distance',sprintf('%.1f',S.RouteDistance_km),'km',routeAssessment; ...
                 'Battery 1 final SOE',sprintf('%.1f',100*S.FinalBattery1SOE),'%',b1Assessment; ...
                 'Battery 2 final SOE',sprintf('%.1f',100*S.FinalBattery2SOE),'%',b2Assessment; ...
@@ -871,7 +948,7 @@ classdef HybridBusApp < handle
                 'Genset operation',sprintf('%.1f / %d',runtimeMinutes,S.GensetStarts),'min / starts', ...
                     'Standby-only charging at the selected efficiency point'; ...
                 'Unmet traction energy',sprintf('%.3f',S.UnmetTractionEnergy_kWh),'kWh',unmetAssessment; ...
-                'Energy-balance error',formatSmallKPI(S.EnergyBalanceError_kWh),'kWh',balanceAssessment};
+                'Energy-balance error',formatSmallKPI(S.EnergyBalanceError_kWh),'kWh',balanceAssessment}];
             status='FEASIBLE';
             if ~R.Validation.IsFeasible, status='ENGINEERING ATTENTION'; end
             app.AnalysisHeaderLabel.Text=sprintf('%s | %.1f km simulated | %.2f EUR/km | %.1f L fuel | %d genset start(s)', ...
@@ -884,6 +961,7 @@ classdef HybridBusApp < handle
             subTabs=uitabgroup(host);
             executiveTab=uitab(subTabs,'Title','Executive Decision');
             scorecardTab=uitab(subTabs,'Title','Engineering Scorecard');
+            performanceTab=uitab(subTabs,'Title','Vehicle Performance');
             robustnessTab=uitab(subTabs,'Title','Robustness');
 
             dashboard=uigridlayout(executiveTab,[4 2]);
@@ -991,6 +1069,49 @@ classdef HybridBusApp < handle
                 'ColumnName',{'Metric','Unit','Preference','BEV','Hybrid'}, ...
                 'ColumnWidth',{185,105,145,120,120},'RowName',{});
             app.KPIScorecardTable.Layout.Row=3;
+
+            performanceLayout=uigridlayout(performanceTab,[4 2]);
+            performanceLayout.RowHeight={64,'1x',188,92};
+            performanceLayout.ColumnWidth={'3x','2x'};
+            performanceLayout.Padding=[14 12 14 14];
+            performanceLayout.RowSpacing=10; performanceLayout.ColumnSpacing=10;
+            performanceHeader=uipanel(performanceLayout,'BorderType','line', ...
+                'HighlightColor',theme.border);
+            performanceHeader.Layout.Row=1; performanceHeader.Layout.Column=[1 2];
+            performanceHeaderGrid=uigridlayout(performanceHeader,[1 1]);
+            performanceHeaderGrid.Padding=[14 7 14 7];
+            app.KPIPerformanceHeaderLabel=uilabel(performanceHeaderGrid, ...
+                'Text','VEHICLE PERFORMANCE — achievable speed and route delivery', ...
+                'FontSize',14,'FontWeight','bold','FontColor',theme.primary,'WordWrap','on');
+            app.KPIPerformanceSpeedAxes=uiaxes(performanceLayout);
+            app.KPIPerformanceSpeedAxes.Layout.Row=2;
+            app.KPIPerformanceSpeedAxes.Layout.Column=1;
+            title(app.KPIPerformanceSpeedAxes,'Target versus achieved vehicle speed');
+            xlabel(app.KPIPerformanceSpeedAxes,'Elapsed time');
+            ylabel(app.KPIPerformanceSpeedAxes,'Speed (km/h)');
+            grid(app.KPIPerformanceSpeedAxes,'on');
+            app.KPIPerformanceComparisonAxes=uiaxes(performanceLayout);
+            app.KPIPerformanceComparisonAxes.Layout.Row=2;
+            app.KPIPerformanceComparisonAxes.Layout.Column=2;
+            title(app.KPIPerformanceComparisonAxes,'Performance delivery');
+            ylabel(app.KPIPerformanceComparisonAxes,'Achievement (%)');
+            grid(app.KPIPerformanceComparisonAxes,'on');
+            app.KPIPerformanceTable=uitable(performanceLayout, ...
+                'ColumnName',{'Powertrain','Formulation','Route completion','Distance shortfall', ...
+                'Max achieved speed','RMS / max speed error','Time below target','Dominant limit','Termination'}, ...
+                'ColumnWidth',{80,115,105,105,115,130,110,145,'auto'},'RowName',{});
+            app.KPIPerformanceTable.Layout.Row=3;
+            app.KPIPerformanceTable.Layout.Column=[1 2];
+            performanceAssessment=uipanel(performanceLayout,'Title','PERFORMANCE DECISION', ...
+                'FontWeight','bold','HighlightColor',theme.primary);
+            performanceAssessment.Layout.Row=4;
+            performanceAssessment.Layout.Column=[1 2];
+            performanceAssessmentGrid=uigridlayout(performanceAssessment,[1 1]);
+            performanceAssessmentGrid.Padding=[12 7 12 7];
+            app.KPIPerformanceAssessmentLabel=uilabel(performanceAssessmentGrid, ...
+                'Text',['Select Constrained or Performance and run the mission to assess ' ...
+                'achievable speed under battery, motor, force, and energy limits.'], ...
+                'WordWrap','on','VerticalAlignment','top','FontSize',11);
 
             robustnessLayout=uigridlayout(robustnessTab,[3 2]);
             robustnessLayout.RowHeight={64,'1x',180};
@@ -1139,6 +1260,7 @@ classdef HybridBusApp < handle
                     'feasibility first, then operating economics and source energy. Operational ' ...
                     'infrastructure and non-nominal scenarios remain separate evidence gaps.'];
             end
+            app.updateKPIPerformance(bev,hybrid,scope);
 
             theme=kpiTheme();
             if isRepeat
@@ -1374,6 +1496,182 @@ classdef HybridBusApp < handle
             else
                 text(ax,0.5,0.5,'Run a study to populate the trade space', ...
                     'Units','normalized','HorizontalAlignment','center');
+            end
+        end
+
+        function updateKPIPerformance(app,bev,hybrid,scope)
+            app.KPIPerformanceHeaderLabel.Text=sprintf( ...
+                'VEHICLE PERFORMANCE | %s | target tracking after physical power and force limits',scope);
+            results={}; labels={}; colors={};
+            theme=kpiTheme();
+            if ~isempty(bev)
+                results{end+1}=bev; labels{end+1}='BEV'; colors{end+1}=theme.success;
+            end
+            if ~isempty(hybrid)
+                results{end+1}=hybrid; labels{end+1}='Hybrid'; colors{end+1}=theme.primary;
+            end
+
+            speedAx=app.KPIPerformanceSpeedAxes;
+            comparisonAx=app.KPIPerformanceComparisonAxes;
+            cla(speedAx); cla(comparisonAx);
+            evaluated=false(1,numel(results));
+            tableData=cell(numel(results),9);
+            metrics=zeros(numel(results),3);
+            hold(speedAx,'on');
+            targetPlotted=false;
+            legendText=cell(1,numel(results)+1);
+            legendCount=0;
+            for index=1:numel(results)
+                result=results{index}; summary=result.Summary;
+                formulation=string(summary.SimulationFormulation);
+                isEvaluated=~strcmpi(formulation,"BackwardDemand");
+                evaluated(index)=isEvaluated;
+                if ~isEvaluated
+                    tableData(index,:)={labels{index},'Backward (prescribed)', ...
+                        'NOT EVALUATED','—','—','—','—', ...
+                        'Prescribed route speed','Achievable response not simulated'};
+                    continue
+                end
+
+                [timeDisplay,timeLabel,timeTickFormat]=select_plot_x_axis( ...
+                    result.Time(:),result.Signals.Vehicle.Distance_m(:),"Time");
+                desired=result.Signals.Vehicle.DesiredSpeed_m_s(:)*3.6;
+                achieved=result.Signals.Vehicle.Speed_m_s(:)*3.6;
+                if ~targetPlotted
+                    plot(speedAx,timeDisplay,desired,'--','Color',[0.32 0.35 0.39], ...
+                        'LineWidth',1.25);
+                    legendCount=legendCount+1;
+                    legendText{legendCount}='Route target'; targetPlotted=true;
+                end
+                plot(speedAx,timeDisplay,achieved,'Color',colors{index},'LineWidth',1.45);
+                legendCount=legendCount+1;
+                legendText{legendCount}=[labels{index} ' achieved'];
+                xlabel(speedAx,timeLabel);
+                xtickformat(speedAx,timeTickFormat);
+
+                compliance=app.performanceTrackingCompliance(result);
+                speedAdequacy=100*min(1,summary.MaximumAchievedSpeed_kmh/ ...
+                    max(max(desired),eps));
+                metrics(index,:)=[summary.RouteCompletion_pct,compliance,speedAdequacy];
+                tableData(index,:)={labels{index},app.performanceFormulationName(formulation), ...
+                    sprintf('%.1f %%',summary.RouteCompletion_pct), ...
+                    sprintf('%.2f km',summary.DistanceShortfall_km), ...
+                    sprintf('%.1f km/h',summary.MaximumAchievedSpeed_kmh), ...
+                    sprintf('%.2f / %.2f km/h',summary.RMSSpeedError_kmh,summary.MaximumSpeedError_kmh), ...
+                    sprintf('%.1f min',summary.TimeBelowTarget_s/60), ...
+                    char(summary.PerformanceLimitingCause),char(summary.TerminationReason)};
+            end
+            hold(speedAx,'off'); grid(speedAx,'on'); box(speedAx,'on');
+            ylabel(speedAx,'Speed (km/h)');
+            title(speedAx,'Target versus achieved vehicle speed');
+            if any(evaluated)
+                legend(speedAx,legendText(1:legendCount),'Location','best');
+            else
+                text(speedAx,0.5,0.5,['Achievable vehicle performance is not evaluated in ' ...
+                    'prescribed-speed Backward mode.'],'Units','normalized', ...
+                    'HorizontalAlignment','center','FontWeight','bold','Color',[0.4 0.44 0.48]);
+                xlim(speedAx,[0 1]); ylim(speedAx,[0 1]);
+                xlabel(speedAx,''); ylabel(speedAx,'');
+            end
+
+            app.KPIPerformanceTable.Data=tableData;
+            evaluatedLabels=labels(evaluated);
+            evaluatedMetrics=metrics(evaluated,:);
+            if ~isempty(evaluatedMetrics)
+                bars=bar(comparisonAx,categorical({'Route completion','Tracking compliance', ...
+                    'Speed adequacy'}),evaluatedMetrics','grouped');
+                evaluatedIndices=find(evaluated);
+                for index=1:numel(bars)
+                    bars(index).FaceColor=colors{evaluatedIndices(index)};
+                end
+                ylim(comparisonAx,[0 105]); yline(comparisonAx,100,'--','Target');
+                legend(comparisonAx,evaluatedLabels,'Location','southoutside', ...
+                    'Orientation','horizontal');
+                comparisonAx.XTickLabelRotation=14;
+            else
+                text(comparisonAx,0.5,0.5,'Run Constrained or Performance mode', ...
+                    'Units','normalized','HorizontalAlignment','center','FontWeight','bold', ...
+                    'Color',[0.4 0.44 0.48]);
+                xlim(comparisonAx,[0 1]); ylim(comparisonAx,[0 1]);
+            end
+            title(comparisonAx,'Performance delivery'); ylabel(comparisonAx,'Achievement (%)');
+            grid(comparisonAx,'on'); box(comparisonAx,'on');
+            app.KPIPerformanceAssessmentLabel.Text=app.performanceAssessment( ...
+                results,labels,evaluated);
+        end
+
+        function compliance=performanceTrackingCompliance(~,result)
+            target=result.Signals.Vehicle.DesiredSpeed_m_s(:);
+            error=max(0,target-result.Signals.Vehicle.Speed_m_s(:));
+            threshold=1.0;
+            if isfield(result.InputParameters,'Performance') && ...
+                    isfield(result.InputParameters.Performance,'SpeedTrackingTolerance_m_s')
+                threshold=result.InputParameters.Performance.SpeedTrackingTolerance_m_s;
+            end
+            moving=target>0.5;
+            if ~any(moving), compliance=100; return; end
+            time=result.Time(:);
+            if numel(time)>1
+                timeStep=[diff(time);median(diff(time))];
+            else
+                timeStep=1;
+            end
+            movingTime=sum(timeStep(moving));
+            belowTime=sum(timeStep(moving & error>threshold));
+            compliance=100*max(0,1-belowTime/max(movingTime,eps));
+        end
+
+        function name=performanceFormulationName(~,formulation)
+            if strcmpi(formulation,"ConstrainedBackward")
+                name='Fast constrained';
+            elseif strcmpi(formulation,"ForwardPerformance")
+                name='Forward performance';
+            else
+                name=char(formulation);
+            end
+        end
+
+        function textValue=performanceAssessment(~,results,labels,evaluated)
+            if isempty(results)
+                textValue='Run a mission to generate vehicle-performance evidence.'; return
+            end
+            if ~any(evaluated)
+                textValue=['Backward mode prescribes route speed, so it evaluates energy demand but ' ...
+                    'does not prove the vehicle can achieve that speed. Select Constrained for a fast ' ...
+                    'capability screen or Performance for forward plant response.'];
+                return
+            end
+            scores=-inf(1,numel(results));
+            for index=find(evaluated)
+                summary=results{index}.Summary;
+                scores(index)=1000*double(summary.RouteCompleted)+summary.RouteCompletion_pct- ...
+                    summary.RMSSpeedError_kmh-0.05*summary.TimeBelowTarget_s/60;
+            end
+            [~,winnerIndex]=max(scores);
+            winner=results{winnerIndex}.Summary;
+            if nnz(evaluated)==1
+                if winner.RouteCompleted && winner.TimeBelowTarget_s<=1
+                    prefix='PASS';
+                elseif winner.RouteCompleted
+                    prefix='COMPLETE WITH TRACKING LIMITS';
+                else
+                    prefix='CAPABILITY SHORTFALL';
+                end
+                textValue=sprintf(['%s — %s completes %.1f%% of the selected route, reaches %.1f km/h, ' ...
+                    'and has %.2f km/h RMS speed error. Dominant constraint: %s.'], ...
+                    prefix,labels{winnerIndex},winner.RouteCompletion_pct, ...
+                    winner.MaximumAchievedSpeed_kmh,winner.RMSSpeedError_kmh, ...
+                    winner.PerformanceLimitingCause);
+            else
+                evaluatedIndices=find(evaluated);
+                firstIndex=evaluatedIndices(1); secondIndex=evaluatedIndices(2);
+                textValue=sprintf(['PERFORMANCE LEADER: %s — feasibility and route completion are ' ...
+                    'ranked before speed-tracking error. BEV: %.1f%% / %.2f km/h RMS; Hybrid: ' ...
+                    '%.1f%% / %.2f km/h RMS. Use Executive Decision for the economics trade-off.'], ...
+                    upper(labels{winnerIndex}),results{firstIndex}.Summary.RouteCompletion_pct, ...
+                    results{firstIndex}.Summary.RMSSpeedError_kmh, ...
+                    results{secondIndex}.Summary.RouteCompletion_pct, ...
+                    results{secondIndex}.Summary.RMSSpeedError_kmh);
             end
         end
 

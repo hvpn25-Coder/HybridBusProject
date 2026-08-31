@@ -729,7 +729,7 @@ story += [
     P("Hybrid-Electric Bus<br/>System Modeling", "CoverTitle"),
     P("A MATLAB and Simulink textbook for selectable hybrid and battery-electric<br/>architectures, route studies, supervisory control, and configuration optimization", "CoverSubtitle"),
     Spacer(1, 52 * mm),
-    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.2<br/>MATLAB / Simulink R2025a<br/>Revised 26 August 2026", "CoverMeta"),
+    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.3<br/>MATLAB / Simulink R2025a<br/>Revised 31 August 2026", "CoverMeta"),
     PageBreak(),
 ]
 
@@ -737,7 +737,7 @@ story += [
 story += [
     P("Preface", "FrontTitle"),
     P("This book explains a complete concept-level bus powertrain study environment with selectable hybrid-electric and battery-electric architectures. It is written for graduate students who already know basic mechanics, electrical power, and MATLAB syntax, but who may be new to model-based design and energy-management architecture.", "Lead"),
-    P("The project combines a transparent backward-facing physical model, an editable Simulink representation, an engineer-maintained Excel database, a programmatic MATLAB app, a bounded configuration optimizer, and automated verification. Its purpose is educational and architectural: it shows how equations, assumptions, data, software interfaces, and test evidence must remain consistent across a system model.", "BodyTextBook"),
+    P("The project combines a transparent backward-demand energy model, constrained-speed and forward-performance formulations, three editable Simulink representations, modular MATLAB/MAT component data, a programmatic MATLAB app, a bounded configuration optimizer, and automated verification. Its purpose is educational and architectural: it shows how equations, assumptions, data, software interfaces, and test evidence must remain consistent across a system model.", "BodyTextBook"),
     callout("How to read this book", "Chapters 1-3 establish the system and data architecture. Chapters 4-10 derive the physical and supervisory models. Chapters 11-15 explain execution, optimization, routes, and validation. Chapters 16-17 interpret worked studies and define responsible extensions.", "note"),
     P("Learning outcomes", "FrontSubhead"),
     bullet_list([
@@ -802,20 +802,22 @@ story.append(callout("Sign convention", "Battery power is positive when a pack d
 # Chapter 1
 chapter(story, "1", "Project Orientation")
 story.append(P("The project asks a systems question: for a prescribed bus mission, selected component set, loading state, environment, and supervisory calibration, how much wheel energy, battery energy, diesel fuel, grid-replenishment energy, operating cost, and feasible range result?", "Lead"))
-section(story, "1.1", "Why a backward-facing model?")
+section(story, "1.1", "Why multiple simulation formulations?")
 story.append(P("A backward-facing model starts from the route speed that the vehicle is assumed to achieve. It differentiates speed to obtain acceleration, computes the tractive force required at the wheels, and then propagates power demand backward through the driveline to the DC bus and energy sources. This is efficient for energy sizing and comparison because it avoids solving a driver controller and vehicle-speed tracking loop.", "BodyTextBook"))
-story.append(callout("Interpretation boundary", "A backward model estimates the energy and power that would be required to follow the trace. It does not prove that the selected vehicle can track the trace. The project therefore logs unmet traction energy whenever component limits prevent delivery.", "warn"))
+story.append(P("The app also provides a fast constrained formulation and a forward Performance formulation. Constrained mode suppresses requested acceleration using available battery current and energy, motor torque-speed/power, final-drive force, and road load while retaining the backward energy kernel. Performance mode closes the loop around desired speed, component limits, and the longitudinal vehicle plant. These modes expose achieved speed, distance completion, tracking error, limiting cause, depletion, and stall behavior.", "BodyTextBook"))
+story.append(callout("Interpretation boundary", "Use Backward mode for required-energy screening, Constrained mode for fast feasibility screening, and Performance mode when achieved speed and mission completion are the decision variables. A prescribed-speed result alone is not evidence that the vehicle can track the route.", "warn"))
 section(story, "1.2", "Project deliverables")
 artifact_rows = [
     ["Artifact", "Role in the study"],
-    ["data/HybridBus_ComponentDatabase.xlsx", "Master selections, catalogs, maps, routes, prices, and control calibrations"],
-    ["models/HybridBus_BackwardModel.slx", "Editable ordinary-block hybrid Simulink representation"],
+    ["data/HybridBus_ComponentDatabase.xlsx", "Selections, common calibration, prices, tyre, final-drive, and governance data"],
+    ["data/routes/*.mat; data/batteries/*.m; data/motors/*.m; data/gensets/*.m", "Extensible one-file-per-variant route and component definitions"],
+    ["models/HybridBus_BackwardModel.slx", "Editable ordinary-block hybrid backward-demand representation"],
     ["models/HybridBus_BEVModel.slx", "Separate editable BEV Simulink model with scalable parallel battery banks and no genset"],
+    ["models/HybridBus_PerformanceModel.slx", "Editable forward-performance plant with route, driver, component-limit, and vehicle subsystems"],
     ["simulate_hybrid_bus_core.m", "Detailed discrete reference kernel used by batch runs and optimization"],
     ["HybridBusApp.m", "Explorer app for selecting, simulating, plotting, optimizing, and exporting"],
-    ["tests/run_all_hybrid_bus_tests.m", "Thirty-one assertion-based Hybrid/BEV physics, mass, battery-set, control, cost, and ranking tests"],
-    ["tests/optimizationWorkflowTest.m", "Four app-shaped integration tests for candidate seeding, load propagation, and ranking"],
-    ["tests/powertrainSequenceTest.m", "Four tests for selected-only and ordered BEV-then-Hybrid manual execution"],
+    ["tests/run_all_hybrid_bus_tests.m", "Fifty assertion-based physics, data, control, braking, performance, and ranking scenarios"],
+    ["tests/*.m", "Fifty-six MATLAB unit and integration tests, including Hybrid/BEV equivalence and extensibility"],
 ]
 story += [table_caption("1.1", "Primary project artifacts"), make_table(artifact_rows, [55*mm, 115*mm]), PageBreak()]
 section(story, "1.3", "Architecture at a glance")
@@ -861,19 +863,20 @@ story += [
 
 # Chapter 3
 chapter(story, "3", "Data Architecture and Reproducible Inputs")
-section(story, "3.1", "Workbook as engineering database")
-story.append(P(f"The version {dashboard.get('DatabaseVersion')} workbook contains {len(sheet_names)} sheets. IDs rather than row numbers form the interfaces between the Dashboard, catalogs, input resolver, app, and optimizer. This is important: a stable ID survives sorting and insertion, while a row number does not.", "BodyTextBook"))
-sheet_rows = [["Sheet group", "Examples", "Purpose"],
-              ["Selections", "Dashboard", "Chosen component IDs, SOEs, prices, fuel tank, and controls"],
-              ["Component catalogs", "Battery, Motor, Genset, Tyre, Final Drive, Mass", "Ratings, efficiency, compatibility, and enable flags"],
-              ["Maps", "Engine_Fuel_Map, Generator_Efficiency_Map", "Bounded lookup data for fuel and conversion efficiency"],
-              ["Routes", "Route_Catalog, Route_Geometry, Route_Time_Speed, Route_Distance_Speed, Route_Grade", "Provenance, map geometry, and mission traces"],
-              ["Calibration", "Environment, Control_Calibration, Energy_Prices", "Scenario and supervisor parameters"],
-              ["Governance", "Units_and_Definitions, Change_Log", "Definitions and database history"]]
-story += [table_caption("3.1", "Workbook organization"), make_table(sheet_rows, [34*mm, 66*mm, 70*mm])]
+section(story, "3.1", "Workbook plus modular engineering data")
+story.append(P(f"The version {dashboard.get('DatabaseVersion')} workbook retains dashboard selections, common vehicle and control calibration, prices, tyre and final-drive data, and governance sheets. Route histories are stored one route per MAT file. Each battery and motor variant is one MATLAB data function, while each genset MATLAB file contains the matched genset, engine, generator, fuel map, and generator-efficiency map. IDs rather than row numbers form every interface.", "BodyTextBook"))
+sheet_rows = [["Data group", "Storage", "Purpose"],
+              ["Selections and calibration", "Workbook Dashboard, Vehicle, Environment, Control", "Chosen IDs, SOEs, prices, vehicle constants, and controls"],
+              ["Routes", "data/routes/*.mat", "Independent time, distance, grade, geometry, elevation, provenance, and license records"],
+              ["Battery variants", "data/batteries/*.m", "SOE/temperature current, OCV, resistance, energy, mass, and compatibility data"],
+              ["Motor variants", "data/motors/*.m", "Torque-speed limits, two-dimensional loss maps, mass, and compatibility data"],
+              ["Genset assemblies", "data/gensets/*.m", "Matched engine, generator, fuel, efficiency, and assembly data"],
+              ["Common hardware", "Workbook Tyre and Final Drive", "Shared driveline ratings and efficiency"],
+              ["Governance", "Workbook definitions/change log + extension guide", "Schema, units, provenance, and safe add-on procedure"]]
+story += [table_caption("3.1", "Hybrid project data organization"), make_table(sheet_rows, [39*mm, 57*mm, 74*mm], font_size=6.8)]
 section(story, "3.2", "Input pipeline")
 story += [pipeline_diagram(), figure_caption("3.1", "Route and component data pipeline")]
-story.append(P("The loader imports every sheet with preserved column names. Validation then checks required sheets, unique IDs, battery and motor consistency, total-mass positivity, route finiteness, monotonic time, non-negative speed, acceleration bounds, and nonzero distance. Preparation resolves selected rows into scalar structures and resamples speed, grade, and auxiliary multiplier at the model sample time.", "BodyTextBook"))
+story.append(P("The loader imports workbook calibration, recursively discovers component MATLAB files, and reads every route MAT file. Validation checks schemas, case-insensitive unique IDs, cross-references, lookup dimensions and monotonic breakpoints, physical ranges, route finiteness, monotonic time and distance, and nonzero mission length. Preparation resolves the selected records and resamples speed, grade, elevation, and auxiliary multiplier at the model sample time.", "BodyTextBook"))
 section(story, "3.3", "Default configuration")
 default_rows = [
     ["Input", "Selection / value", "Unit or interpretation"],
@@ -919,6 +922,15 @@ mass_fig = line_chart(
 )
 story += [mass_fig, figure_caption("4.1", "Calculated-mass sensitivity from 19 to 60 tonnes by varying entered load")]
 story.append(P("The historical 19-to-60 tonne catalog is retained only as a reproducible sweep grid. Each study point is now realized by calculating the load required above the selected hardware-dependent curb mass. The default component set remains feasible at the low end, but unmet traction energy grows with total mass. Cost per kilometre alone must not rank infeasible cases because unsupplied energy is not purchased.", "BodyTextBook"))
+section(story, "4.4", "Achieved-speed and performance formulations")
+story.append(P("Backward mode treats route speed as achieved and computes required force. Constrained mode instead limits positive acceleration to the force that remains after road load, motor torque-speed/power, driveline, battery-current, terminal-voltage, and available-energy constraints. Terrain and auxiliary demand are sampled at actual travelled distance, speed is prevented from becoming negative, and a depleted or force-deficient vehicle remains stopped. Performance mode uses a proportional driver, explicit component limits, and a forward longitudinal plant to calculate achieved speed and distance.", "BodyTextBook"))
+story += [
+    equation("F<sub>acc,available</sub> = max[0, min(F<sub>motor</sub>, F<sub>battery</sub>) - F<sub>road</sub>]", "4.11"),
+    equation("a<sub>achieved</sub> = min[a<sub>requested</sub>, F<sub>acc,available</sub>/m]", "4.12"),
+    equation("v<sub>k+1</sub> = max[0, v<sub>k</sub> + a<sub>achieved,k</sub> Δt]", "4.13"),
+    equation("s<sub>k+1</sub> = s<sub>k</sub> + 0.5(v<sub>k</sub>+v<sub>k+1</sub>)Δt", "4.14"),
+]
+story.append(callout("Performance evidence", "The KPI Vehicle Performance sub-tab reports desired versus achieved speed, route completion, tracking compliance, speed adequacy, RMS/maximum speed error, time below target, limiting cause, and termination reason. Repeat-route studies remain range/depletion experiments rather than single-pass tracking tests.", "info"))
 
 # Chapter 5
 chapter(story, "5", "Rear Hub Motors and Fixed Driveline")
@@ -954,22 +966,27 @@ story += [
 # Chapter 6
 chapter(story, "6", "Battery Energy Model")
 section(story, "6.1", "Energy state and SOE")
-story.append(P("Each battery is represented by usable stored energy rather than voltage, current, temperature, or electrochemical states. This is appropriate for concept energy analysis but cannot predict electrical transients or thermal derating.", "BodyTextBook"))
+story.append(P("Each battery retains usable stored energy as its dynamic state and uses a first-order Thevenin capability layer. Open-circuit voltage, internal resistance, maximum discharge current, and maximum charge current are two-dimensional functions of SOE and ambient battery temperature. This supports state-dependent terminal voltage, current, power capability, and ohmic loss without claiming a full electrothermal cell model.", "BodyTextBook"))
 story += [
     equation("SOE = E / E<sub>usable</sub>", "6.1"),
     equation("E<sub>k+1</sub> = E<sub>k</sub> - P<sub>dis</sub> Δt / (3600 η<sub>dis</sub>)", "6.2"),
     equation("E<sub>k+1</sub> = E<sub>k</sub> + |P<sub>chg</sub>| η<sub>chg</sub> Δt / 3600", "6.3"),
 ]
-section(story, "6.2", "Three simultaneous limits")
-story.append(P("At every time step the battery helper applies the minimum of the requested power, catalog power limit including derating, and energy-implied power needed to remain within minimum or maximum SOE. Charge power is additionally bounded by the pack regeneration rating.", "BodyTextBook"))
+section(story, "6.2", "Current, voltage, and energy limits")
+story.append(P("At every time step the battery helper interpolates the SOE-temperature current maps, OCV map, and resistance map. Map current is further limited by terminal-voltage headroom. Accepted power is then bounded by the resulting electrical capability and by the energy-implied power needed to remain within minimum or maximum SOE.", "BodyTextBook"))
+story += [
+    equation("I<sub>dis,max</sub> = min[I<sub>map,dis</sub>(SOE,T), (OCV(SOE,T)-V<sub>min</sub>)/R(SOE,T)]", "6.4"),
+    equation("I<sub>chg,max</sub> = min[I<sub>map,chg</sub>(SOE,T), (V<sub>max</sub>-OCV(SOE,T))/R(SOE,T)]", "6.5"),
+    equation("P<sub>dis,max</sub> = I<sub>dis,max</sub>[OCV-I<sub>dis,max</sub>R]/1000", "6.6"),
+    equation("P<sub>chg,max</sub> = I<sub>chg,max</sub>[OCV+I<sub>chg,max</sub>R]/1000", "6.7"),
+]
 story.append(callout("Numerical safeguard", "The energy state is clamped to [MinSOE, MaxSOE] after each update. Regenerative power rejected by the active battery is assigned to the resistor load bank; a genset-charger mismatch remains a separately logged rejected-charge term. Unserved positive demand is recorded as unmet DC power.", "note"))
 section(story, "6.3", "Hybrid active/standby roles versus BEV parallel packs")
 story.append(P("The Hybrid supervisor permits only one battery bank to discharge for traction. This is intentionally conservative: the active bank must support residual DC demand while the equal-sized alternate bank remains available for standby charging and deterministic role switching. Bank energy, mass, charge, discharge, and regeneration limits scale linearly with the whole-number set multiplier. BEV mode removes active/standby roles and connects the installed one-or-more packs in parallel; each selected bank remains independently bounded by SOE, energy headroom, power, derating, and efficiency limits.", "BodyTextBook"))
 battery_rows = [["Catalog range", "Minimum", "Maximum"]]
 for label, col, unit in [
     ("Usable energy", "UsableEnergy_kWh", "kWh"),
-    ("Maximum discharge", "MaxDischarge_kW", "kW"),
-    ("Maximum charge", "MaxCharge_kW", "kW"),
+    ("Nominal voltage", "NominalVoltage_V", "V"),
     ("Mass", "Mass_kg", "kg"),
 ]:
     battery_rows.append([label, f"{batteries[col].min():.0f} {unit}", f"{batteries[col].max():.0f} {unit}"])
@@ -1157,7 +1174,7 @@ for _, row in powertrain_comparison.iterrows():
 story += [table_caption("11.1", "Default ordered BEV-then-Hybrid manual comparison"), make_table(comparison_rows, [24*mm, 26*mm, 34*mm, 25*mm, 38*mm, 23*mm], font_size=6.8, alignments=["LEFT","RIGHT","RIGHT","RIGHT","RIGHT","CENTER"])]
 story.append(callout("Reading the paired result", "This is a controlled architecture comparison, not an optimization. Component IDs and mission inputs are held fixed, but architecture-specific mass and starting-SOE rules still apply. The BEV excludes genset mass and fuel; Hybrid includes the selected genset and active/standby starting states.", "note"))
 section(story, "11.3", "Management KPI dashboard")
-story.append(P("The KPIs tab replaces the former one-row summary table with twelve icon-led cards. The header identifies the route, total mass, battery selections, and feasibility state. Executive cards report distance, operating cost, fuel consumption, and source-energy intensity. Energy cards report grid-equivalent energy, regeneration, auxiliary energy, and fuel used. Battery and engineering-health cards report final pack SOEs, unmet traction energy, and energy-balance error. Every value carries an explicit unit; the card colors provide hierarchy rather than changing the numerical result.", "BodyTextBook"))
+story.append(P("The KPIs tab is organized into Executive Decision, Engineering Scorecard, Vehicle Performance, and Robustness and Range sub-tabs. Executive Decision compares BEV and Hybrid outcomes for the selected route, load, auxiliaries, prices, and run scope and provides a qualified recommendation. Engineering Scorecard exposes completion, energy, power, SOE, conservation, and cost gates. Vehicle Performance distinguishes prescribed demand from achieved-speed evidence. Robustness and Range compares operating cost, source energy, range/depletion behavior, and decision sensitivity. Single-mode, ordered BEV-then-Hybrid, and repeat-until-depleted runs are interpreted without inventing unavailable comparison evidence.", "BodyTextBook"))
 kpi_dashboard_image = image_flow(ASSET / "kpi_dashboard.png", max_width=170*mm, max_height=102*mm)
 story += [kpi_dashboard_image, figure_caption("11.6", "Management KPI dashboard with icon-led values, units, configuration context, and feasibility status")]
 section(story, "11.4", "Simulation Analysis tab")
@@ -1166,7 +1183,7 @@ analysis_image = image_flow(ASSET / "simulation_analysis.png", max_width=170*mm,
 story += [analysis_image, figure_caption("11.7", "Simulation Analysis tab combining energy allocation, battery duty share, and engineering assessment")]
 story.append(callout("Management versus engineering views", "Use the KPI dashboard to communicate outcomes quickly. Use Simulation Analysis to explain why those outcomes occurred and whether a limit, energy sink, or control transition requires attention.", "note"))
 section(story, "11.5", "Model Credibility tab")
-story.append(P("The Model Credibility tab prevents evidence from being compressed into one misleading green status. Concept verification, implementation equivalence, and measured-vehicle validation are separate gates. Requirements traceability, the behavioral suite, deterministic sensitivity screening, and analytical concept baselines may pass while MATLAB-Simulink equivalence fails and vehicle validation remains unavailable. The tab keeps every PASS, FAIL, NOT AVAILABLE, and NOT IMPLEMENTED state visible with its evidence and required decision.", "BodyTextBook"))
+story.append(P("The Model Credibility tab prevents evidence from being compressed into one misleading green status. Concept verification, implementation equivalence, supplier calibration, and measured-vehicle validation are separate gates. Requirements traceability, the behavioral suite, deterministic sensitivity screening, and both Hybrid and BEV MATLAB-Simulink equivalence currently pass, while supplier calibration and measured-vehicle validation remain unavailable. The tab keeps every PASS, FAIL, NOT AVAILABLE, and NOT IMPLEMENTED state visible with its evidence and required decision.", "BodyTextBook"))
 credibility_image = image_flow(ASSET / "model_credibility.png", max_width=170*mm, max_height=102*mm)
 story += [credibility_image, figure_caption("11.8", "Model Credibility tab separating verified concept behavior from open implementation and validation gates")]
 section(story, "11.6", "Signals and Detailed Plot axes")
@@ -1287,7 +1304,7 @@ story.append(callout("Route fidelity warning", "OSRM supplies road-network dista
 chapter(story, "14", "Verification, Validation, and Test Evidence")
 section(story, "14.1", "Layered evidence")
 story += [validation_pyramid(), figure_caption("14.1", "Verification pyramid used by the automated suite")]
-story.append(P(f"The automated behavioral suite combines analytical comparisons, traction isolation, constant genset power, regeneration priority, route geolocation, saturation, conservation, repeatability, optimizer ranking, scalable battery sets, and calculated Hybrid/BEV mass. All {len(tests)} scenarios currently pass. The app-shaped optimization class adds four passing checks, including editable-load propagation into candidate mass. The powertrain-sequence class adds four passing checks for selected-only behavior, BEV-first/Hybrid-second order, BEV SOE equalization, retained Hybrid SOEs, and rejection of a fractional comparison multiplier.", "BodyTextBook"))
+story.append(P(f"The automated behavioral suite combines analytical comparisons, traction isolation, constant genset power, regeneration priority, pneumatic brake blending, modular data discovery, dynamic battery maps, motor loss maps, saturation, conservation, repeatability, optimizer ranking, scalable battery sets, calculated mass, constrained-speed behavior, depletion, and forward performance. All {len(tests)} behavioral scenarios currently pass. The complete MATLAB unit and integration suite contains 56 passing tests, including Hybrid/BEV implementation equivalence and component-extension coverage.", "BodyTextBook"))
 section(story, "14.2", "Test matrix")
 test_rows = [["Test", "Purpose", "Result"]]
 for _, row in tests.iterrows():
@@ -1304,11 +1321,11 @@ for _, row in credibility_gates.iterrows():
 story += [table_caption("14.2", "Current model-credibility gates"), make_table(gate_rows,[54*mm,32*mm,84*mm],font_size=6.5)]
 story.append(callout("Gate discipline", "A concept-verification PASS does not imply implementation-equivalence PASS, supplier calibration, or measured-vehicle validation. Management decisions must use the lowest unresolved gate relevant to the decision being made.", "critical"))
 section(story, "14.5", "Independent implementation equivalence")
-story.append(P("The MATLAB kernel and Simulink model are independent implementations fed from the same selected database configuration. The equivalence suite compares speed, wheel and motor power, auxiliaries, both battery SOEs, genset power, total fuel, and integrated balance residual against declared tolerances. The current release does not pass this gate: route speed and auxiliary demand agree, but wheel/motor transients, battery states, genset scheduling, fuel, and residual require reconciliation. This failed gate is a discovered engineering action, not a documentation defect to hide.", "BodyTextBook"))
-eq_rows=[["Signal","Max error","Tolerance","Unit","Status"]]
+story.append(P("The MATLAB kernels and Simulink models are independent implementations fed from the same selected configuration. Separate Hybrid and BEV cases compare speed, wheel demand, motor DC power, pneumatic friction braking, auxiliaries, both battery SOEs, genset power, total fuel, and integrated balance residual against declared tolerances. All twenty checks currently pass. This demonstrates numerical implementation equivalence for the declared cases; it is not supplier calibration or measured-vehicle validation.", "BodyTextBook"))
+eq_rows=[["Mode","Signal","Max error","Tolerance","Unit","Status"]]
 for _, row in equivalence_checks.iterrows():
-    eq_rows.append([row["Signal"],f'{row["MaxAbsoluteError"]:.4g}',f'{row["Tolerance"]:.4g}',row["Unit"],row["Status"]])
-story += [table_caption("14.3", "MATLAB-Simulink signal-level equivalence results"), make_table(eq_rows,[57*mm,28*mm,27*mm,28*mm,30*mm],font_size=6.5)]
+    eq_rows.append([row["Powertrain"],row["Signal"],f'{row["MaxAbsoluteError"]:.4g}',f'{row["Tolerance"]:.4g}',row["Unit"],row["Status"]])
+story += [table_caption("14.3", "Hybrid and BEV MATLAB-Simulink signal-level equivalence"), make_table(eq_rows,[20*mm,48*mm,25*mm,24*mm,25*mm,28*mm],font_size=6.2)]
 section(story, "14.6", "Decision robustness and concept baselines")
 story.append(P("The sensitivity study perturbs mass, aerodynamic drag, rolling resistance, auxiliary demand, motor efficiency, and battery discharge efficiency one factor at a time. It is deterministic screening, not a probability distribution. The concept comparison places the implemented hybrid beside analytical battery-electric and conventional-diesel screening baselines. Those baselines state their efficiency and fuel-energy assumptions and are suitable for architecture discussion, not procurement or homologation.", "BodyTextBook"))
 concept_rows=[["Concept","Cost (EUR/km)","Source energy (kWh/km)","Evidence"]]
@@ -1393,9 +1410,9 @@ chapter(story, "17", "Limitations, Responsible Use, and Extensions")
 section(story, "17.1", "Current model boundary")
 limitations = [
     ["Missing fidelity", "Why it matters", "Recommended extension"],
-    ["Battery voltage/current and temperature", "Power and efficiency limits change with electrical and thermal state", "Equivalent-circuit and thermal network with calibrated maps"],
+    ["Battery dynamic temperature and ageing", "Current maps use scenario temperature but do not integrate cell temperature or degradation", "Calibrated electrothermal states plus cycle/calendar ageing"],
     ["Ageing", "Usable energy, resistance, and cost evolve with throughput and temperature", "Cycle/calendar degradation and life-cycle cost"],
-    ["Closed-loop driver", "Backward demand may exceed trackable acceleration or actuator limits", "Driver controller and forward vehicle dynamics"],
+    ["Driver and plant calibration", "Forward and constrained formulations are implemented but use concept calibrations", "Calibrate driver gains, force limits, stall thresholds, and plant response with vehicle data"],
     ["Validated simulation grade for long routes", "Cached terrain supports 3D display, but zero dynamics grade still understates mountain energy", "Map-match, smooth, and validate an elevation-derived grade channel"],
     ["Engine transients and emissions", "Fuel and pollutants depend on warm-up and aftertreatment", "Dynamic engine/aftertreatment model and measured maps"],
     ["Wheel slip and lateral dynamics", "Traction limits and stability are not represented", "Tyre-road force limits and vehicle dynamics"],
@@ -1429,7 +1446,7 @@ story.append(numbered_list([
     "Open HybridBus_BackwardModel.slx and trace signals from route input to energy accounting.",
     "Launch app = HybridBusApp; repeat the default case and inspect all plot tabs.",
     "Change only one factor, such as entered load or route, and explain every KPI change before running a second factor.",
-    "Run TestResults = run_all_hybrid_bus_tests; confirm 31 PASS results, then confirm four optimization-workflow and four powertrain-sequence test results.",
+    "Run TestResults = run_all_hybrid_bus_tests; confirm 50 PASS behavioral scenarios, then run the full tests folder and confirm 56 passing unit/integration tests.",
     "Run Credibility = generate_model_credibility_report; review every PASS, FAIL, NOT AVAILABLE, and NOT IMPLEMENTED gate before presenting a decision.",
 ]))
 story.append(code_block("""
@@ -1483,7 +1500,7 @@ story += [table_caption("B.2", "Principal parameter groups"), make_table(param_r
 # References
 chapter(story, "References", "Sources and Project Files")
 refs = [
-    f"[1] HybridBusProject source tree, workbook, MATLAB functions, Hybrid and BEV Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.2, revised 26 August 2026.",
+    f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.3, revised 31 August 2026.",
     "[2] European Commission, Vehicle Energy Consumption Calculation Tool (VECTO), https://climate.ec.europa.eu/eu-action/transport-decarbonisation/road-transport/vehicle-energy-consumption-calculation-tool-vecto_en.",
     "[3] European Commission VECTO source repository, declaration mission cycles, commit d16ba783c1d8af0ea68797f5d7ed6cf01877d402, https://code.europa.eu/vecto/vecto.",
     "[4] Project OSRM API documentation, route service and annotation objects, https://project-osrm.org/docs/v5.24.0/api/.",

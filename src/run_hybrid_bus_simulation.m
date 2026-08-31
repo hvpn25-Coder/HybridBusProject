@@ -12,7 +12,7 @@ Validation=validate_hybrid_bus_database(Database);
 assert(Validation.IsValid,'HybridBus:InvalidDatabase','Database validation failed:\n%s', ...
     strjoin(Validation.Errors,newline));
 Input=prepare_hybrid_bus_inputs(Database,overrides);
-Results=simulate_hybrid_bus_core(Input);
+Results=simulate_hybrid_bus(Input);
 Results.Validation.Database=Validation;
 if options.SaveResults
     export_hybrid_bus_results(Results,options.ResultsFolder);

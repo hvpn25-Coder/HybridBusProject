@@ -28,6 +28,35 @@ for index = 1:numel(sheetNames)
             'VariableNamingRule','preserve');
     end
 end
+dataFolder=fileparts(databaseFile);
+BatteryComponents=load_component_m_files(fullfile(dataFolder,'batteries'),"Battery");
+MotorComponents=load_component_m_files(fullfile(dataFolder,'motors'),"Motor");
+GensetComponents=load_genset_m_files(fullfile(dataFolder,'gensets'));
+Database.BatteryFolder=BatteryComponents.Folder;
+Database.BatteryFiles=BatteryComponents.Files;
+Database.Battery_Catalog=BatteryComponents.Catalog;
+Database.Battery_Maps=BatteryComponents.Maps;
+Database.MotorFolder=MotorComponents.Folder;
+Database.MotorFiles=MotorComponents.Files;
+Database.Motor_Catalog=MotorComponents.Catalog;
+Database.Motor_Maps=MotorComponents.Maps;
+Database.GensetFolder=GensetComponents.Folder;
+Database.GensetFiles=GensetComponents.Files;
+Database.Genset_Catalog=GensetComponents.GensetCatalog;
+Database.Engine_Catalog=GensetComponents.EngineCatalog;
+Database.Generator_Catalog=GensetComponents.GeneratorCatalog;
+Database.Genset_Assembly=GensetComponents.AssemblyCatalog;
+Database.Engine_Fuel_Map=GensetComponents.EngineFuelMap;
+Database.Generator_Efficiency_Map=GensetComponents.GeneratorEfficiencyMap;
+routeFolder=fullfile(fileparts(databaseFile),'routes');
+Routes=load_route_mat_files(routeFolder);
+Database.RouteFolder=Routes.Folder;
+Database.RouteFiles=Routes.Files;
+Database.Route_Catalog=Routes.Catalog;
+Database.Route_Time_Speed=Routes.TimeSpeed;
+Database.Route_Distance_Speed=Routes.DistanceSpeed;
+Database.Route_Grade=Routes.Grade;
+Database.Route_Geometry=Routes.Geometry;
 if isfield(Database,'Change_Log') && ~isempty(Database.Change_Log)
     Database.Version = string(Database.Change_Log.Version(end));
 else

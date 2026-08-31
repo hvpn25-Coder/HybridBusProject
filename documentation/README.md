@@ -1,6 +1,6 @@
 # HybridBusProject
 
-Concept-level, backward-facing hybrid-electric bus energy model for route energy, diesel fuel, grid-equivalent electrical energy, operating cost, range, and bounded configuration comparison.
+Concept-level hybrid-electric and battery-electric bus study platform with selectable backward-demand energy analysis and forward longitudinal performance simulation. It evaluates route energy, achievable speed, gradeability, diesel fuel, grid-equivalent electrical energy, operating cost, range, and bounded configuration comparisons.
 
 Component catalog values are synthetic engineering data and are not manufacturer claims. The
 Urban, Suburban, and Coach mission profiles are official European Commission VECTO inputs. Eight
@@ -25,6 +25,28 @@ open_system('HybridBus_BackwardModel')
 app = HybridBusApp;
 ```
 
+Use the **Simulation formulation** dropdown in Configuration before running:
+
+- **Backward** preserves the prescribed route-speed energy calculation.
+- **Constrained** performs a fast fixed route-time pass. It iterates the vectorized
+  backward kernel over an achieved-speed trace and suppresses acceleration using
+  battery current/energy capability, motor torque-speed/power, final-drive force,
+  road load, and grade. Grade and auxiliaries follow actual distance. Repeat Route
+  is disabled in this mode so execution stays bounded.
+- **Performance** runs the detailed forward mission calculation and may extend time
+  while attempting route completion.
+
+The Signals speed plot overlays desired and achieved speed for Constrained and
+Performance runs. Simulation Analysis reports completion, distance shortfall, speed
+error, time below target, limiting cause, and termination reason.
+
+The editable forward Simulink model can also be run directly:
+
+```matlab
+open_system('HybridBus_PerformanceModel')
+[performanceOutput, performanceInput] = run_performance_simulink_model;
+```
+
 The Powertrain Architecture switch selects Hybrid or BEV operation. The BEV
 alternative also has its own editable Simulink model:
 
@@ -42,6 +64,20 @@ BEV mode accepts 0.5-set increments, with two packs per set. Therefore 0.5, 1.0,
 odd, the additional pack uses the Battery-1 selection. All connected BEV packs have
 the same starting SOE and share DC power within their bank capabilities. Genset
 power and fuel use remain zero in BEV mode.
+
+The database uses one readable MATLAB script per selectable battery, motor, and
+complete genset assembly. Copy battery scripts into `data/batteries`, motor scripts
+into `data/motors`, and genset scripts into `data/gensets`. A genset script keeps
+the assembly ratings, matching engine and generator, engine BSFC map, and generator
+efficiency map together so the selected hardware and maps cannot drift apart.
+
+Every battery script carries SOE/temperature maps for charge-current limit,
+discharge-current limit and internal resistance, plus an SOC/temperature OCV map. The MATLAB kernel and both Simulink
+models use these maps for dynamic power saturation. The first-order terminal
+model evaluates open-circuit voltage from the current SOE-based SOC proxy and temperature, applies the mapped resistance,
+and reports terminal voltage, current, and estimated I-squared-R loss. Until a
+thermal state model is calibrated, the selected ambient temperature is used as
+the battery-temperature proxy.
 
 In the app, choose a route and configuration, enter both initial battery SOEs in percent, then
 press **Run Manual Case**. Fuel and electricity prices are entered in `EUR/L` and `EUR/kWh`.
@@ -112,13 +148,17 @@ Git metadata remain at the root because those tools require them there.
 | `src/build_route_elevation_cache.m` | Reproducible Copernicus DEM GLO-90 elevation cache for the Route Map's 3D view |
 | `models/HybridBus_BackwardModel.slx` | Editable fixed-step Simulink system model with ten top-level subsystems |
 | `models/HybridBus_BEVModel.slx` | Editable fixed-step BEV model with parallel battery control and no genset |
+| `models/HybridBus_PerformanceModel.slx` | Editable driver, terrain, component-limit, and forward longitudinal vehicle model |
 | `src/run_bev_simulink_model.m` | Database-backed half-set BEV Simulink runner for one or more parallel packs |
 | `HybridBusApp.m` | R2025a programmatic App Designer-compatible UIFigure app |
-| `src/simulate_hybrid_bus_core.m` | Detailed discrete first-principles simulation used by batch runs and optimization |
+| `src/simulate_hybrid_bus.m` | Formulation dispatcher shared by manual runs, sequences, and optimization |
+| `src/simulate_hybrid_bus_core.m` | Legacy prescribed-speed backward-demand first-principles kernel |
+| `src/simulate_hybrid_bus_constrained.m` | Fast fixed-horizon acceleration-suppressed wrapper around the backward energy kernel |
+| `src/simulate_hybrid_bus_performance.m` | Forward achieved-speed and distance kernel with component constraints and stall handling |
 | `src/run_hybrid_bus_simulation.m` | Validate, prepare, simulate, and save a selected case |
 | `src/run_powertrain_sequence.m` | Deterministic selected-mode or BEV-then-Hybrid manual-run orchestration |
 | `src/optimize_hybrid_bus_configuration.m` | Compatibility-filtered bounded enumeration using base MATLAB loops |
-| `tests/run_all_hybrid_bus_tests.m` | Thirty-one assertion-based hybrid/BEV physics, calculated-mass, battery-set, isolation, control, limit, and ranking scenarios |
+| `tests/run_all_hybrid_bus_tests.m` | Fifty assertion-based hybrid/BEV energy, constrained-speed, performance, data, control, limit, Simulink-structure, and ranking scenarios |
 | `tests/powertrainSequenceTest.m` | Four ordered-run tests covering selected-only behavior, BEV-to-Hybrid sequencing, SOE handling, and multiplier validation |
 | `src/generate_model_credibility_report.m` | Release evidence orchestration and synchronized Markdown/CSV/MAT reports |
 | `src/assess_matlab_simulink_equivalence.m` | Signal-level independent implementation comparison with declared tolerances |
@@ -137,11 +177,11 @@ report = validate_hybrid_bus_database(db);
 assert(report.IsValid, strjoin(report.Errors,newline));
 ```
 
-Add a component by copying a catalog row, assigning a unique `ComponentID`, updating ratings/units/notes, and setting `OptimizationEnabled`. Add a route to `Route_Catalog`, then append rows with the same new `RouteID` and strictly increasing route-local time. Raw VECTO inputs and OSM/OSRM route snapshots with provenance are retained in `documentation/reference_routes`.
+Add a battery or motor by copying one data script anywhere below `data/batteries` or `data/motors`, assigning a unique `ComponentID`, updating ratings/units/notes, and setting `OptimizationEnabled`. IDs are not limited to numeric suffixes: examples such as `BAT-13`, `Bat_Series_1`, and `MOT-HighTorque-A` are valid. Add a genset by copying one self-contained file below `data/gensets`; its genset, engine, and generator IDs are linked by file content and no longer need matching numeric suffixes. Database regeneration overwrites built-in filenames but preserves additional files. See `Component_Data_Extension_Guide.md`. Add a route by creating one `data/routes/<RouteID>.mat` file containing the documented `RouteData` structure and strictly increasing route-local time. Raw VECTO inputs and OSM/OSRM route snapshots with provenance are retained in `documentation/reference_routes`.
 
 ## Backward model
 
-The route prescribes speed. A filtered finite difference (`tau = 0.3 s`) produces acceleration. The model computes inertia, rolling, grade, and aerodynamic forces, then wheel power. Two rear hub motors share wheel demand. Torque-speed, peak-power, maximum-speed, fixed-drive efficiency, regeneration, and battery acceptance limits are applied before DC demand is calculated.
+The route prescribes speed. A filtered finite difference (`tau = 0.3 s`) produces acceleration. The model computes inertia, rolling, grade, and aerodynamic forces, then wheel power. Two rear hub motors share wheel demand. Torque-speed, peak-power, maximum-speed, fixed-drive efficiency, regeneration, and battery acceptance limits are applied before DC demand is calculated. Motor conversion loss is bilinearly interpolated from each selected motor's per-motor torque-speed loss map; the pair loss is added during motoring and reduces recovered DC power during regeneration.
 
 Auxiliaries are active at zero speed and combine the catalog base load, route multiplier, user scalar, and ambient-sensitive HVAC load.
 

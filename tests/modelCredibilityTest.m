@@ -39,11 +39,18 @@ classdef modelCredibilityTest < matlab.unittest.TestCase
         end
 
         function equivalenceAssessmentDeclaresTolerances(testCase)
-            assessment=assess_matlab_simulink_equivalence(testCase.DatabaseFile);
+            assessment=assess_matlab_simulink_equivalence(testCase.DatabaseFile, ...
+                struct('PowertrainMode',"Hybrid"));
+            bevAssessment=assess_matlab_simulink_equivalence(testCase.DatabaseFile, ...
+                struct('PowertrainMode',"BEV",'InitialBattery1SOE',0.85, ...
+                'InitialBattery2SOE',0.85));
 
-            testCase.verifyEqual(height(assessment.SignalChecks),9);
-            testCase.verifyGreaterThan(assessment.SignalChecks.Tolerance,zeros(9,1));
+            testCase.verifyEqual(height(assessment.SignalChecks),10);
+            testCase.verifyGreaterThan(assessment.SignalChecks.Tolerance, ...
+                zeros(height(assessment.SignalChecks),1));
             testCase.verifyTrue(all(ismember(assessment.SignalChecks.Status,["PASS","FAIL"])));
+            testCase.verifyEqual(assessment.OverallStatus,"PASS");
+            testCase.verifyEqual(bevAssessment.OverallStatus,"PASS");
         end
     end
 end

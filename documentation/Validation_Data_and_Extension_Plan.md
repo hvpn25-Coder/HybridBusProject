@@ -6,7 +6,7 @@ This plan defines the evidence needed to advance the project beyond concept veri
 
 | Component | Required data | Minimum metadata | Intended use |
 |---|---|---|---|
-| Battery packs | OCV-SOE curves, resistance, usable energy, charge/discharge power limits, efficiency, thermal limits | temperature, age, sample rate, pack configuration, test procedure | voltage/current and thermal calibration |
+| Battery packs | OCV versus SOE and temperature, resistance, usable energy, charge/discharge current limits, efficiency, thermal limits | temperature, age, sample rate, pack configuration, test procedure | voltage/current and thermal calibration |
 | Hub motors and inverters | torque-speed envelope, motoring/regeneration efficiency maps, DC-voltage range, thermal derating | coolant condition, DC voltage, winding temperature, test standard | power-limit and loss calibration |
 | Engine-generator | BSFC map, generator efficiency map, optimum operating point, start fuel, warm-up behavior | fuel properties, ambient condition, measurement uncertainty | fuel and charging calibration |
 | Reduction gears | directional efficiency and thermal rating | oil temperature, speed and torque range | driveline loss calibration |

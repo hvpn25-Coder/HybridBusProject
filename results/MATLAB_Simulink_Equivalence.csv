@@ -1,10 +1,21 @@
-Signal,MaxAbsoluteError,RMSError,Tolerance,Unit,Status
-Vehicle speed,0,0,0.02,m/s,PASS
-Wheel demand,114.626282735358,13.9876878252606,5,kW,FAIL
-Motor DC power,129.965995732256,22.4914496004619,8,kW,FAIL
-Auxiliary power,0,0,0.05,kW,PASS
-Battery 1 SOE,0.166340836416496,0.0983644938275386,0.025,fraction,FAIL
-Battery 2 SOE,0.0465166132159457,0.0202628272830223,0.025,fraction,FAIL
-Genset power,123.181818181818,23.1418340296467,1,kW,FAIL
-Total fuel,2.75607981756584,2.75607981756584,0.1,L,FAIL
-Energy-balance integral,0.131047310220169,0.658491725377052,0.01,kWh,FAIL
+Powertrain,Signal,MaxAbsoluteError,RMSError,Tolerance,Unit,Status
+Hybrid,Vehicle speed,0,0,0.02,m/s,PASS
+Hybrid,Wheel demand,1.13686837721616e-13,1.0779010249158e-14,5,kW,PASS
+Hybrid,Motor DC power,0.181327200706768,0.00262072528095827,8,kW,PASS
+Hybrid,Pneumatic friction brake,0,0,5,kW,PASS
+Hybrid,Auxiliary power,0,0,0.05,kW,PASS
+Hybrid,Battery 1 SOE,4.32804101779816e-07,2.70356838432059e-07,0.025,fraction,PASS
+Hybrid,Battery 2 SOE,2.22044604925031e-16,3.44247233001376e-17,0.025,fraction,PASS
+Hybrid,Genset power,0,0,1,kW,PASS
+Hybrid,Total fuel,0.0545454545454476,0.0545454545454476,0.1,L,PASS
+Hybrid,Energy-balance integral,0,0,0.01,kWh,PASS
+BEV,Vehicle speed,0,0,0.02,m/s,PASS
+BEV,Wheel demand,1.13686837721616e-13,1.03101604758364e-14,5,kW,PASS
+BEV,Motor DC power,0.172946036904034,0.00249942366370387,8,kW,PASS
+BEV,Pneumatic friction brake,0,0,5,kW,PASS
+BEV,Auxiliary power,0,0,0.05,kW,PASS
+BEV,Battery 1 SOE,2.06376045808199e-07,1.2892237001496e-07,0.025,fraction,PASS
+BEV,Battery 2 SOE,2.06376045808199e-07,1.2892237001496e-07,0.025,fraction,PASS
+BEV,Genset power,0,0,1,kW,PASS
+BEV,Total fuel,0,0,0.1,L,PASS
+BEV,Energy-balance integral,0,0,0.01,kWh,PASS

@@ -6,4 +6,7 @@ codegen/
 *.autosave
 tmp/**/rendered*/
 tmp/*.png
+tmp/**/__pycache__/
+tmp/pdfs/qa_*/
+tmp/test_*.m
 generated/

@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Engineering and generated artifacts are binary. Explicit declarations
+# prevent host-level diff drivers from treating them as plain text.
+*.mat binary
+*.pdf binary
+*.png binary
+*.slx binary
+*.xlsx binary

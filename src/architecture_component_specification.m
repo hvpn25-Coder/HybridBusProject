@@ -13,7 +13,10 @@ end
 key=lower(componentKey);
 battery1=catalogRow(database.Battery_Catalog,selectedID(selections,"SelectedBattery1"));
 battery2=catalogRow(database.Battery_Catalog,selectedID(selections,"SelectedBattery2"));
+battery1=attachBatteryMaps(battery1,database.Battery_Maps);
+battery2=attachBatteryMaps(battery2,database.Battery_Maps);
 motor=catalogRow(database.Motor_Catalog,selectedID(selections,"SelectedMotor"));
+motor=attachMotorMaps(motor,database.Motor_Maps);
 genset=catalogRow(database.Genset_Catalog,selectedID(selections,"SelectedGenset"));
 tyre=catalogRow(database.Tyre_Catalog,selectedID(selections,"SelectedTyre"));
 drive=catalogRow(database.Final_Drive_Catalog,selectedID(selections,"SelectedFinalDrive"));
@@ -36,9 +39,12 @@ calculatedMass=calculate_vehicle_mass(battery1.Mass_kg,battery1Count, ...
     battery2.Mass_kg,battery2Count,genset.Mass_kg, ...
     string(fieldValue(selections,"PowertrainMode","Hybrid")),loadMassTonnes);
 
-suffix=extractAfter(string(genset.ComponentID),"-");
-engine=catalogRow(database.Engine_Catalog,"ENG-"+suffix);
-generator=catalogRow(database.Generator_Catalog,"GNR-"+suffix);
+assembly=database.Genset_Assembly( ...
+    string(database.Genset_Assembly.GensetID)==string(genset.ComponentID),:);
+assert(height(assembly)==1,'HybridBus:GensetAssembly', ...
+    'Expected one assembly link for genset %s.',genset.ComponentID);
+engine=catalogRow(database.Engine_Catalog,assembly.EngineID);
+generator=catalogRow(database.Generator_Catalog,assembly.GeneratorID);
 
 switch key
     case "grid_charger"
@@ -171,6 +177,10 @@ switch key
             'Maximum speed',numberValue(motor.MaxSpeed_rpm,0),'rpm';
             'Motoring efficiency',percentValue(motor.MotoringEfficiency),'%';
             'Regeneration efficiency',percentValue(motor.RegenEfficiency),'%';
+            'Torque-speed loss-map range',sprintf('%.2f to %.2f', ...
+                min(motor.MotorLossMap_kW,[],'all'),max(motor.MotorLossMap_kW,[],'all')),'kW per motor';
+            'Loss-map axes',sprintf('%d torque x %d speed points', ...
+                numel(motor.TorqueBreakpoints_Nm),numel(motor.SpeedBreakpoints_rpm)),'-';
             'Voltage class',numberValue(motor.VoltageClass_V,0),'V';
             'Data status',textValue(motor.Notes),'-'});
     case "reduction"
@@ -277,16 +287,41 @@ specification=makeSpecification(titleText, ...
     'Bank usable energy',numberValue(packCount*row.UsableEnergy_kWh,1),'kWh';
     'Nominal voltage',numberValue(row.NominalVoltage_V,0),'V';
     'Voltage range',sprintf('%.0f to %.0f',row.MinVoltage_V,row.MaxVoltage_V),'V';
-    'Maximum discharge power',numberValue(row.MaxDischarge_kW,1),'kW';
-    'Bank maximum discharge',numberValue(packCount*row.MaxDischarge_kW,1),'kW';
-    'Maximum charge power',numberValue(row.MaxCharge_kW,1),'kW';
-    'Maximum regenerative power',numberValue(row.MaxRegen_kW,1),'kW';
-    'Bank maximum regeneration',numberValue(packCount*row.MaxRegen_kW,1),'kW';
+    'Reference discharge-current limit',numberValue(row.ReferenceDischargeCurrent_A,1),'A at 25 degC / mid-SOE';
+    'Dynamic discharge-current range',sprintf('%.1f to %.1f',min(row.MaxDischargeCurrentMap_A,[],'all'),max(row.MaxDischargeCurrentMap_A,[],'all')),'A per pack';
+    'Reference charge-current limit',numberValue(row.ReferenceChargeCurrent_A,1),'A at 25 degC / mid-SOE';
+    'Dynamic charge-current range',sprintf('%.1f to %.1f',min(row.MaxChargeCurrentMap_A,[],'all'),max(row.MaxChargeCurrentMap_A,[],'all')),'A per pack';
+    'Open-circuit voltage range',sprintf('%.1f to %.1f',min(row.OpenCircuitVoltageMap_V,[],'all'),max(row.OpenCircuitVoltageMap_V,[],'all')),'V per pack';
+    'Internal resistance range',sprintf('%.4f to %.4f',min(row.InternalResistanceMap_Ohm,[],'all'),max(row.InternalResistanceMap_Ohm,[],'all')),'ohm per pack';
+    'Current/resistance map axes',sprintf('%d SOE x %d temperature points',numel(row.SOEBreakpoints),numel(row.TemperatureBreakpoints_C)),'-';
     'SOE operating range',sprintf('%.0f to %.0f',100*row.MinSOE,100*row.MaxSOE),'%';
     'Charge / discharge efficiency',sprintf('%.1f / %.1f',100*row.ChargeEfficiency,100*row.DischargeEfficiency),'%';
     'Mass',numberValue(row.Mass_kg,1),'kg';
     'Bank mass',numberValue(packCount*row.Mass_kg,1),'kg';
     'Data status',textValue(row.Notes),'-'});
+end
+
+function row=attachBatteryMaps(row,maps)
+index=string({maps.ComponentID})==string(row.ComponentID);
+assert(nnz(index)==1,'HybridBus:BatteryMapSelection', ...
+    'Expected one battery-map record for %s.',row.ComponentID);
+map=maps(index);
+fields={'SOEBreakpoints','SOCBreakpoints','TemperatureBreakpoints_C','MaxDischargeCurrentMap_A', ...
+    'MaxChargeCurrentMap_A','OpenCircuitVoltageMap_V','InternalResistanceMap_Ohm','MapBasis'};
+for fieldIndex=1:numel(fields)
+    field=fields{fieldIndex}; row.(field)=map.(field);
+end
+end
+
+function row=attachMotorMaps(row,maps)
+index=string({maps.ComponentID})==string(row.ComponentID);
+assert(nnz(index)==1,'HybridBus:MotorMapSelection', ...
+    'Expected one motor-map record for %s.',row.ComponentID);
+map=maps(index);
+fields={'TorqueBreakpoints_Nm','SpeedBreakpoints_rpm','MotorLossMap_kW','MapBasis'};
+for fieldIndex=1:numel(fields)
+    field=fields{fieldIndex}; row.(field)=map.(field);
+end
 end
 
 function specification=makeSpecification(titleText,roleText,rows)
@@ -300,7 +335,7 @@ if ~any(index)
     error('HybridBus:MissingArchitectureComponent', ...
         'Selected component %s is missing from its catalog.',string(id));
 end
-row=catalog(find(index,1),:);
+row=table2struct(catalog(find(index,1),:));
 end
 
 function id=selectedID(selections,fieldName)

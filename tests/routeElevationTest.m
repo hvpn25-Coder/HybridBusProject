@@ -35,8 +35,8 @@ classdef routeElevationTest < matlab.unittest.TestCase
             testCase.verifyEqual(height(geometry),1200);
         end
 
-        function testDatabaseVersionIncludesThreeDimensionalMapData(testCase)
-            testCase.verifyEqual(testCase.Database.Version,"1.7.0");
+        function testDatabaseVersionIncludesModularDataStorage(testCase)
+            testCase.verifyEqual(testCase.Database.Version,"1.8.0");
         end
     end
 end

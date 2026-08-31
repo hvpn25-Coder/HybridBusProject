@@ -45,14 +45,27 @@ torqueEnvelope(aboveBase) = min(torqueEnvelope(aboveBase), ...
 perMotorMechLimit = min(Input.Motor.PeakPower_kW,torqueEnvelope.*wMotor/1000);
 perMotorMechLimit(rpmMotor>Input.Motor.MaxSpeed_rpm) = 0;
 tractionLimit = 2*perMotorMechLimit*Input.FinalDrive.MotoringEfficiency;
-if isBEV
-    batteryRegenLimit=Input.Battery1.MaxRegen_kW;
-    if useTwoBEVBatteries, batteryRegenLimit=batteryRegenLimit+Input.Battery2.MaxRegen_kW; end
-else
-    batteryRegenLimit=min(Input.Battery1.MaxRegen_kW,Input.Battery2.MaxRegen_kW);
-end
-regenLimit = min(2*perMotorMechLimit*Input.FinalDrive.RegenEfficiency,batteryRegenLimit);
+regenLimit = 2*perMotorMechLimit*Input.FinalDrive.RegenEfficiency;
 PWheelDelivered = min(max(PWheelDemand,-regenLimit),tractionLimit);
+motorMechanicalPower=zeros(size(PWheelDelivered));
+motoring=PWheelDelivered>=0;
+motorMechanicalPower(motoring)=PWheelDelivered(motoring)./ ...
+    max(Input.FinalDrive.MotoringEfficiency,eps);
+motorMechanicalPower(~motoring)=PWheelDelivered(~motoring).* ...
+    Input.FinalDrive.RegenEfficiency;
+motorPairTorque=zeros(size(wMotor)); rotating=abs(wMotor)>1e-9;
+motorPairTorque(rotating)=1000*motorMechanicalPower(rotating)./wMotor(rotating);
+mapTorque=min(max(abs(motorPairTorque)/2,Input.Motor.TorqueBreakpoints_Nm(1)), ...
+    Input.Motor.TorqueBreakpoints_Nm(end));
+mapSpeed=min(max(abs(rpmMotor),Input.Motor.SpeedBreakpoints_rpm(1)), ...
+    Input.Motor.SpeedBreakpoints_rpm(end));
+mappedPairMotorLoss=2*interp2(Input.Motor.TorqueBreakpoints_Nm, ...
+    Input.Motor.SpeedBreakpoints_rpm,Input.Motor.MotorLossMap_kW, ...
+    mapTorque,mapSpeed,'linear');
+PMotorDC=zeros(n,1);
+PMotorDC(motoring)=motorMechanicalPower(motoring)+mappedPairMotorLoss(motoring);
+PMotorDC(~motoring)=min(0,motorMechanicalPower(~motoring)+mappedPairMotorLoss(~motoring));
+motorLossPower=abs(PMotorDC-motorMechanicalPower);
 unmetTraction = max(0,PWheelDemand-PWheelDelivered);
 brakingDemand=max(0,-PWheelDemand);
 regenerativeWheelBraking=max(0,-PWheelDelivered);
@@ -64,12 +77,6 @@ frictionBrakePower=max(0,brakingDemand-regenerativeWheelBraking);
 totalWheelDelivered=PWheelDelivered-frictionBrakePower;
 unmetBraking=max(0,brakingDemand-regenerativeWheelBraking-frictionBrakePower);
 unmetRegen=frictionBrakePower; % Legacy alias: formerly the unserved regen remainder.
-PMotorDC = zeros(n,1);
-motoring = PWheelDelivered>=0;
-PMotorDC(motoring) = PWheelDelivered(motoring) ./ ...
-    max(Input.FinalDrive.MotoringEfficiency*Input.Motor.MotoringEfficiency,0.1);
-PMotorDC(~motoring) = PWheelDelivered(~motoring) .* ...
-    Input.FinalDrive.RegenEfficiency*Input.Motor.RegenEfficiency;
 ambientDelta = abs(Input.Environment.Temperature_C-Input.Aux.ComfortTemperature_C);
 hvacSlope = Input.Aux.HotHVAC_kW_per_C;
 if Input.Environment.Temperature_C<Input.Aux.ComfortTemperature_C
@@ -82,6 +89,7 @@ PNet = PMotorDC+PAux;
 E1 = zeros(n,1); E2 = zeros(n,1);
 E1(1)=Input.InitialBattery1SOE*Input.Battery1.UsableEnergy_kWh;
 E2(1)=Input.InitialBattery2SOE*Input.Battery2.UsableEnergy_kWh;
+batteryTemperature_C=Input.Environment.Temperature_C;
 P1=zeros(n,1); P2=zeros(n,1); PGen=zeros(n,1); fuelRate=zeros(n,1);
 mode=zeros(n,1); active=zeros(n,1); gensetOn=false(n,1); starts=false(n,1);
 unmetDC=zeros(n,1); rejectedCharge=zeros(n,1); residual=zeros(n,1);
@@ -112,9 +120,11 @@ for k=1:n
         totalRequest=PNet(k);
         if PNet(k)<0, totalRequest=-regenAfterAuxiliary(k); end
         [request1,request2]=parallel_battery_requests(totalRequest,E1(k),E2(k), ...
-            Input.Battery1,Input.Battery2,dt(k),useTwoBEVBatteries);
-        [P1(k),nextE1,loss1]=battery_step(request1,E1(k),Input.Battery1,dt(k),request1<0);
-        [P2(k),nextE2,loss2]=battery_step(request2,E2(k),Input.Battery2,dt(k),request2<0);
+            Input.Battery1,Input.Battery2,dt(k),useTwoBEVBatteries,batteryTemperature_C);
+        [P1(k),nextE1,loss1]=battery_step(request1,E1(k),Input.Battery1, ...
+            dt(k),request1<0,batteryTemperature_C);
+        [P2(k),nextE2,loss2]=battery_step(request2,E2(k),Input.Battery2, ...
+            dt(k),request2<0,batteryTemperature_C);
         batteryLoss(k)=loss1+loss2;
         if PNet(k)>=0
             unmetDC(k)=max(0,PNet(k)-max(0,P1(k))-max(0,P2(k)));
@@ -197,8 +207,10 @@ for k=1:n
         end
     end
 
-    [P1(k),nextE1,loss1]=battery_step(request1,E1(k),Input.Battery1,dt(k),request1<0);
-    [P2(k),nextE2,loss2]=battery_step(request2,E2(k),Input.Battery2,dt(k),request2<0);
+    [P1(k),nextE1,loss1]=battery_step(request1,E1(k),Input.Battery1, ...
+        dt(k),request1<0,batteryTemperature_C);
+    [P2(k),nextE2,loss2]=battery_step(request2,E2(k),Input.Battery2, ...
+        dt(k),request2<0,batteryTemperature_C);
     batteryLoss(k)=loss1+loss2;
     if PNet(k)>=0
         if active(k)==1, activePower=max(0,P1(k)); else, activePower=max(0,P2(k)); end
@@ -264,6 +276,10 @@ if isfield(Input,'RepeatUntilDepleted') && Input.RepeatUntilDepleted
         keep=1:depletionIndex;
         R=R(keep,:); t=t(keep); dt=dt(keep); v=v(keep); a=a(keep); FTractive=FTractive(keep);
         PWheelDemand=PWheelDemand(keep); PWheelDelivered=PWheelDelivered(keep);
+        perMotorMechLimit=perMotorMechLimit(keep);
+        motorMechanicalPower=motorMechanicalPower(keep); motorPairTorque=motorPairTorque(keep);
+        motorLossPower=motorLossPower(keep);
+        regenLimit=regenLimit(keep);
         totalWheelDelivered=totalWheelDelivered(keep); brakingDemand=brakingDemand(keep);
         regenerativeWheelBraking=regenerativeWheelBraking(keep);
         frictionBrakePower=frictionBrakePower(keep); unmetBraking=unmetBraking(keep);
@@ -281,21 +297,56 @@ if isfield(Input,'RepeatUntilDepleted') && Input.RepeatUntilDepleted
 end
 
 Signals = struct;
-Signals.Vehicle=struct('Speed_m_s',v,'Acceleration_m_s2',a,'Grade_pct',R.Grade_pct, ...
-    'TractiveForce_N',FTractive,'Distance_m',R.Distance_m);
+motorDrivingLimit=2*perMotorMechLimit;
+motorRegenerationLimit=regenLimit/max(Input.FinalDrive.RegenEfficiency,eps);
+[battery1Voltage,battery1Current,battery1DischargeCurrentLimit,battery1ChargeCurrentLimit, ...
+    battery1DischargePowerCapability,battery1ChargePowerCapability, ...
+    battery1OCV,battery1Resistance,battery1OhmicLoss]=battery_electrical_signals( ...
+    P1,E1,Input.Battery1,dt,Input.Battery1PackCount,batteryTemperature_C);
+[battery2Voltage,battery2Current,battery2DischargeCurrentLimit,battery2ChargeCurrentLimit, ...
+    battery2DischargePowerCapability,battery2ChargePowerCapability, ...
+    battery2OCV,battery2Resistance,battery2OhmicLoss]=battery_electrical_signals( ...
+    P2,E2,Input.Battery2,dt,Input.Battery2PackCount,batteryTemperature_C);
+dcBusVoltage=Input.Motor.VoltageClass_V*ones(size(PNet));
+dcBusCurrent=1000*PNet./max(dcBusVoltage,eps);
+Signals.Vehicle=struct('Speed_m_s',v,'DesiredSpeed_m_s',v,'SpeedError_m_s',zeros(size(v)), ...
+    'Acceleration_m_s2',a,'DesiredAcceleration_m_s2',a,'Grade_pct',R.Grade_pct, ...
+    'TractiveForce_N',FTractive,'TractiveForceDemand_N',FTractive, ...
+    'Distance_m',R.Distance_m,'LimitingCause',repmat("Prescribed speed",numel(v),1));
 Signals.Wheel=struct('Demand_kW',PWheelDemand,'Delivered_kW',PWheelDelivered, ...
     'TotalDelivered_kW',totalWheelDelivered,'BrakingDemand_kW',brakingDemand, ...
     'RegenerativeBraking_kW',regenerativeWheelBraking, ...
     'FrictionBrakePower_kW',frictionBrakePower, ...
     'UnmetTraction_kW',unmetTraction,'UnmetBraking_kW',unmetBraking, ...
     'UnmetRegen_kW',unmetRegen);
-Signals.Motors=struct('ElectricalPower_kW',PMotorDC,'MotorSpeed_rpm',rpmMotor);
+Signals.Motors=struct('ElectricalPower_kW',PMotorDC,'MechanicalPower_kW',motorMechanicalPower, ...
+    'MotorSpeed_rpm',rpmMotor,'PairTorque_Nm',motorPairTorque, ...
+    'PerMotorTorque_Nm',motorPairTorque/2, ...
+    'LossPower_kW',motorLossPower, ...
+    'DrivingPowerLimit_kW',motorDrivingLimit, ...
+    'RegenerationPowerLimit_kW',motorRegenerationLimit);
 Signals.Auxiliary=struct('Power_kW',PAux);
 Signals.Regeneration=struct('Available_kW',regenAvailable, ...
     'ToAuxiliary_kW',regenToAuxiliary,'ToActiveBattery_kW',regenToActiveBattery, ...
     'ResistorLoadBank_kW',resistorLoadBank);
-Signals.Battery1=struct('Power_kW',P1,'Energy_kWh',E1,'SOE',E1/Input.Battery1.UsableEnergy_kWh);
-Signals.Battery2=struct('Power_kW',P2,'Energy_kWh',E2,'SOE',E2/Input.Battery2.UsableEnergy_kWh);
+Signals.Battery1=struct('Power_kW',P1,'Energy_kWh',E1,'SOE',E1/Input.Battery1.UsableEnergy_kWh, ...
+    'Voltage_V',battery1Voltage,'OpenCircuitVoltage_V',battery1OCV, ...
+    'Current_A',battery1Current,'Temperature_C',batteryTemperature_C*ones(size(P1)), ...
+    'InternalResistance_Ohm',battery1Resistance,'OhmicLoss_kW',battery1OhmicLoss, ...
+    'DischargeCurrentLimit_A',battery1DischargeCurrentLimit, ...
+    'ChargeCurrentLimit_A',battery1ChargeCurrentLimit, ...
+    'DerivedDischargePowerCapability_kW',battery1DischargePowerCapability, ...
+    'DerivedChargePowerCapability_kW',battery1ChargePowerCapability);
+Signals.Battery2=struct('Power_kW',P2,'Energy_kWh',E2,'SOE',E2/Input.Battery2.UsableEnergy_kWh, ...
+    'Voltage_V',battery2Voltage,'OpenCircuitVoltage_V',battery2OCV, ...
+    'Current_A',battery2Current,'Temperature_C',batteryTemperature_C*ones(size(P2)), ...
+    'InternalResistance_Ohm',battery2Resistance,'OhmicLoss_kW',battery2OhmicLoss, ...
+    'DischargeCurrentLimit_A',battery2DischargeCurrentLimit, ...
+    'ChargeCurrentLimit_A',battery2ChargeCurrentLimit, ...
+    'DerivedDischargePowerCapability_kW',battery2DischargePowerCapability, ...
+    'DerivedChargePowerCapability_kW',battery2ChargePowerCapability);
+Signals.DCBus=struct('Voltage_V',dcBusVoltage,'Current_A',dcBusCurrent, ...
+    'NetPower_kW',PNet,'VoltageModel',"Nominal traction voltage class");
 Signals.Genset=struct('ElectricalPower_kW',PGen,'MechanicalPower_kW',genMechanical, ...
     'FuelRate_L_s',fuelRate,'On',gensetOn,'StartEvent',starts, ...
     'ChargeDestinationBattery',gensetChargeDestination);
@@ -345,10 +396,17 @@ else
     hybridFuelRange=Input.Vehicle.FuelTank_L/max(fuelPerKm,1e-9);
 end
 Summary=struct('RouteDistance_km',distanceKm,'Fuel_L',fuelL, ...
+    'RouteCatalogDistance_km',Input.RouteDistance_km,'RouteCompletion_pct',100, ...
+    'RouteCompleted',true,'DistanceShortfall_km',0,'ActualCompletionTime_s',t(end), ...
+    'NominalRouteTime_s',Input.Route.Time_s(end),'MaximumAchievedSpeed_kmh',max(v)*3.6, ...
+    'MaximumSpeedError_kmh',0,'RMSSpeedError_kmh',0,'TimeBelowTarget_s',0, ...
+    'PerformanceLimitingCause','Not evaluated in prescribed-speed mode', ...
+    'TerminationReason','Prescribed route completed','SimulationFormulation','BackwardDemand', ...
     'Fuel_L_per_100km',100*fuelL/max(distanceKm,eps),'GridEquivalentEnergy_kWh',gridEnergy, ...
     'Electrical_kWh_per_km',gridEnergy/max(distanceKm,eps), ...
     'TotalSourceEnergy_kWh_per_km',(gridEnergy+integrate(genMechanical))/max(distanceKm,eps), ...
     'GensetElectricalEnergy_kWh',integrate(PGen),'BatteryThroughput_kWh',integrate(abs(P1)+abs(P2)), ...
+    'BatteryOhmicLossEnergy_kWh',integrate(battery1OhmicLoss+battery2OhmicLoss), ...
     'RegeneratedEnergy_kWh',integrate(regenAvailable), ...
     'RegenerationToAuxiliaryEnergy_kWh',integrate(regenToAuxiliary), ...
     'RegenerationToActiveBatteryEnergy_kWh',integrate(regenToActiveBattery), ...
@@ -396,13 +454,13 @@ Results=struct('Metadata',struct('DatabaseFilename',Input.DatabaseFile, ...
     'IsFeasible',isempty(warnings) || all(warnings~="Unmet traction/DC energy present")));
 end
 
-function [request1,request2]=parallel_battery_requests(totalRequest,E1,E2,B1,B2,dt,useTwo)
+function [request1,request2]=parallel_battery_requests(totalRequest,E1,E2,B1,B2,dt,useTwo,temperature_C)
 if ~useTwo
     request1=totalRequest; request2=0; return
 end
 isCharge=totalRequest<0;
-cap1=battery_power_capability(E1,B1,dt,isCharge);
-cap2=battery_power_capability(E2,B2,dt,isCharge);
+cap1=battery_power_capability(E1,B1,dt,isCharge,temperature_C);
+cap2=battery_power_capability(E2,B2,dt,isCharge,temperature_C);
 magnitude=abs(totalRequest);
 accepted=min(magnitude,cap1+cap2);
 if cap1+cap2<=eps
@@ -418,29 +476,107 @@ else
 end
 end
 
-function capability=battery_power_capability(energy,B,dt,isCharge)
-emin=B.MinSOE*B.UsableEnergy_kWh; emax=B.MaxSOE*B.UsableEnergy_kWh;
+function capability=battery_power_capability(energy,B,dt,isCharge,temperature_C)
+[~,~,dischargePower,chargePower]=battery_current_capability( ...
+    energy,B,dt,temperature_C);
 if isCharge
-    energyPower=max(0,(emax-energy)*3600/max(dt,eps)/B.ChargeEfficiency);
-    capability=min([B.MaxCharge_kW*B.DeratingFactor,B.MaxRegen_kW,energyPower]);
+    capability=chargePower;
 else
-    energyPower=max(0,(energy-emin)*3600*B.DischargeEfficiency/max(dt,eps));
-    capability=min(B.MaxDischarge_kW*B.DeratingFactor,energyPower);
+    capability=dischargePower;
 end
 end
 
-function [power,energy,loss] = battery_step(request,energy,B,dt,isCharge)
+function [power,energy,loss] = battery_step(request,energy,B,dt,isCharge,temperature_C)
 emin=B.MinSOE*B.UsableEnergy_kWh; emax=B.MaxSOE*B.UsableEnergy_kWh;
+[~,~,dischargePower,chargePower]=battery_current_capability( ...
+    energy,B,dt,temperature_C);
 if ~isCharge
-    energyPower=max(0,(energy-emin)*3600*B.DischargeEfficiency/max(dt,eps));
-    power=min([max(0,request),B.MaxDischarge_kW*B.DeratingFactor,energyPower]);
+    power=min(max(0,request),dischargePower);
     delta=-power/B.DischargeEfficiency*dt/3600;
     loss=power*(1/B.DischargeEfficiency-1);
 else
-    energyPower=max(0,(emax-energy)*3600/max(dt,eps)/B.ChargeEfficiency);
-    magnitude=min([-min(0,request),B.MaxCharge_kW*B.DeratingFactor,B.MaxRegen_kW,energyPower]);
+    magnitude=min(-min(0,request),chargePower);
     power=-magnitude; delta=magnitude*B.ChargeEfficiency*dt/3600;
     loss=magnitude*(1-B.ChargeEfficiency);
 end
 energy=min(emax,max(emin,energy+delta));
+end
+
+function [voltage,current,dischargeCurrentLimit,chargeCurrentLimit, ...
+        dischargePowerCapability,chargePowerCapability,openCircuitVoltage, ...
+        resistance,ohmicLoss]=battery_electrical_signals( ...
+        power,energy,B,dt,packCount,temperature_C)
+% First-order Thevenin terminal quantities with SOE/temperature resistance.
+if packCount==0
+    voltage=zeros(size(power)); current=zeros(size(power));
+    dischargeCurrentLimit=zeros(size(power)); chargeCurrentLimit=zeros(size(power));
+    dischargePowerCapability=zeros(size(power)); chargePowerCapability=zeros(size(power));
+    openCircuitVoltage=zeros(size(power)); resistance=zeros(size(power));
+    ohmicLoss=zeros(size(power));
+    return
+end
+[dischargeCurrentLimit,chargeCurrentLimit,dischargePowerCapability, ...
+    chargePowerCapability,openCircuitVoltage,resistance]= ...
+    battery_current_capability(energy,B,dt,temperature_C);
+discriminant=max(0,openCircuitVoltage.^2-4.*resistance.*1000.*power);
+current=(openCircuitVoltage-sqrt(discriminant))./max(2.*resistance,eps);
+voltage=openCircuitVoltage-current.*resistance;
+ohmicLoss=current.^2.*resistance/1000;
+end
+
+function [dischargeCurrent,chargeCurrent,dischargePower,chargePower, ...
+        openCircuitVoltage,resistance]=battery_current_capability(energy,B,dt,temperature_C)
+soe=energy/max(B.UsableEnergy_kWh,eps);
+[mapDischarge,mapCharge,openCircuitVoltage,resistance]= ...
+    battery_dynamic_current_limits(B,soe,temperature_C);
+dischargeCurrent=max(0,mapDischarge*B.DeratingFactor);
+chargeCurrent=max(0,mapCharge*B.DeratingFactor);
+dischargeCurrent=min(dischargeCurrent,max(0,(openCircuitVoltage-B.MinVoltage_V)./max(resistance,eps)));
+chargeCurrent=min(chargeCurrent,max(0,(B.MaxVoltage_V-openCircuitVoltage)./max(resistance,eps)));
+emin=B.MinSOE*B.UsableEnergy_kWh; emax=B.MaxSOE*B.UsableEnergy_kWh;
+energyDischarge=max(0,(energy-emin).*3600.*B.DischargeEfficiency./max(dt,eps));
+energyCharge=max(0,(emax-energy).*3600./max(dt,eps)./B.ChargeEfficiency);
+dischargeCurrent=min(dischargeCurrent,current_from_power( ...
+    energyDischarge,openCircuitVoltage,resistance,false));
+chargeCurrent=min(chargeCurrent,current_from_power( ...
+    energyCharge,openCircuitVoltage,resistance,true));
+dischargePower=max(0,dischargeCurrent.*(openCircuitVoltage-dischargeCurrent.*resistance)/1000);
+chargePower=max(0,chargeCurrent.*(openCircuitVoltage+chargeCurrent.*resistance)/1000);
+end
+
+function current=current_from_power(power,voltage,resistance,isCharge)
+power=max(0,power);
+if isCharge
+    current=(-voltage+sqrt(voltage.^2+4.*resistance.*1000.*power))./ ...
+        max(2.*resistance,eps);
+else
+    power=min(power,voltage.^2./max(4.*resistance.*1000,eps));
+    current=(voltage-sqrt(max(0,voltage.^2-4.*resistance.*1000.*power)))./ ...
+        max(2.*resistance,eps);
+end
+end
+
+function [dischargeLimit,chargeLimit,openCircuitVoltage,resistance]= ...
+        battery_dynamic_current_limits(B,soe,temperature_C)
+soe=min(max(soe,B.SOEBreakpoints(1)),B.SOEBreakpoints(end));
+if isfield(B,'DischargeCurrentVsSOE_A') && ...
+        abs(B.ConditionedTemperature_C-temperature_C)<1e-12
+    dischargeLimit=interp1(B.SOEBreakpoints,B.DischargeCurrentVsSOE_A,soe,'linear');
+    chargeLimit=interp1(B.SOEBreakpoints,B.ChargeCurrentVsSOE_A,soe,'linear');
+    openCircuitVoltage=interp1(B.SOCBreakpoints, ...
+        B.OpenCircuitVoltageVsSOC_V,soe,'linear');
+    resistance=interp1(B.SOEBreakpoints,B.InternalResistanceVsSOE_Ohm,soe,'linear');
+    return
+end
+temperature_C=min(max(temperature_C,B.TemperatureBreakpoints_C(1)), ...
+    B.TemperatureBreakpoints_C(end));
+temperature_C=temperature_C+zeros(size(soe));
+dischargeLimit=interp2(B.SOEBreakpoints,B.TemperatureBreakpoints_C, ...
+    B.MaxDischargeCurrentMap_A,soe,temperature_C,'linear');
+chargeLimit=interp2(B.SOEBreakpoints,B.TemperatureBreakpoints_C, ...
+    B.MaxChargeCurrentMap_A,soe,temperature_C,'linear');
+openCircuitVoltage=interp2(B.SOCBreakpoints,B.TemperatureBreakpoints_C, ...
+    B.OpenCircuitVoltageMap_V,soe,temperature_C,'linear');
+resistance=interp2(B.SOEBreakpoints,B.TemperatureBreakpoints_C, ...
+    B.InternalResistanceMap_Ohm,soe,temperature_C,'linear');
 end
