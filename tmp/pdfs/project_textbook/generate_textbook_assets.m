@@ -163,6 +163,102 @@ try
             architectureTab.Parent.SelectedTab=architectureTab;
             drawnow;
             exportapp(figures(1),fullfile(assetFolder,'hybrid_bus_app_architecture.png'));
+
+            hitTargets=findall(figures(1),'Type','patch','Tag','ArchitectureBlockHitTarget');
+            if ~isempty(hitTargets)
+                callback=hitTargets(1).ButtonDownFcn;
+                callback(hitTargets(1),[]);
+                drawnow;
+                detailFigures=findall(groot,'Type','figure');
+                detailFigures=detailFigures(detailFigures~=figures(1));
+                if ~isempty(detailFigures)
+                    exportapp(detailFigures(1),fullfile(assetFolder,'architecture_component_detail.png'));
+                    delete(detailFigures(1));
+                end
+            end
+        end
+
+        routeTab=findall(figures(1),'Type','uitab','Title','Route Map');
+        if ~isempty(routeTab)
+            routeDropDowns=findall(figures(1),'Type','uidropdown');
+            for dropDownIndex=1:numel(routeDropDowns)
+                routeItemIndex=find(contains(string(routeDropDowns(dropDownIndex).Items), ...
+                    "Mannheim",'IgnoreCase',true),1);
+                if ~isempty(routeItemIndex)
+                    itemData=routeDropDowns(dropDownIndex).ItemsData;
+                    if isempty(itemData)
+                        routeDropDowns(dropDownIndex).Value=routeDropDowns(dropDownIndex).Items{routeItemIndex};
+                    elseif iscell(itemData)
+                        routeDropDowns(dropDownIndex).Value=itemData{routeItemIndex};
+                    else
+                        routeDropDowns(dropDownIndex).Value=itemData(routeItemIndex);
+                    end
+                    callback=routeDropDowns(dropDownIndex).ValueChangedFcn;
+                    callback(routeDropDowns(dropDownIndex),[]);
+                    break
+                end
+            end
+            routeTab.Parent.SelectedTab=routeTab;
+            drawnow;
+            exportapp(figures(1),fullfile(assetFolder,'app_mannheim_city_map.png'));
+            modeSwitches=findall(figures(1),'Type','uiswitch','Tag','ColoredModeSwitch');
+            for switchIndex=1:numel(modeSwitches)
+                switchData=modeSwitches(switchIndex).UserData;
+                if isstruct(switchData) && string(switchData.RightValue)=="3D"
+                    modeSwitches(switchIndex).Value='3D';
+                    callback=modeSwitches(switchIndex).ValueChangedFcn;
+                    callback(modeSwitches(switchIndex),[]);
+                end
+            end
+            drawnow;
+            exportapp(figures(1),fullfile(assetFolder,'route_map_3d_elevation.png'));
+            modeSwitches=findall(figures(1),'Type','uiswitch','Tag','ColoredModeSwitch');
+            for switchIndex=1:numel(modeSwitches)
+                switchData=modeSwitches(switchIndex).UserData;
+                if isstruct(switchData) && string(switchData.RightValue)=="Slope"
+                    modeSwitches(switchIndex).Value='Slope';
+                    callback=modeSwitches(switchIndex).ValueChangedFcn;
+                    callback(modeSwitches(switchIndex),[]);
+                end
+            end
+            drawnow;
+            exportapp(figures(1),fullfile(assetFolder,'route_map_3d_slope.png'));
+        end
+
+        runButton=findall(figures(1),'Type','uibutton','Text','Run Manual');
+        if ~isempty(runButton)
+            callback=runButton(1).ButtonPushedFcn;
+            callback(runButton(1),[]);
+            drawnow;
+        end
+
+        tabExports={ ...
+            'KPIs','kpi_dashboard.png'; ...
+            'Simulation Analysis','simulation_analysis.png'; ...
+            'Model Credibility','model_credibility.png'};
+        for exportIndex=1:size(tabExports,1)
+            selectedTab=findall(figures(1),'Type','uitab','Title',tabExports{exportIndex,1});
+            if ~isempty(selectedTab)
+                selectedTab.Parent.SelectedTab=selectedTab;
+                drawnow;
+                exportapp(figures(1),fullfile(assetFolder,tabExports{exportIndex,2}));
+            end
+        end
+
+        signalsTab=findall(figures(1),'Type','uitab','Title','Signals');
+        if ~isempty(signalsTab)
+            signalsTab.Parent.SelectedTab=signalsTab;
+            modeSwitches=findall(figures(1),'Type','uiswitch','Tag','ColoredModeSwitch');
+            for switchIndex=1:numel(modeSwitches)
+                switchData=modeSwitches(switchIndex).UserData;
+                if isstruct(switchData) && string(switchData.RightValue)=="Distance"
+                    modeSwitches(switchIndex).Value='Distance';
+                    callback=modeSwitches(switchIndex).ValueChangedFcn;
+                    callback(modeSwitches(switchIndex),[]);
+                end
+            end
+            drawnow;
+            exportapp(figures(1),fullfile(assetFolder,'signals_distance_axis.png'));
         end
     end
     delete(app);

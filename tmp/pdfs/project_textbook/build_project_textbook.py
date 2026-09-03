@@ -395,209 +395,321 @@ def box(d, x, y, w, h, label, fill=WHITE, edge=TEAL, font=7.2):
                      fillColor=NAVY, textAnchor="middle"))
 
 
+def icon(d, cx, cy, kind, color=TEAL, scale=1.0):
+    """Small vector pictograms used throughout the textbook figures."""
+    sw = 1.4 * scale
+    if kind == "route":
+        d.add(Circle(cx, cy + 3*scale, 5*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(Circle(cx, cy + 3*scale, 1.7*scale, fillColor=color, strokeColor=color))
+        d.add(Polygon([cx-3*scale, cy-1*scale, cx+3*scale, cy-1*scale, cx, cy-8*scale], fillColor=color, strokeColor=color))
+    elif kind == "data":
+        for oy in (-5, 0, 5):
+            d.add(Rect(cx-7*scale, cy+oy*scale-2*scale, 14*scale, 4*scale, rx=2*scale, ry=2*scale,
+                       fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+    elif kind == "check":
+        d.add(Polygon([cx, cy+8*scale, cx+7*scale, cy+4*scale, cx+5*scale, cy-6*scale,
+                       cx, cy-9*scale, cx-5*scale, cy-6*scale, cx-7*scale, cy+4*scale],
+                      fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(PolyLine([cx-3*scale, cy, cx-0.5*scale, cy-3*scale, cx+4*scale, cy+3*scale],
+                       strokeColor=color, strokeWidth=sw))
+    elif kind == "vehicle":
+        d.add(Rect(cx-9*scale, cy-5*scale, 18*scale, 10*scale, rx=2*scale, ry=2*scale,
+                   fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(Rect(cx-6*scale, cy, 4*scale, 3*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw*.7))
+        d.add(Rect(cx, cy, 4*scale, 3*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw*.7))
+        d.add(Circle(cx-5*scale, cy-6*scale, 2*scale, fillColor=color, strokeColor=color))
+        d.add(Circle(cx+5*scale, cy-6*scale, 2*scale, fillColor=color, strokeColor=color))
+    elif kind == "battery":
+        d.add(Rect(cx-8*scale, cy-7*scale, 16*scale, 14*scale, rx=2*scale, ry=2*scale,
+                   fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(Rect(cx-3*scale, cy+7*scale, 6*scale, 2*scale, fillColor=color, strokeColor=color))
+        d.add(Line(cx-4*scale, cy+1*scale, cx, cy+1*scale, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx-2*scale, cy-1*scale, cx-2*scale, cy+3*scale, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx+2*scale, cy+1*scale, cx+5*scale, cy+1*scale, strokeColor=color, strokeWidth=sw))
+    elif kind == "motor":
+        d.add(Circle(cx, cy, 8*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(String(cx, cy-2.5*scale, "M", fontName="Arial-Bold", fontSize=7*scale,
+                     fillColor=color, textAnchor="middle"))
+    elif kind == "engine":
+        d.add(Rect(cx-8*scale, cy-6*scale, 16*scale, 12*scale, rx=2*scale, ry=2*scale,
+                   fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx-4*scale, cy-3*scale, cx-4*scale, cy+3*scale, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx, cy-3*scale, cx, cy+3*scale, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx+4*scale, cy-3*scale, cx+4*scale, cy+3*scale, strokeColor=color, strokeWidth=sw))
+    elif kind == "control":
+        d.add(Rect(cx-7*scale, cy-7*scale, 14*scale, 14*scale, rx=2*scale, ry=2*scale,
+                   fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(String(cx, cy-2.2*scale, "EMS", fontName="Arial-Bold", fontSize=4.5*scale,
+                     fillColor=color, textAnchor="middle"))
+        for off in (-5, 0, 5):
+            d.add(Line(cx+off*scale, cy+7*scale, cx+off*scale, cy+10*scale, strokeColor=color, strokeWidth=sw*.8))
+            d.add(Line(cx+off*scale, cy-7*scale, cx+off*scale, cy-10*scale, strokeColor=color, strokeWidth=sw*.8))
+    elif kind == "aux":
+        d.add(Circle(cx, cy, 7*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        for ang in (0, 2.1, 4.2):
+            x2=cx+6*scale*math.cos(ang); y2=cy+6*scale*math.sin(ang)
+            d.add(Line(cx, cy, x2, y2, strokeColor=color, strokeWidth=sw))
+        d.add(Circle(cx, cy, 1.5*scale, fillColor=color, strokeColor=color))
+    elif kind == "resistor":
+        pts=[cx-9*scale,cy, cx-6*scale,cy+5*scale, cx-3*scale,cy-5*scale,
+             cx,cy+5*scale, cx+3*scale,cy-5*scale, cx+6*scale,cy+5*scale, cx+9*scale,cy]
+        d.add(PolyLine(pts, strokeColor=color, strokeWidth=sw))
+    elif kind == "chart":
+        d.add(Line(cx-8*scale, cy-7*scale, cx-8*scale, cy+7*scale, strokeColor=color, strokeWidth=sw))
+        d.add(Line(cx-8*scale, cy-7*scale, cx+8*scale, cy-7*scale, strokeColor=color, strokeWidth=sw))
+        d.add(PolyLine([cx-6*scale,cy-3*scale,cx-1*scale,cy+1*scale,cx+3*scale,cy-1*scale,cx+7*scale,cy+6*scale],
+                       strokeColor=color, strokeWidth=sw))
+    elif kind == "bolt":
+        d.add(Polygon([cx+1*scale,cy+9*scale,cx-6*scale,cy,cx-1*scale,cy,
+                       cx-3*scale,cy-9*scale,cx+7*scale,cy+2*scale,cx+2*scale,cy+2*scale],
+                      fillColor=color, strokeColor=color))
+    else:
+        d.add(Circle(cx, cy, 7*scale, fillColor=WHITE, strokeColor=color, strokeWidth=sw))
+        d.add(String(cx, cy-2.5*scale, kind[:1].upper(), fontName="Arial-Bold",
+                     fontSize=7*scale, fillColor=color, textAnchor="middle"))
+
+
+def card(d, x, y, w, h, label, kind, fill=WHITE, edge=TEAL, font=7.0, subtitle=None):
+    d.add(Rect(x+2, y-2, w, h, rx=7, ry=7, fillColor=HexColor("#DCE4E9"), strokeColor=None))
+    d.add(Rect(x, y, w, h, rx=7, ry=7, fillColor=fill, strokeColor=edge, strokeWidth=1.4))
+    d.add(Rect(x, y, 4, h, rx=2, ry=2, fillColor=edge, strokeColor=edge))
+    badge_x=x+20
+    d.add(Circle(badge_x, y+h/2, 13, fillColor=WHITE, strokeColor=HexColor("#D5E2E8"), strokeWidth=.8))
+    icon(d, badge_x, y+h/2, kind, edge, .75)
+    lines=label.split("\n")
+    base=y+h/2+(len(lines)-1)*4
+    for i,line in enumerate(lines):
+        d.add(String(x+39, base-i*8, line, fontName="Arial-Bold", fontSize=font,
+                     fillColor=NAVY, textAnchor="start"))
+    if subtitle:
+        d.add(String(x+39, y+6, subtitle, fontName="Arial", fontSize=5.8,
+                     fillColor=MID, textAnchor="start"))
+
+
+def routed_arrow(d, points, color=TEAL, width=1.7, dash=None):
+    flat=[]
+    for x,y in points: flat.extend([x,y])
+    d.add(PolyLine(flat, strokeColor=color, strokeWidth=width, strokeDashArray=dash))
+    x1,y1=points[-2]; x2,y2=points[-1]
+    angle=math.atan2(y2-y1,x2-x1); size=5
+    d.add(Polygon([x2,y2,
+                   x2-size*math.cos(angle-.45),y2-size*math.sin(angle-.45),
+                   x2-size*math.cos(angle+.45),y2-size*math.sin(angle+.45)],
+                  fillColor=color,strokeColor=color))
+
+
 def architecture_diagram():
-    d = Drawing(485, 235)
-    d.add(Rect(0, 0, 485, 235, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
-    labels = [
-        (10, 175, 82, 36, "Routes +\nExcel data", SKY),
-        (110, 175, 88, 36, "Input validation\n+ resampling", TEAL_LIGHT),
-        (216, 175, 90, 36, "Longitudinal\ndynamics", HexColor("#E9EFF7")),
-        (324, 175, 75, 36, "Hub motor\ndrive", HexColor("#F5EBDD")),
-        (417, 175, 58, 36, "DC bus", HexColor("#F4E6E6")),
-        (220, 105, 95, 42, "Supervisory\nenergy manager", TEAL_LIGHT),
-        (340, 95, 63, 42, "Battery 1", SKY),
-        (412, 95, 63, 42, "Battery 2", SKY),
-        (107, 95, 82, 42, "Engine\ngenset", HexColor("#FFF1E4")),
-        (10, 95, 75, 42, "Auxiliary\nloads", HexColor("#F3F0E4")),
-        (118, 25, 112, 38, "Energy + cost\naccounting", HexColor("#E8F3EA")),
-        (262, 25, 102, 38, "MAT / CSV\nresults", HexColor("#EAF0F4")),
-        (389, 25, 86, 38, "App +\noptimizer", HexColor("#EFE9F6")),
-    ]
-    for x, y, w, h, label, fill in labels:
-        box(d, x, y, w, h, label, fill=fill)
-    for a, b in [((92, 193), (110, 193)), ((198, 193), (216, 193)), ((306, 193), (324, 193)), ((399, 193), (417, 193))]:
-        arrow(d, *a, *b, TEAL)
-    arrow(d, 446, 175, 446, 137, RED)
-    arrow(d, 417, 116, 403, 116, BLUE)
-    arrow(d, 340, 116, 315, 126, BLUE)
-    arrow(d, 189, 116, 220, 126, ORANGE)
-    arrow(d, 85, 116, 220, 116, GOLD)
-    arrow(d, 267, 105, 180, 63, GREEN)
-    arrow(d, 230, 44, 262, 44, GREEN)
-    arrow(d, 364, 44, 389, 44, TEAL)
+    d = Drawing(485, 252)
+    d.add(Rect(0, 0, 485, 252, rx=8, ry=8, fillColor=HexColor("#F7FAFC"), strokeColor=GRID))
+    # Three explicit swimlanes keep data, physics, and decision flows distinct.
+    for y,label,color in [(176,"MISSION + DATA",BLUE),(91,"PHYSICAL POWERTRAIN",ORANGE),(9,"DECISION + EVIDENCE",GREEN)]:
+        d.add(Rect(8,y,469,68,rx=6,ry=6,fillColor=WHITE,strokeColor=HexColor("#E1E8ED")))
+        d.add(Rect(8,y,92,68,rx=6,ry=6,fillColor=HexColor("#EDF4F8"),strokeColor=None))
+        d.add(String(54,y+35,label,fontName="Arial-Bold",fontSize=6.7,fillColor=color,textAnchor="middle"))
+    card(d,110,191,91,39,"Route +\ndata","route",SKY,BLUE,6.5)
+    card(d,218,191,102,39,"Validate +\nresample","check",TEAL_LIGHT,TEAL,6.5)
+    card(d,337,191,126,39,"Resolved mission\ninputs","data",HexColor("#EEF2F8"),NAVY_2,6.5)
+    routed_arrow(d,[(201,211),(218,211)],BLUE)
+    routed_arrow(d,[(320,211),(337,211)],TEAL)
+    card(d,110,106,86,44,"Genset\ncharger","engine",HexColor("#FFF1E4"),ORANGE,6.5)
+    card(d,208,106,83,44,"Battery\nbanks","battery",SKY,BLUE,6.5)
+    card(d,303,106,83,44,"DC bus +\nmotors","motor",TEAL_LIGHT,TEAL,6.5)
+    card(d,398,106,65,44,"Bus","vehicle",HexColor("#E8F3EA"),GREEN,6.5)
+    routed_arrow(d,[(196,128),(208,128)],ORANGE,2)
+    routed_arrow(d,[(291,128),(303,128)],TEAL,2)
+    routed_arrow(d,[(386,128),(398,128)],TEAL,2)
+    routed_arrow(d,[(430,106),(430,98),(344,98),(344,106)],BLUE,1.3)
+    d.add(String(386,94,"regeneration",fontName="Arial-Bold",fontSize=5.8,fillColor=BLUE,textAnchor="middle"))
+    card(d,110,24,92,43,"Energy\nmanager","control",TEAL_LIGHT,TEAL,6.5)
+    card(d,218,24,100,43,"Physics + cost\naccounting","chart",HexColor("#E8F3EA"),GREEN,6.5)
+    card(d,334,24,129,43,"App + batch studies\n+ evidence","chart",HexColor("#EFE9F6"),BLUE,6.5)
+    routed_arrow(d,[(156,67),(156,80),(250,80),(250,106)],TEAL,1.4,[4,3])
+    routed_arrow(d,[(202,46),(218,46)],GREEN)
+    routed_arrow(d,[(318,46),(334,46)],BLUE)
     return d
 
 
 def energy_flow_diagram():
-    d = Drawing(485, 215)
-    d.add(Rect(0, 0, 485, 215, fillColor=WHITE, strokeColor=GRID))
-    box(d, 10, 158, 58, 34, "Diesel\nfuel", fill=HexColor("#FFF0E1"), edge=ORANGE)
-    box(d, 86, 158, 82, 34, "Engine +\ngenerator", fill=HexColor("#FFF0E1"), edge=ORANGE)
-    box(d, 188, 158, 94, 34, "Constant-point\ncharger", fill=HexColor("#FFF0E1"), edge=ORANGE)
-    box(d, 305, 158, 104, 34, "Standby charge\nselector", fill=HexColor("#FFF0E1"), edge=ORANGE)
-    box(d, 105, 84, 100, 38, "Battery 1\n(active/standby)", fill=SKY, edge=BLUE)
-    box(d, 235, 84, 100, 38, "Battery 2\n(active/standby)", fill=SKY, edge=BLUE)
-    box(d, 175, 20, 105, 38, "2 Active battery\nselector", fill=TEAL_LIGHT, edge=TEAL)
-    box(d, 305, 20, 64, 38, "Traction\nDC bus", fill=HexColor("#F5E8E8"), edge=RED)
-    box(d, 394, 20, 80, 38, "Hub motors +\nwheels", fill=HexColor("#E8F3EA"), edge=GREEN)
-    box(d, 10, 20, 68, 38, "1 Auxiliary\nloads", fill=HexColor("#F3F0E4"), edge=GOLD)
-    box(d, 90, 20, 70, 38, "3 Resistor\nload bank", fill=HexColor("#F8E7E2"), edge=DUMP)
-    arrow(d, 68, 175, 86, 175, ORANGE, 2)
-    arrow(d, 168, 175, 188, 175, ORANGE, 2)
-    arrow(d, 282, 175, 305, 175, ORANGE, 2)
-    arrow(d, 337, 158, 180, 122, ORANGE, 1.8)
-    arrow(d, 377, 158, 285, 122, ORANGE, 1.8)
-    arrow(d, 155, 84, 205, 58, BLUE, 1.8)
-    arrow(d, 285, 84, 250, 58, BLUE, 1.8)
-    arrow(d, 280, 39, 305, 39, RED, 2)
-    arrow(d, 369, 39, 394, 39, RED, 2)
-    arrow(d, 394, 31, 369, 31, GREEN, 1.4)
-    d.add(PolyLine([337, 58, 337, 76, 44, 76], strokeColor=GOLD, strokeWidth=1.4))
-    arrow(d, 44, 76, 44, 58, GOLD, 1.4)
-    d.add(PolyLine([347, 58, 347, 68, 125, 68], strokeColor=DUMP, strokeWidth=1.4))
-    arrow(d, 125, 68, 125, 58, DUMP, 1.4)
-    d.add(String(240, 202, "isolated standby charging path - no connection to traction bus", fontName="Arial-Bold", fontSize=7.2, fillColor=ORANGE, textAnchor="middle"))
-    d.add(String(240, 7, "regeneration priority: 1 auxiliary loads  -  2 active battery  -  3 resistor load bank", fontName="Arial-Bold", fontSize=7, fillColor=MID, textAnchor="middle"))
+    d = Drawing(485, 255)
+    d.add(Rect(0,0,485,255,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    d.add(Rect(10,163,465,78,rx=7,ry=7,fillColor=HexColor("#FFF9F3"),strokeColor=HexColor("#F0D5BC")))
+    d.add(String(22,228,"ISOLATED STANDBY CHARGING",fontName="Arial-Bold",fontSize=7.2,fillColor=ORANGE))
+    d.add(String(463,228,"no traction-bus connection",fontName="Arial",fontSize=6.3,fillColor=MID,textAnchor="end"))
+    xs=[20,125,239,354]; labs=[("Diesel\nfuel","engine"),("Engine +\ngenerator","engine"),("Best-point\ncharger","bolt"),("Standby\nselector","battery")]
+    for x,(lab,kind) in zip(xs,labs): card(d,x,178,91,37,lab,kind,HexColor("#FFF1E4"),ORANGE,6.2)
+    for x1,x2 in zip([111,216,330],[125,239,354]): routed_arrow(d,[(x1,197),(x2,197)],ORANGE,2)
+    d.add(Rect(10,66,465,84,rx=7,ry=7,fillColor=WHITE,strokeColor=HexColor("#CFE0E5")))
+    d.add(String(22,137,"TRACTION POWER",fontName="Arial-Bold",fontSize=7.2,fillColor=TEAL))
+    card(d,20,86,105,37,"Role-selected\nbattery banks","battery",SKY,BLUE,6.2)
+    card(d,145,86,86,37,"Traction\nDC bus","bolt",TEAL_LIGHT,TEAL,6.2)
+    card(d,251,86,95,37,"Motor +\ninverter","motor",HexColor("#E8F3EA"),GREEN,6.2)
+    card(d,366,86,99,37,"Wheels +\nvehicle","vehicle",HexColor("#E8F3EA"),GREEN,6.2)
+    for x1,x2 in [(125,145),(231,251),(346,366)]: routed_arrow(d,[(x1,105),(x2,105)],TEAL,2.2)
+    routed_arrow(d,[(399,86),(399,73),(299,73),(299,86)],BLUE,1.8)
+    d.add(String(349,69,"regenerative return",fontName="Arial-Bold",fontSize=6.2,fillColor=BLUE,textAnchor="middle"))
+    # Charging selector drops vertically to the physically selected standby pack; it never crosses traction flow.
+    routed_arrow(d,[(399,178),(399,158),(72,158),(72,123)],ORANGE,1.8)
+    d.add(String(226,153,"standby pack only",fontName="Arial-Bold",fontSize=6.1,fillColor=ORANGE,textAnchor="middle"))
+    # Priority destinations are aligned below the motor/inverter so the blue regen path is unambiguous.
+    card(d,20,15,118,35,"1  Auxiliary loads","aux",HexColor("#FFF8E8"),GOLD,6.2)
+    card(d,183,15,118,35,"2  Active battery","battery",SKY,BLUE,6.2)
+    card(d,346,15,119,35,"3  Resistor bank","resistor",HexColor("#FCEDE8"),DUMP,6.2)
+    routed_arrow(d,[(299,73),(299,58),(79,58),(79,50)],GOLD,1.6)
+    routed_arrow(d,[(299,58),(242,58),(242,50)],BLUE,1.6)
+    routed_arrow(d,[(299,58),(405,58),(405,50)],DUMP,1.6)
+    d.add(String(242,3,"regeneration order: auxiliaries  ->  active pack  ->  load bank",fontName="Arial-Bold",fontSize=6.4,fillColor=NAVY,textAnchor="middle"))
+    return d
+
+
+def simulink_decomposition_diagram():
+    """Readable subsystem view; the exact model screenshot remains available in the project."""
+    d=Drawing(485,190)
+    d.add(Rect(0,0,485,190,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    d.add(String(18,174,"SIMULINK FUNCTIONAL DECOMPOSITION",fontName="Arial-Bold",fontSize=7.2,fillColor=NAVY))
+    d.add(String(467,174,"signals routed on a separate logging lane",fontName="Arial",fontSize=6,fillColor=MID,textAnchor="end"))
+    cards=[(12,112,81,"Route mission","route",BLUE),(105,112,88,"Demand + grade","vehicle",TEAL),(217,112,85,"Force limits","check",ORANGE),(326,112,83,"Energy manager","control",TEAL),(427,112,46,"Plant","motor",GREEN)]
+    for x,y,w,label,kind,color in cards: card(d,x,y,w,40,label,kind,WHITE,color,6.1)
+    for (x,_,w,_,_,color),(nx,_,_,_,_,_) in zip(cards[:-1],cards[1:]): routed_arrow(d,[(x+w,132),(nx,132)],color,1.6)
+    card(d,104,44,100,40,"Battery models","battery",SKY,BLUE,6.2)
+    card(d,222,44,100,40,"Genset model","engine",HexColor("#FFF1E4"),ORANGE,6.2)
+    card(d,340,44,133,40,"Results + diagnostics","chart",HexColor("#E8F3EA"),GREEN,6.2)
+    routed_arrow(d,[(367,112),(367,96),(154,96),(154,84)],BLUE,1.4)
+    routed_arrow(d,[(367,96),(272,96),(272,84)],ORANGE,1.4)
+    routed_arrow(d,[(450,112),(450,96),(407,96),(407,84)],GREEN,1.4)
+    d.add(Line(23,25,455,25,strokeColor=HexColor("#BFCBD3"),strokeWidth=2,strokeDashArray=[5,3]))
+    for x,label,color in [(66,"mission",BLUE),(169,"demand",TEAL),(272,"limits",ORANGE),(375,"energy",GREEN)]:
+        d.add(Circle(x,25,5,fillColor=color,strokeColor=color)); d.add(String(x,12,label,fontName="Arial",fontSize=5.5,fillColor=MID,textAnchor="middle"))
+    d.add(String(467,22,"logged bus",fontName="Arial-Bold",fontSize=5.8,fillColor=NAVY,textAnchor="end"))
     return d
 
 
 def pipeline_diagram():
-    d = Drawing(485, 145)
-    d.add(Rect(0, 0, 485, 145, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
-    stages = [
-        (10, "Source\ntraces"), (88, "Route\nconversion"), (174, "Workbook +\nmodular data"),
-        (260, "Schema +\nphysics checks"), (355, "Resolved\nInput struct"), (430, "1 s\nroute")
-    ]
-    widths = [60, 68, 68, 76, 62, 45]
-    for (x, label), w in zip(stages, widths):
-        box(d, x, 70, w, 38, label, fill=SKY if x < 174 else TEAL_LIGHT)
-    for i in range(len(stages) - 1):
-        x1 = stages[i][0] + widths[i]
-        x2 = stages[i + 1][0]
-        arrow(d, x1, 89, x2, 89, TEAL)
-    d.add(String(10, 40, "VECTO .vdri", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(88, 40, "1 Hz acceleration-limited", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(260, 40, "IDs, ranges, monotonic time", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(355, 40, "selected catalog rows", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(10, 25, "OSM/OSRM JSON", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(88, 25, "10 s coach adaptation", fontName="Arial", fontSize=7, fillColor=MID))
-    d.add(String(430, 25, "Simulink", fontName="Arial", fontSize=7, fillColor=MID))
+    d=Drawing(485,168)
+    d.add(Rect(0,0,485,168,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    stages=[(15,70,"Acquire","route","VECTO / OSM"),(94,72,"Convert","bolt","1 Hz / 10 s"),(175,84,"Catalog","data","MAT + M files"),(269,83,"Validate","check","schema + physics"),(361,74,"Resolve","control","selected IDs"),(443,34,"Simulate","vehicle","1 s mission")]
+    centers=[]
+    for i,(cx,w,title,kind,sub) in enumerate(stages,1):
+        d.add(Circle(cx,116,20,fillColor=WHITE,strokeColor=TEAL,strokeWidth=1.5))
+        icon(d,cx,116,kind,TEAL,.8)
+        d.add(Circle(cx-15,143,7,fillColor=NAVY_2,strokeColor=NAVY_2))
+        d.add(String(cx-15,140.5,str(i),fontName="Arial-Bold",fontSize=6.5,fillColor=WHITE,textAnchor="middle"))
+        d.add(String(cx,82,title,fontName="Arial-Bold",fontSize=7,fillColor=NAVY,textAnchor="middle"))
+        d.add(String(cx,67,sub,fontName="Arial",fontSize=5.8,fillColor=MID,textAnchor="middle"))
+        centers.append(cx)
+    for a,b in zip(centers[:-1],centers[1:]): routed_arrow(d,[(a+21,116),(b-21,116)],TEAL,1.5)
+    d.add(Rect(30,20,425,27,rx=13,ry=13,fillColor=TEAL_LIGHT,strokeColor=None))
+    d.add(String(242,30,"traceable input chain: source  ->  conversion  ->  validation  ->  reproducible simulation",fontName="Arial-Bold",fontSize=6.5,fillColor=TEAL,textAnchor="middle"))
     return d
 
 
 def supervisor_diagram():
-    d = Drawing(485, 250)
-    d.add(Rect(0, 0, 485, 250, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
-    states = [
-        (30, 175, 95, 40, "Mode 1\nB1 traction", SKY),
-        (360, 175, 95, 40, "Mode 2\nB2 traction", SKY),
-        (30, 85, 125, 42, "Mode 3\nB1 traction\ncharge standby B2", TEAL_LIGHT),
-        (330, 85, 125, 42, "Mode 4\nB2 traction\ncharge standby B1", TEAL_LIGHT),
-        (187, 155, 110, 50, "30% role-swap\nguard", HexColor("#FFF0E1")),
-        (187, 70, 110, 42, "Mode 6\nRegeneration", HexColor("#E8F3EA")),
-        (187, 12, 110, 34, "Mode 7\nProtection", HexColor("#F8E7E7")),
-    ]
-    for x, y, w, h, label, fill in states:
-        box(d, x, y, w, h, label, fill=fill, edge=RED if "Protection" in label else TEAL)
-    arrow(d, 125, 195, 187, 180, TEAL)
-    arrow(d, 360, 195, 297, 180, TEAL)
-    arrow(d, 77, 175, 77, 127, ORANGE)
-    arrow(d, 408, 175, 408, 127, ORANGE)
-    arrow(d, 155, 106, 187, 168, BLUE)
-    arrow(d, 330, 106, 297, 168, BLUE)
-    arrow(d, 242, 155, 242, 112, GREEN)
-    arrow(d, 242, 70, 242, 46, RED)
-    arrow(d, 187, 91, 125, 195, TEAL)
-    arrow(d, 297, 91, 360, 195, TEAL)
-    d.add(String(242, 232, "active SOE <= 30% swaps roles only when the alternate pack is above 30%", fontName="Arial-Bold", fontSize=7.3, fillColor=MID, textAnchor="middle"))
-    d.add(String(242, 136, "genset runs at one optimum point and charges standby only", fontName="Arial", fontSize=7, fillColor=ORANGE, textAnchor="middle"))
+    d=Drawing(485,260)
+    d.add(Rect(0,0,485,260,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    card(d,169,197,147,45,"Supervisory EMS","control",TEAL_LIGHT,TEAL,7.2,">30% alternate-pack guard")
+    d.add(String(242,250,"ROLE-BASED CONTROL WITH ORTHOGONAL TRANSITIONS",fontName="Arial-Bold",fontSize=7.2,fillColor=NAVY,textAnchor="middle"))
+    card(d,18,132,132,42,"Mode 1  B1 traction","battery",SKY,BLUE,6.7)
+    card(d,335,132,132,42,"Mode 2  B2 traction","battery",SKY,BLUE,6.7)
+    card(d,18,67,132,45,"Mode 3  B1 traction\ncharge standby B2","bolt",HexColor("#FFF1E4"),ORANGE,6.2)
+    card(d,335,67,132,45,"Mode 4  B2 traction\ncharge standby B1","bolt",HexColor("#FFF1E4"),ORANGE,6.2)
+    card(d,177,87,130,43,"Mode 6  Regeneration","motor",HexColor("#E8F3EA"),GREEN,6.6)
+    card(d,177,19,130,40,"Mode 7  Protection","check",HexColor("#FCEBEC"),RED,6.6)
+    routed_arrow(d,[(213,197),(213,185),(84,185),(84,174)],TEAL,1.4)
+    routed_arrow(d,[(272,197),(272,185),(401,185),(401,174)],TEAL,1.4)
+    routed_arrow(d,[(84,132),(84,112)],ORANGE,1.6)
+    routed_arrow(d,[(401,132),(401,112)],ORANGE,1.6)
+    routed_arrow(d,[(150,89),(164,89),(164,151),(150,151)],BLUE,1.3)
+    routed_arrow(d,[(335,89),(321,89),(321,151),(335,151)],BLUE,1.3)
+    routed_arrow(d,[(242,197),(242,130)],GREEN,1.6)
+    routed_arrow(d,[(242,87),(242,59)],RED,1.6)
+    d.add(Rect(18,4,449,10,rx=5,ry=5,fillColor=HexColor("#E9EFF3"),strokeColor=None))
+    d.add(String(242,6.7,"orange = constant-point standby charging   |   blue = role swap   |   green = braking   |   red = protection",fontName="Arial",fontSize=5.6,fillColor=MID,textAnchor="middle"))
     return d
 
 
 def regeneration_priority_diagram():
-    d = Drawing(485, 185)
-    d.add(Rect(0, 0, 485, 185, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
-    d.add(String(242, 166, "STRICT SEQUENTIAL REGENERATIVE-ENERGY ALLOCATION",
-                 fontName="Arial-Bold", fontSize=8, fillColor=NAVY, textAnchor="middle"))
-    box(d, 10, 105, 78, 42, "Available\nregen DC", fill=HexColor("#E8F3EA"), edge=GREEN)
-    box(d, 108, 105, 92, 42, "1 Auxiliary\nloads", fill=HexColor("#F3F0E4"), edge=GOLD)
-    box(d, 225, 105, 110, 42, "2 Active battery\ncharge limits", fill=SKY, edge=BLUE)
-    box(d, 365, 105, 110, 42, "3 Resistor\nload bank", fill=HexColor("#F8E7E2"), edge=DUMP)
-    arrow(d, 88, 126, 108, 126, GREEN, 1.8)
-    arrow(d, 200, 126, 225, 126, BLUE, 1.8)
-    arrow(d, 335, 126, 365, 126, DUMP, 1.8)
-    d.add(String(49, 82, "P_reg = max(0, -P_motor,dc)", fontName="Arial", fontSize=6.7,
-                 fillColor=MID, textAnchor="middle"))
-    d.add(String(154, 82, "min(P_reg, P_aux)", fontName="Arial", fontSize=6.7,
-                 fillColor=MID, textAnchor="middle"))
-    d.add(String(280, 82, "remaining power within charge/SOE limits", fontName="Arial",
-                 fontSize=6.7, fillColor=MID, textAnchor="middle"))
-    d.add(String(420, 82, "all unaccepted remainder", fontName="Arial", fontSize=6.7,
-                 fillColor=MID, textAnchor="middle"))
-    d.add(Rect(55, 22, 375, 35, rx=4, ry=4, fillColor=WHITE, strokeColor=TEAL, strokeWidth=1))
-    d.add(String(242, 42,
-                 "P_reg = P_reg,aux + P_reg,active + P_dump",
-                 fontName="Arial-Bold", fontSize=8.2, fillColor=TEAL, textAnchor="middle"))
-    d.add(String(242, 29,
-                 "The standby battery is never a regenerative-energy destination.",
-                 fontName="Arial", fontSize=7, fillColor=MID, textAnchor="middle"))
+    d=Drawing(485,195)
+    d.add(Rect(0,0,485,195,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    d.add(String(242,178,"REGENERATIVE POWER CASCADE",fontName="Arial-Bold",fontSize=8,fillColor=NAVY,textAnchor="middle"))
+    d.add(String(242,165,"each stage receives only the power remaining from the previous stage",fontName="Arial",fontSize=6.3,fillColor=MID,textAnchor="middle"))
+    items=[(12,92,"SOURCE","Available DC","motor",GREEN,"max(0, -Pmotor,dc)"),(130,98,"1","Auxiliary loads","aux",GOLD,"min(Preg, Paux)"),(248,108,"2","Active battery","battery",BLUE,"charge + SOE limits"),(366,118,"3","Resistor bank","resistor",DUMP,"unaccepted remainder")]
+    for x,w,step,label,kind,color,sub in items:
+        d.add(Rect(x,92,w,59,rx=8,ry=8,fillColor=WHITE,strokeColor=color,strokeWidth=1.5))
+        d.add(Rect(x,92,w,13,rx=6,ry=6,fillColor=color,strokeColor=color))
+        d.add(Circle(x+20,126,12,fillColor=HexColor("#F7FAFC"),strokeColor=HexColor("#D8E3E8")))
+        icon(d,x+20,126,kind,color,.7)
+        d.add(String(x+38,132,step,fontName="Arial-Bold",fontSize=6.2,fillColor=color))
+        d.add(String(x+38,119,label,fontName="Arial-Bold",fontSize=6.6,fillColor=NAVY))
+        d.add(String(x+w/2,96,sub,fontName="Arial",fontSize=5.5,fillColor=WHITE,textAnchor="middle"))
+    for x1,x2,y in [(104,130,122),(228,248,126),(356,366,130)]: routed_arrow(d,[(x1,y),(x2,y)],TEAL,1.8)
+    d.add(Rect(42,27,401,43,rx=8,ry=8,fillColor=TEAL_LIGHT,strokeColor=TEAL,strokeWidth=1))
+    d.add(String(242,51,"P_reg = P_reg,aux + P_reg,active + P_dump",fontName="Arial-Bold",fontSize=8,fillColor=TEAL,textAnchor="middle"))
+    d.add(String(242,37,"standby battery excluded: its only charging source is the isolated genset",fontName="Arial",fontSize=6.3,fillColor=MID,textAnchor="middle"))
     return d
 
 
 def optimization_diagram():
-    d = Drawing(485, 175)
-    d.add(Rect(0, 0, 485, 175, fillColor=WHITE, strokeColor=GRID))
-    labels = [
-        (10, 105, 72, "Candidate\nIDs"), (101, 105, 82, "Compatibility\nfilter"),
-        (202, 105, 75, "Prepare\ninputs"), (296, 105, 72, "Run\nkernel"),
-        (387, 105, 88, "Feasibility\nchecks"), (202, 35, 75, "Rank by\nEUR/km"),
-        (315, 35, 92, "Top 10 +\nbest result"),
-    ]
-    for x, y, w, label in labels:
-        box(d, x, y, w, 38, label, fill=TEAL_LIGHT if y > 80 else SKY)
-    for i in range(4):
-        x1 = labels[i][0] + labels[i][2]
-        x2 = labels[i + 1][0]
-        arrow(d, x1, 124, x2, 124, TEAL)
-    arrow(d, 431, 105, 277, 54, GREEN)
-    arrow(d, 277, 54, 315, 54, GREEN)
-    d.add(String(123, 75, "reject: voltage, speed, ratio, power", fontName="Arial", fontSize=7, fillColor=RED, textAnchor="middle"))
-    d.add(String(415, 75, "reject: unmet energy, residual, terminal SOE", fontName="Arial", fontSize=7, fillColor=RED, textAnchor="middle"))
+    d=Drawing(485,205)
+    d.add(Rect(0,0,485,205,rx=8,ry=8,fillColor=HexColor("#F7FAFC"),strokeColor=GRID))
+    d.add(String(18,189,"BOUNDED, AUDITABLE SEARCH FUNNEL",fontName="Arial-Bold",fontSize=7.2,fillColor=NAVY))
+    stages=[(12,141,76,"Candidates","data"),(105,141,86,"Compatibility","check"),(208,141,78,"Prepare","control"),(303,141,70,"Simulate","vehicle"),(390,141,83,"Feasibility","check")]
+    for x,y,w,label,kind in stages: card(d,x,y,w,38,label,kind,TEAL_LIGHT,TEAL,6.1)
+    for (x,_,w,_,_),(nx,_,_,_,_) in zip(stages[:-1],stages[1:]): routed_arrow(d,[(x+w,160),(nx,160)],TEAL,1.6)
+    card(d,208,54,99,40,"Rank feasible\nEUR/km","chart",SKY,BLUE,6.3)
+    card(d,330,54,143,40,"Top 10 + best design","chart",HexColor("#E8F3EA"),GREEN,6.3)
+    routed_arrow(d,[(410,141),(410,115),(258,115),(258,94)],GREEN,1.8)
+    routed_arrow(d,[(307,74),(330,74)],GREEN,1.8)
+    d.add(Rect(105,20,86,26,rx=6,ry=6,fillColor=HexColor("#FCEBEC"),strokeColor=RED))
+    d.add(String(148,34,"static rejection",fontName="Arial-Bold",fontSize=6,fillColor=RED,textAnchor="middle"))
+    d.add(String(148,24,"voltage / speed / ratio",fontName="Arial",fontSize=5.2,fillColor=MID,textAnchor="middle"))
+    routed_arrow(d,[(148,141),(148,46)],RED,1.2,[3,3])
+    d.add(Rect(390,20,83,26,rx=6,ry=6,fillColor=HexColor("#FCEBEC"),strokeColor=RED))
+    d.add(String(431,34,"dynamic rejection",fontName="Arial-Bold",fontSize=6,fillColor=RED,textAnchor="middle"))
+    d.add(String(431,24,"unmet / residual / SOE",fontName="Arial",fontSize=5.2,fillColor=MID,textAnchor="middle"))
+    routed_arrow(d,[(452,141),(452,46)],RED,1.2,[3,3])
     return d
 
 
 def validation_pyramid():
-    d = Drawing(485, 220)
-    d.add(Rect(0, 0, 485, 220, fillColor=HexColor("#FBFCFD"), strokeColor=GRID))
+    d = Drawing(485, 230)
+    d.add(Rect(0, 0, 485, 230, rx=8, ry=8, fillColor=HexColor("#F7FAFC"), strokeColor=GRID))
+    d.add(String(242,214,"MODEL CREDIBILITY BUILDS FROM CONSERVATION TO DECISIONS",fontName="Arial-Bold",fontSize=7.2,fillColor=NAVY,textAnchor="middle"))
     levels = [
-        (75, 25, 335, 42, "System / ranking: repeatability, optimization order", HexColor("#DDEFF0")),
-        (115, 72, 255, 42, "Controller: switching, hysteresis, limits", HexColor("#E7F1F8")),
-        (155, 119, 175, 42, "Energy: DC balance, cost correction", HexColor("#FFF0E1")),
-        (195, 166, 95, 35, "Physics: force + power", HexColor("#E8F3EA")),
+        (55, 22, 375, 38, "4  DECISION EVIDENCE   repeatability + optimization order", HexColor("#DDEFF0"),"chart"),
+        (95, 65, 295, 38, "3  CONTROL EVIDENCE   switching + hysteresis + limits", HexColor("#E7F1F8"),"control"),
+        (135, 108, 215, 38, "2  ENERGY EVIDENCE   DC balance + cost", HexColor("#FFF0E1"),"battery"),
+        (175, 151, 135, 38, "1  PHYSICS   force + power", HexColor("#E8F3EA"),"vehicle"),
     ]
-    for x, y, w, h, label, fill in levels:
-        d.add(Polygon([x, y, x + w, y, x + w - 20, y + h, x + 20, y + h], fillColor=fill, strokeColor=TEAL))
-        d.add(String(242, y + h / 2 - 2, label, fontName="Arial-Bold", fontSize=7.4, fillColor=NAVY, textAnchor="middle"))
+    for x,y,w,h,label,fill,kind in levels:
+        d.add(Polygon([x,y,x+w,y,x+w-16,y+h,x+16,y+h],fillColor=fill,strokeColor=TEAL,strokeWidth=1.2))
+        icon(d,x+28,y+h/2,kind,TEAL,.65)
+        d.add(String(x+w/2+7,y+h/2-2,label,fontName="Arial-Bold",fontSize=6.5,fillColor=NAVY,textAnchor="middle"))
     return d
 
 
 def roadmap_diagram():
-    d = Drawing(485, 190)
-    d.add(Rect(0, 0, 485, 190, fillColor=WHITE, strokeColor=GRID))
+    d = Drawing(485, 205)
+    d.add(Rect(0, 0, 485, 205, rx=8, ry=8, fillColor=HexColor("#F7FAFC"), strokeColor=GRID))
+    d.add(String(242,188,"ENGINEERING MATURITY ROADMAP",fontName="Arial-Bold",fontSize=7.4,fillColor=NAVY,textAnchor="middle"))
     stages = [
-        (15, 100, "Concept\nenergy model", GREEN),
-        (113, 100, "Calibrated\ncomponent maps", TEAL),
-        (211, 100, "Thermal +\nageing models", BLUE),
-        (309, 100, "Closed-loop\ndriver + route", ORANGE),
-        (407, 100, "HIL / fleet\nvalidation", RED),
+        (12,"Concept\nenergy model",GREEN,"bolt","current"),
+        (108,"Calibrated\ncomponent maps",TEAL,"data","measure"),
+        (204,"Thermal +\nageing models",BLUE,"battery","predict"),
+        (300,"Closed-loop\ndriver + route",ORANGE,"vehicle","integrate"),
+        (396,"HIL / fleet\nvalidation",RED,"check","validate"),
     ]
-    for x, y, label, color in stages:
-        d.add(Circle(x + 30, y + 20, 28, fillColor=HexColor("#F7FAFB"), strokeColor=color, strokeWidth=2))
-        for i, line in enumerate(label.split("\n")):
-            d.add(String(x + 30, y + 23 - i * 9, line, fontName="Arial-Bold", fontSize=6.8, fillColor=NAVY, textAnchor="middle"))
-    for i in range(len(stages) - 1):
-        arrow(d, stages[i][0] + 58, 120, stages[i + 1][0] + 2, 120, MID)
-    d.add(String(242, 45, "increasing fidelity, data quality, and test evidence", fontName="Arial", fontSize=8, fillColor=MID, textAnchor="middle"))
+    d.add(Line(44,111,440,111,strokeColor=HexColor("#C8D3DA"),strokeWidth=4))
+    for i,(x,label,color,kind,tag) in enumerate(stages,1):
+        cx=x+32
+        d.add(Circle(cx,111,25,fillColor=WHITE,strokeColor=color,strokeWidth=2.2))
+        icon(d,cx,116,kind,color,.8)
+        d.add(Circle(cx-20,132,8,fillColor=color,strokeColor=color))
+        d.add(String(cx-20,129.5,str(i),fontName="Arial-Bold",fontSize=6.5,fillColor=WHITE,textAnchor="middle"))
+        for j,line in enumerate(label.split("\n")):
+            d.add(String(cx,75-j*9,line,fontName="Arial-Bold",fontSize=6.4,fillColor=NAVY,textAnchor="middle"))
+        d.add(String(cx,49,tag.upper(),fontName="Arial-Bold",fontSize=5.5,fillColor=color,textAnchor="middle"))
+    for i in range(len(stages)-1): routed_arrow(d,[(stages[i][0]+58,111),(stages[i+1][0]+6,111)],MID,1.4)
+    d.add(Rect(75,14,335,20,rx=10,ry=10,fillColor=HexColor("#E9EFF3"),strokeColor=None))
+    d.add(String(242,21,"increasing fidelity  |  stronger data  |  higher decision confidence",fontName="Arial-Bold",fontSize=6.1,fillColor=MID,textAnchor="middle"))
     return d
 
 
@@ -611,6 +723,12 @@ def line_chart(x, series, title, x_label, y_label, width=485, height=235, y_min=
     xmin, xmax = min(x), max(x)
     ymin = min(all_y) if y_min is None else y_min
     ymax = max(all_y) if y_max is None else y_max
+    # Textbook figures must never draw data outside the plot rectangle. If a
+    # configured axis limit excludes valid samples, expand the scale to retain
+    # the complete signal rather than allowing the polyline to escape the axes.
+    if all_y:
+        ymin = min(ymin, min(all_y))
+        ymax = max(ymax, max(all_y))
     if ymax <= ymin:
         ymax = ymin + 1
     pad = 0.06 * (ymax - ymin)
@@ -727,9 +845,9 @@ story += [
     Spacer(1, 44 * mm),
     P("GRADUATE STUDY EDITION", "CoverKicker"),
     P("Hybrid-Electric Bus<br/>System Modeling", "CoverTitle"),
-    P("A MATLAB and Simulink textbook for selectable hybrid and battery-electric<br/>architectures, route studies, supervisory control, and configuration optimization", "CoverSubtitle"),
+    P("A MATLAB and Simulink textbook for selectable hybrid and battery-electric<br/>architectures, route studies, supervisory control, and engineering evidence", "CoverSubtitle"),
     Spacer(1, 52 * mm),
-    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.3<br/>MATLAB / Simulink R2025a<br/>Revised 31 August 2026", "CoverMeta"),
+    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.6<br/>MATLAB / Simulink R2025a<br/>Revised 3 September 2026", "CoverMeta"),
     PageBreak(),
 ]
 
@@ -737,8 +855,8 @@ story += [
 story += [
     P("Preface", "FrontTitle"),
     P("This book explains a complete concept-level bus powertrain study environment with selectable hybrid-electric and battery-electric architectures. It is written for graduate students who already know basic mechanics, electrical power, and MATLAB syntax, but who may be new to model-based design and energy-management architecture.", "Lead"),
-    P("The project combines a transparent backward-demand energy model, constrained-speed and forward-performance formulations, three editable Simulink representations, modular MATLAB/MAT component data, a programmatic MATLAB app, a bounded configuration optimizer, and automated verification. Its purpose is educational and architectural: it shows how equations, assumptions, data, software interfaces, and test evidence must remain consistent across a system model.", "BodyTextBook"),
-    callout("How to read this book", "Chapters 1-3 establish the system and data architecture. Chapters 4-10 derive the physical and supervisory models. Chapters 11-15 explain execution, optimization, routes, and validation. Chapters 16-17 interpret worked studies and define responsible extensions.", "note"),
+    P("The project combines a transparent backward-demand energy model, constrained-speed and forward-performance formulations, three editable Simulink representations, modular MATLAB/MAT component data, a programmatic MATLAB app, an optional headless configuration-screening API, and automated verification. Its purpose is educational and architectural: it shows how equations, assumptions, data, software interfaces, and test evidence must remain consistent across a system model.", "BodyTextBook"),
+    callout("How to read this book", "Chapters 1-3 establish the system and data architecture. Chapters 4-10 derive the physical and supervisory models. Chapter 11 explains the current app workflow. Chapter 12 documents optional script-driven screening outside the app. Chapters 13-15 cover routes and validation; Chapters 16-17 interpret worked studies and responsible extensions.", "note"),
     P("Learning outcomes", "FrontSubhead"),
     bullet_list([
         "Derive tractive force and wheel power from a prescribed route speed and grade.",
@@ -814,24 +932,24 @@ artifact_rows = [
     ["models/HybridBus_BackwardModel.slx", "Editable ordinary-block hybrid backward-demand representation"],
     ["models/HybridBus_BEVModel.slx", "Separate editable BEV Simulink model with scalable parallel battery banks and no genset"],
     ["models/HybridBus_PerformanceModel.slx", "Editable forward-performance plant with route, driver, component-limit, and vehicle subsystems"],
-    ["simulate_hybrid_bus_core.m", "Detailed discrete reference kernel used by batch runs and optimization"],
-    ["HybridBusApp.m", "Explorer app for selecting, simulating, plotting, optimizing, and exporting"],
+    ["simulate_hybrid_bus_core.m", "Detailed discrete reference kernel used by app runs and headless batch studies"],
+    ["HybridBusApp.m", "Explorer app for selecting, simulating, comparing, plotting, and exporting"],
     ["tests/run_all_hybrid_bus_tests.m", "Fifty assertion-based physics, data, control, braking, performance, and ranking scenarios"],
     ["tests/*.m", "Fifty-six MATLAB unit and integration tests, including Hybrid/BEV equivalence and extensibility"],
 ]
 story += [table_caption("1.1", "Primary project artifacts"), make_table(artifact_rows, [55*mm, 115*mm]), PageBreak()]
 section(story, "1.3", "Architecture at a glance")
-story += [architecture_diagram(), figure_caption("1.1", "End-to-end project architecture from sourced routes to app and optimizer outputs")]
-story.append(P("The Excel workbook is the single engineer-editable input source. The loader resolves stable IDs, the validator checks schema and physical ranges, and the input-preparation function resamples the selected route to a 1 s grid. Both the MATLAB kernel and the SLX model consume the same resolved parameter set.", "BodyTextBook"))
+story += [architecture_diagram(), figure_caption("1.1", "End-to-end project architecture from sourced routes to app, batch-study, and evidence outputs")]
+story.append(P("The workbook supplies common calibration and selections, while route and component catalogs are modular MAT and MATLAB files. The loader resolves stable IDs, the validator checks schema and physical ranges, and the input-preparation function resamples the selected route to a 1 s grid. Both the MATLAB kernel and the SLX model consume the same resolved parameter set.", "BodyTextBook"))
 
 # Chapter 2
 chapter(story, "2", "Selectable Hybrid and Battery-Electric Architectures")
 section(story, "2.1", "Energy topology")
 story.append(P("The architecture contains two independent battery packs, two rear hub motors, a diesel engine-generator set, an auxiliary electrical load, and a resistor load bank. The topology has two deliberately separated electrical paths. Only the active battery connects to the traction DC bus; the genset connects only to the standby battery through a dedicated charger. The genset therefore cannot propel the vehicle or reduce active-battery traction demand. During braking, regenerated electrical power supplies auxiliaries first, charges only the active battery second, and is sent to the resistor load bank if the active battery cannot accept the remainder.", "BodyTextBook"))
 story += [energy_flow_diagram(), figure_caption("2.1", "Conceptual energy flow, isolated genset path, and regeneration priorities")]
+story.append(PageBreak())
 section(story, "2.2", "Simulink decomposition")
-simulink_image = image_flow(ASSET / "simulink_top_level.png", max_width=170*mm, max_height=72*mm)
-story += [simulink_image, figure_caption("2.2", "Top-level Simulink model and logged signal fan-out")]
+story += [simulink_decomposition_diagram(), figure_caption("2.2", "Readable Simulink subsystem decomposition and separated logging lane")]
 subsystems = [
     ["Subsystem", "Responsibility"],
     ["Route_and_Environment", "Publishes route speed, grade, and auxiliary multiplier"],
@@ -846,14 +964,18 @@ subsystems = [
 ]
 story += [table_caption("2.1", "Top-level model responsibilities"), make_table(subsystems, [62*mm, 108*mm])]
 section(story, "2.3", "Reference kernel versus SLX")
-story.append(P("The ordinary-block SLX is intended for architecture inspection, signal tracing, and interactive simulation. The MATLAB kernel contains the complete deterministic limit handling and supervisory behavior used by batch studies and the optimizer. This separation keeps the teaching model editable while making the numerical reference path easy to test.", "BodyTextBook"))
+story.append(P("The ordinary-block SLX is intended for architecture inspection, signal tracing, and interactive simulation. The MATLAB kernel contains the complete deterministic limit handling and supervisory behavior used by app runs and optional batch studies. This separation keeps the teaching model editable while making the numerical reference path easy to test.", "BodyTextBook"))
+story.append(PageBreak())
 section(story, "2.4", "Battery-electric alternative")
 story.append(P("The Powertrain Architecture switch selects Hybrid or BEV without changing the component database. In BEV mode the diesel fuel, engine, generator, and isolated standby charger are absent. The former Use both batteries checkbox has been removed. A Battery set multiplier now defines installed capacity: 0.5, 1.0, 1.5, and 2.0 BEV sets mean one, two, three, and four connected packs. Odd pack totals assign the additional pack to the Battery 1 selection. All connected packs begin at the same SOE, 85% by default.", "BodyTextBook"))
 story += [image_flow(ROOT / "results" / "BEV_App_Dual_Battery_View.png", max_width=170*mm, max_height=102*mm), figure_caption("2.3", "Selectable BEV architecture with scalable parallel battery banks, external charging, and regenerative return")]
+story.append(PageBreak())
 story.append(P("For a requested signed DC power Pdc, the controller computes each connected bank's instantaneous charge or discharge capability from its SOE window, scaled pack count, power rating, derating factor, efficiency, and remaining energy headroom. Accepted power is shared in proportion to those capabilities:", "BodyTextBook"))
 story += [equation("P<sub>1</sub> = P<sub>accepted</sub> C<sub>1</sub>/(C<sub>1</sub>+C<sub>2</sub>), &nbsp; P<sub>2</sub> = P<sub>accepted</sub> C<sub>2</sub>/(C<sub>1</sub>+C<sub>2</sub>)", "2.1")]
 story.append(P("Regeneration retains the same first-principles destination order: auxiliaries first, connected battery pack or packs second, and the resistor load bank third. The BEV kernel sets genset power, genset starts, fuel rate, and fuel use identically to zero. HybridBus_BEVModel.slx is a separate editable fixed-step representation using the same database-resolved route, motor, driveline, auxiliary, battery, vehicle, and economic parameters.", "BodyTextBook"))
+story.append(PageBreak())
 story += [image_flow(ROOT / "results" / "HybridBus_BEVModel_TopLevel.png", max_width=170*mm, max_height=68*mm), figure_caption("2.4", "Separate HybridBus_BEVModel.slx with parallel battery energy management and explicit zero fuel/genset path")]
+story.append(PageBreak())
 section(story, "2.5", "Battery-set interpretation in Hybrid mode")
 story.append(P("Hybrid accepts only positive whole-number set multipliers. One set contains one Battery 1 pack in one role bank and one Battery 2 pack in the alternate role bank. A multiplier of two therefore produces two Battery 1 packs in parallel and two Battery 2 packs in parallel. Exactly one bank is active for traction while the equal-sized alternate bank is standby; the 30% role-swap rule transfers those bank roles, not individual packs.", "BodyTextBook"))
 story += [
@@ -1143,15 +1265,16 @@ chapter(story, "11", "Using the Explorer App")
 section(story, "11.1", "Configuration panel")
 story.append(P("The programmatic UIFigure app groups route, editable load, calculated curb and total mass, and auxiliary selection in Mission Inputs. Battery, motor, and genset selections remain directly below. Initial battery SOEs are entered as percentages and converted to fractions only at the model boundary. Fuel and electricity prices show EUR/L and EUR/kWh. The battery-set multiplier controls installed bank count; Repeat route until depleted selects a range experiment; and Run BEV first, then Hybrid selects the ordered architecture comparison defined in Section 8.7.", "BodyTextBook"))
 story.append(P("The Powertrain Architecture tab opens first and includes a blue/gray Hybrid-BEV switch. In Hybrid it shows the isolated standby-charging chain, active-battery selector, traction DC bus, regenerative return, auxiliary-first branch, and resistor load bank. In BEV it replaces the fuel and genset chain with external charging and scalable parallel battery banks. Every component block is clickable: a non-modal window reports selected catalog IDs, ratings, units, implemented role, control rules, mass contribution, and concept-model limitations.", "BodyTextBook"))
+story.append(callout("Current app boundary", "The current tabs are Powertrain Architecture, Route Map, KPIs, Simulation Analysis, Model Credibility, Signals, and Detailed Plot. Configuration provides Run Manual, Cancel, and Export. The former Optimize control, Max configurations field, and Optimization Ranking tab have been removed. Optional catalog screening remains available only through the headless MATLAB API in Chapter 12.", "note"))
 app_image = image_flow(ASSET / "hybrid_bus_app.png", max_width=170*mm, max_height=102*mm)
-story += [app_image, figure_caption("11.1", "Current Explorer Configuration panel with calculated mass; the default-off BEV-then-Hybrid control is selected here for illustration")]
+story += [app_image, figure_caption("11.1", "Current Explorer Configuration panel with calculated mass and the default-off BEV-then-Hybrid comparison control")]
 architecture_app_image = image_flow(ASSET / "hybrid_bus_app_architecture.png", max_width=170*mm, max_height=102*mm)
 story += [architecture_app_image, figure_caption("11.2", "Architecture tab with the wheel-to-inverter regenerative return and numbered destination priorities")]
-story += [image_flow(ROOT / "documentation" / "screenshots" / "architecture_clickable_blocks.png", max_width=170*mm, max_height=102*mm), figure_caption("11.3", "Clickable architecture blocks expose the underlying selected component specifications")]
+story += [image_flow(ASSET / "architecture_component_detail.png", max_width=170*mm, max_height=102*mm), figure_caption("11.3", "Component detail window with Specification Information, KPIs, and Physical Signals tabs")]
 route_map_image = image_flow(ASSET / "app_mannheim_city_map.png", max_width=170*mm, max_height=102*mm)
 story += [route_map_image, figure_caption("11.4", "Route Map 2D view displaying stored latitude/longitude geometry and endpoint markers")]
 story.append(P("The Route Map switch preserves the geographic 2D view and reveals a second Elevation-Slope switch only in 3D mode. Elevation is plotted in metres from the stored route geometry. Slope is derived from successive elevation change divided by geographic path-distance change and displayed in percent. Blue identifies the selected side of every slider-style switch; gray identifies the alternative.", "BodyTextBook"))
-route_3d_views = Table([[image_flow(ROOT / "documentation" / "screenshots" / "route_map_3d_elevation_toggle.png", max_width=82*mm, max_height=58*mm), image_flow(ROOT / "documentation" / "screenshots" / "route_map_3d_slope_toggle.png", max_width=82*mm, max_height=58*mm)]], colWidths=[85*mm,85*mm])
+route_3d_views = Table([[image_flow(ASSET / "route_map_3d_elevation.png", max_width=82*mm, max_height=58*mm), image_flow(ASSET / "route_map_3d_slope.png", max_width=82*mm, max_height=58*mm)]], colWidths=[85*mm,85*mm])
 route_3d_views.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('LEFTPADDING',(0,0),(-1,-1),0),('RIGHTPADDING',(0,0),(-1,-1),0)]))
 story += [route_3d_views, figure_caption("11.5", "Route Map 3D quantity switch: elevation in metres (left) and road slope in percent (right)")]
 section(story, "11.2", "Manual-study and architecture-comparison workflow")
@@ -1188,33 +1311,30 @@ credibility_image = image_flow(ASSET / "model_credibility.png", max_width=170*mm
 story += [credibility_image, figure_caption("11.8", "Model Credibility tab separating verified concept behavior from open implementation and validation gates")]
 section(story, "11.6", "Signals and Detailed Plot axes")
 story.append(P("Signals and Detailed Plot share a Time-Distance switch. Time remains the internal independent variable in seconds, but display units adapt to mission duration: minutes for missions shorter than two hours and hours for longer missions. Distance mode uses cumulative vehicle distance in kilometres, so users can relate power, SOE, torque, and speed events directly to route position. The Battery SOE axes are always displayed in percent.", "BodyTextBook"))
-story += [image_flow(ROOT / "documentation" / "screenshots" / "signals_distance_axis.png", max_width=170*mm, max_height=102*mm), figure_caption("11.9", "Signals tab using cumulative distance in kilometres as the common x-axis")]
-section(story, "11.7", "Optimization tab")
-story.append(P("The optimization view ranks feasible configurations and keeps stable component IDs visible. Hybrid mode varies Battery 1, the motor pair, genset, and final drive while Battery 2 remains fixed. BEV mode varies both batteries, the motor pair, and final drive; the genset is excluded. Cancellation is checked between simulations, so the bounded search remains responsive without requiring Parallel Computing Toolbox. Chapter 12 defines the complete search and interpretation workflow.", "BodyTextBook"))
-
+story += [image_flow(ASSET / "signals_distance_axis.png", max_width=170*mm, max_height=102*mm), figure_caption("11.9", "Signals tab using cumulative distance in kilometres as the common x-axis")]
 # Chapter 12
-chapter(story, "12", "Configuration Optimization")
+chapter(story, "12", "Headless Configuration Screening")
 section(story, "12.1", "Purpose and study boundary")
-story.append(P("The optimizer is a deterministic design-screening tool. It answers: among the component combinations actually evaluated for one prescribed mission, which feasible combination has the lowest modeled operating cost per kilometre? It does not redesign components, tune continuous parameters, predict hardware life, or prove a global optimum.", "BodyTextBook"))
+story.append(P("The retained optimize_hybrid_bus_configuration MATLAB function is a deterministic, script-driven design-screening tool. It is not exposed by the current Explorer app. It answers: among the component combinations actually evaluated for one prescribed mission, which feasible combination has the lowest modeled operating cost per kilometre? It does not redesign components, tune continuous parameters, predict hardware life, or prove a global optimum.", "BodyTextBook"))
 fixed_varied_rows = [
-    ["Mode / held fixed by the app", "Varied by the app"],
+    ["Mode / held fixed by the calling script", "Varied by the headless API"],
     ["Both: route, entered load, calculated mass, auxiliaries, environment, prices", "Both: motor pair and final drive"],
     ["Both: tyre, control calibration, fuel tank, repeat-route flag", "Hybrid: Battery 1 and genset"],
     ["Both: battery-set multiplier; Hybrid: Battery 2 and both initial SOEs", "BEV: Battery 1 and Battery 2"],
     ["BEV: equal initial SOE and connected pack count derived from multiplier", "BEV: no genset candidate"],
 ]
-story += [table_caption("12.1", "Study variables controlled by the Optimize button"), make_table(fixed_varied_rows, [85*mm, 85*mm])]
+story += [table_caption("12.1", "Study variables supplied to the headless screening API"), make_table(fixed_varied_rows, [85*mm, 85*mm])]
 story.append(callout("Mode-specific search", "Hybrid preserves the selected standby Battery 2 while varying Battery 1. BEV varies both pack selections because both may operate in parallel; the voltage-class compatibility rule is enforced before simulation.", "note"))
 
 section(story, "12.2", "Candidate set and mixed-radix enumeration")
 story.append(P("For every varied category, the optimizer reads stable component IDs from catalog rows marked OptimizationEnabled. If the four candidate counts are nB, nM, nG, and nF, the complete discrete search space is", "BodyTextBook"))
 story += [equation("N<sub>space</sub> = n<sub>B</sub> n<sub>M</sub> n<sub>G</sub> n<sub>F</sub>", "12.1")]
 story.append(P("A mixed-radix counter converts each linear evaluation index into one Battery 1, motor, genset, and final-drive combination. This avoids materializing a large Cartesian-product table in memory and gives repeatable ordering between runs with the same database.", "BodyTextBook"))
-story.append(P("Before enumeration, any currently displayed component ID supplied by the app is moved to the front of its candidate list. The first candidate is therefore the complete displayed configuration, including the selected final drive. This release fixed a handoff defect in which the hidden final-drive ID was omitted: the 40-case budget could be consumed by an incompatible FD-01 prefix before the displayed valid FD-08 was reached. The complete configuration handoff now includes tyre, final drive, environment, control calibration, initial active battery, auxiliary scalar, and fuel-tank capacity.", "BodyTextBook"))
+story.append(P("Before enumeration, any preferred component ID supplied by the calling script is moved to the front of its candidate list. The first candidate is therefore the complete preferred configuration, including the selected final drive. The complete configuration handoff includes tyre, final drive, environment, control calibration, initial active battery, auxiliary scalar, and fuel-tank capacity.", "BodyTextBook"))
 story += [optimization_diagram(), figure_caption("12.1", "Compatibility, simulation, feasibility, and ranking sequence")]
 
-section(story, "12.3", "Meaning of Max configurations")
-story.append(P("Max configurations is the evaluation budget for one click of Optimize. Its default value of 40 means that no more than forty candidate combinations are inspected in that run. Both compatible simulated cases and combinations rejected by the pre-simulation compatibility filter consume an evaluation number. The field is therefore a runtime-control setting, not a request for forty feasible solutions.", "BodyTextBook"))
+section(story, "12.3", "Meaning of the evaluation budget")
+story.append(P("The MaxConfigurations API option is the evaluation budget for one script-driven screening run. A value of 40 means that no more than forty candidate combinations are inspected. Both compatible simulated cases and combinations rejected by the pre-simulation compatibility filter consume an evaluation number. It is a runtime-control argument, not an app field and not a request for forty feasible solutions.", "BodyTextBook"))
 story += [equation("N<sub>evaluated</sub> = min(N<sub>max</sub>, N<sub>space</sub>)", "12.2")]
 story.append(P("Increasing the budget explores more of the deterministic catalog order and may find a lower-cost feasible design, but simulation time rises approximately with the number of compatible cases. If Nmax is smaller than Nspace, the reported winner is only the best among the evaluated prefix. A global discrete optimum is established only when the complete enabled search space is evaluated, or when a separately justified search strategy covers it.", "BodyTextBook"))
 budget_rows = [
@@ -1245,15 +1365,15 @@ story.append(P("The first gate rejects component sets that cannot satisfy reques
 
 section(story, "12.6", "Objective, ranking, and tie-break")
 story += [equation("minimize C<sub>km</sub> = (C<sub>fuel</sub> + C<sub>grid-equivalent electricity</sub>) / d<sub>route</sub>", "12.6")]
-story.append(P("Only feasible rows are sorted. Operating cost per kilometre is the primary objective; fuel consumption in litres per 100 km is the ascending tie-break. The optimization table displays the highest-ranked feasible rows, up to ten. Stable catalog IDs are retained so a result can be reproduced from the workbook.", "BodyTextBook"))
+story.append(P("Only feasible rows are sorted. Operating cost per kilometre is the primary objective; fuel consumption in litres per 100 km is the ascending tie-break. The returned MATLAB result contains the ranked feasible rows. Stable catalog IDs are retained so a result can be reproduced from the modular database.", "BodyTextBook"))
 
 section(story, "12.7", "What happens after the search")
 story.append(numbered_list([
-    "The status line reports the number of evaluated combinations; during the run it also shows the latest modeled cost.",
+    "The calling script receives the number of evaluated combinations and the latest modeled cost through the progress callback when one is supplied.",
     "All evaluated rows retain compatibility, feasibility, rejection reason, cost, energy, terminal SOE, unmet energy, and estimated-mass fields.",
-    "The Optimization Ranking tab receives the top feasible table, limited to ten rows.",
-    "The best feasible result becomes the app's current result, so the Signals, Detailed Plot, and KPI tabs update to that configuration.",
-    "Cancel requests are honored between candidate simulations; the already completed rows remain the meaningful partial search history in memory.",
+    "The returned TopConfigurations table contains the highest-ranked feasible rows, limited by the API result contract.",
+    "The best feasible result is returned to the caller; it does not mutate the Explorer app or its displayed simulation.",
+    "A cancellation callback can stop work between candidate simulations; completed rows remain available as a meaningful partial search history.",
 ]))
 
 section(story, "12.8", "Worked ranking and responsible interpretation")
@@ -1269,12 +1389,12 @@ for i, row in top_configs.head(5).iterrows():
     opt_rows.append([i + 1, row["Battery1ID"], row["MotorID"], f"{row['CostPer_km']:.4f}", f"{row['Electrical_kWh_per_km']:.4f}"])
 story += [table_caption("12.3", "Top five feasible rows in the current 144-case study"), make_table(opt_rows, [16*mm, 34*mm, 34*mm, 43*mm, 43*mm], alignments=["CENTER", "CENTER", "CENTER", "RIGHT", "RIGHT"])]
 release_audit_rows = [
-    ["App-shaped release audit", "Evaluated", "Feasible", "Top sorted", "Best returned"],
+    ["API-shaped release audit", "Evaluated", "Feasible", "Top sorted", "Best returned"],
     ["Hybrid default", "40", "4", "Yes", "Yes"],
     ["BEV, 1.0 set / two packs", "40", "2", "Yes", "Yes; fuel = 0"],
     ["BEV, 0.5 set / one pack", "1 smoke case", "1", "Yes", "Yes; Battery 2 count = 0"],
 ]
-story += [table_caption("12.4", "Post-fix Optimize verification using the app's actual configuration handoff"), make_table(release_audit_rows, [58*mm, 25*mm, 25*mm, 30*mm, 32*mm], font_size=6.8, alignments=["LEFT","CENTER","CENTER","CENTER","CENTER"])]
+story += [table_caption("12.4", "Headless screening verification using the complete configuration handoff"), make_table(release_audit_rows, [58*mm, 25*mm, 25*mm, 30*mm, 32*mm], font_size=6.8, alignments=["LEFT","CENTER","CENTER","CENTER","CENTER"])]
 story.append(callout("Correct interpretation", "A first-ranked row is the best feasible row within the combinations that were actually evaluated, under the selected route, mass, prices, initial SOEs, component data, and terminal-energy rule. It is not automatically a production recommendation or a global optimum when the evaluation budget truncates the enabled search space.", "warn"))
 
 # Chapter 13
@@ -1341,7 +1461,7 @@ section(story, "15.2", "Signal interpretation")
 sig_fig = line_chart(
     signals["Time_s"] / 60,
     [("B1 SOE", signals["Battery1SOE_pct"], BLUE), ("B2 SOE", signals["Battery2SOE_pct"], ORANGE)],
-    "Battery state of energy on the default mission", "Time (min)", "SOE (%)", y_min=45, y_max=86,
+    "Battery state of energy on the default mission", "Time (min)", "SOE (%)", y_min=0, y_max=100,
 )
 story += [sig_fig, figure_caption("15.1", "Default dual-battery SOE histories and active-pack behavior")]
 story.append(P(
@@ -1403,7 +1523,7 @@ story.append(numbered_list([
     "Increase motor and active-pack capability, add sufficient battery energy, or schedule external charging; do not count genset output as traction power.",
     "Introduce realistic elevation and road-grade data before comparing Alpine corridors.",
     "Calibrate speed, dwell, passenger load, HVAC, traffic, and rest-stop assumptions with measured or operator data.",
-    "Run bounded optimization with feasibility constraints, then compare equivalent replenishment and charge-sustaining results.",
+    "Run the optional headless bounded screening API with feasibility constraints, then compare equivalent replenishment and charge-sustaining results.",
     "Repeat under temperature, mass, headwind, and component-degradation scenarios.",
 ]))
 
@@ -1495,14 +1615,14 @@ param_rows = [
     ["Genset", "optimum/max power, minimum times, BSFC, efficiency", "Genset + maps"],
     ["Supervisor", "Hybrid 30% role swap or BEV parallel capability sharing; auxiliary-battery-dump regen priority", "Architecture mode + control calibration"],
     ["Load bank", "regenerative surplus after active-pack limits", "Derived power sink"],
-    ["Economics", "fuel tank, prices, grid efficiency, terminal method", "Dashboard / Vehicle / Prices / Optimization"],
+    ["Economics", "fuel tank, prices, grid efficiency, terminal method", "Dashboard / Vehicle / Prices / headless studies"],
 ]
 story += [table_caption("B.2", "Principal parameter groups"), make_table(param_rows, [34*mm, 88*mm, 48*mm], font_size=6.8)]
 
 # References
 chapter(story, "", "References, Sources, and Project Files")
 refs = [
-    f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.3, revised 31 August 2026.",
+    f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.6, revised 3 September 2026.",
     "[2] European Commission, Vehicle Energy Consumption Calculation Tool (VECTO), https://climate.ec.europa.eu/eu-action/transport-decarbonisation/road-transport/vehicle-energy-consumption-calculation-tool-vecto_en.",
     "[3] European Commission VECTO source repository, declaration mission cycles, commit d16ba783c1d8af0ea68797f5d7ed6cf01877d402, https://code.europa.eu/vecto/vecto.",
     "[4] Project OSRM API documentation, route service and annotation objects, https://project-osrm.org/docs/v5.24.0/api/.",

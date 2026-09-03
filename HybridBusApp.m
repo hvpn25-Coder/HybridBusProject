@@ -1,5 +1,5 @@
 classdef HybridBusApp < handle
-    %HYBRIDBUSAPP Explorer UI for manual and optimized hybrid-bus studies.
+    %HYBRIDBUSAPP Explorer UI for interactive hybrid-bus studies.
     properties (Access=private)
         Figure matlab.ui.Figure
         DatabaseField matlab.ui.control.EditField
@@ -16,7 +16,6 @@ classdef HybridBusApp < handle
         SOE2Field matlab.ui.control.NumericEditField
         FuelPriceField matlab.ui.control.NumericEditField
         ElectricityPriceField matlab.ui.control.NumericEditField
-        MaxConfigurationsField matlab.ui.control.NumericEditField
         BatterySetMultiplierField matlab.ui.control.NumericEditField
         RepeatRouteCheckBox matlab.ui.control.CheckBox
         RunBEVThenHybridCheckBox matlab.ui.control.CheckBox
@@ -50,7 +49,6 @@ classdef HybridBusApp < handle
         CredibilityGateTable matlab.ui.control.Table
         CredibilityBaselineTable matlab.ui.control.Table
         CredibilityAxes matlab.ui.control.UIAxes
-        RankingTable matlab.ui.control.Table
         SpeedAxes matlab.ui.control.UIAxes
         PowerAxes matlab.ui.control.UIAxes
         BatteryAxes matlab.ui.control.UIAxes
@@ -74,7 +72,6 @@ classdef HybridBusApp < handle
         Database struct = struct
         CurrentResults = []
         CurrentPowertrainSequence = []
-        CurrentOptimization = []
         CancelRequested logical = false
         HybridSOE1Cache double = 85
         HybridSOE2Cache double = 20
@@ -102,8 +99,8 @@ classdef HybridBusApp < handle
             root.RowHeight={'1x','fit'}; root.ColumnWidth={350,'1x'};
             root.Padding=[0 0 0 0]; root.ColumnSpacing=8;
             side=uipanel(root,'Title','Configuration'); side.Layout.Row=1; side.Layout.Column=1;
-            sideGrid=uigridlayout(side,[19 2]);
-            sideGrid.RowHeight=[repmat({'fit'},1,18),{'1x'}];
+            sideGrid=uigridlayout(side,[18 2]);
+            sideGrid.RowHeight=[repmat({'fit'},1,17),{'1x'}];
             sideGrid.ColumnWidth={140,'1x'}; sideGrid.Padding=[10 10 10 10];
             addLabel(sideGrid,'Database',1); dbGrid=uigridlayout(sideGrid,[1 2]);
             dbGrid.Layout.Row=1; dbGrid.Layout.Column=2; dbGrid.ColumnWidth={'1x','fit'};
@@ -148,35 +145,39 @@ classdef HybridBusApp < handle
             app.SOE2Field.ValueChangedFcn=@(~,~)app.synchronizeBEVSOE(2);
             app.FuelPriceField=app.addNumber(sideGrid,'Fuel price (EUR/L)',10,2.10,[0 inf]);
             app.ElectricityPriceField=app.addNumber(sideGrid,'Electricity (EUR/kWh)',11,0.40,[0 inf]);
-            app.MaxConfigurationsField=app.addNumber(sideGrid,'Max configurations',12,40,[1 1000]);
-            addLabel(sideGrid,'Simulation formulation',13);
+            addLabel(sideGrid,'Simulation formulation',12);
             app.SimulationFormulationSwitch=uidropdown(sideGrid, ...
                 'Items',{'Backward','Constrained','Performance'},'Value','Backward', ...
                 'ValueChangedFcn',@(~,~)app.updateSimulationFormulation(), ...
                 'Tooltip',['Backward prescribes route speed. Constrained performs one fast route-time ' ...
                 'pass with current/torque/force-limited achieved speed. Performance continues the ' ...
                 'detailed forward mission calculation.']);
-            app.SimulationFormulationSwitch.Layout.Row=13;
+            app.SimulationFormulationSwitch.Layout.Row=12;
             app.SimulationFormulationSwitch.Layout.Column=2;
             app.RepeatRouteCheckBox=uicheckbox(sideGrid,'Text','Repeat route until depleted', ...
                 'Value',false,'Tooltip',['Continuously repeat the selected route until the fuel tank ' ...
                 'is empty and both batteries reach their usable-energy limits.']);
-            app.RepeatRouteCheckBox.Layout.Row=14; app.RepeatRouteCheckBox.Layout.Column=[1 2];
+            app.RepeatRouteCheckBox.Layout.Row=13; app.RepeatRouteCheckBox.Layout.Column=[1 2];
             app.RunBEVThenHybridCheckBox=uicheckbox(sideGrid, ...
                 'Text','Run BEV first, then Hybrid','Value',false, ...
                 'Tooltip',['When Run Manual is pressed, simulate BEV first and Hybrid second ' ...
                 'with the same mission configuration. Leave unchecked to run the slider selection.']);
-            app.RunBEVThenHybridCheckBox.Layout.Row=15;
+            app.RunBEVThenHybridCheckBox.Layout.Row=14;
             app.RunBEVThenHybridCheckBox.Layout.Column=[1 2];
-            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[16 17];
+            buttonGrid=uigridlayout(sideGrid,[2 2]); buttonGrid.Layout.Row=[15 16];
             buttonGrid.Layout.Column=[1 2]; buttonGrid.ColumnWidth={'1x','1x'};
             buttonGrid.RowHeight={'fit','fit'}; buttonGrid.Padding=[0 0 0 0];
-            uibutton(buttonGrid,'Text','Run Manual','ButtonPushedFcn',@(~,~)app.runManual());
-            uibutton(buttonGrid,'Text','Optimize','ButtonPushedFcn',@(~,~)app.runOptimization());
-            uibutton(buttonGrid,'Text','Cancel','ButtonPushedFcn',@(~,~)app.requestCancel());
-            uibutton(buttonGrid,'Text','Export','ButtonPushedFcn',@(~,~)app.exportCurrent());
+            runButton=uibutton(buttonGrid,'Text','Run Manual', ...
+                'ButtonPushedFcn',@(~,~)app.runManual());
+            runButton.Layout.Row=1; runButton.Layout.Column=[1 2];
+            cancelButton=uibutton(buttonGrid,'Text','Cancel', ...
+                'ButtonPushedFcn',@(~,~)app.requestCancel());
+            cancelButton.Layout.Row=2; cancelButton.Layout.Column=1;
+            exportButton=uibutton(buttonGrid,'Text','Export', ...
+                'ButtonPushedFcn',@(~,~)app.exportCurrent());
+            exportButton.Layout.Row=2; exportButton.Layout.Column=2;
             app.StatusLabel=uilabel(sideGrid,'Text','Ready','WordWrap','on');
-            app.StatusLabel.Layout.Row=18; app.StatusLabel.Layout.Column=[1 2];
+            app.StatusLabel.Layout.Row=17; app.StatusLabel.Layout.Column=[1 2];
 
             tabs=uitabgroup(root); tabs.Layout.Row=1; tabs.Layout.Column=2;
             % Creation order defines the user-facing workflow and initial tab.
@@ -185,7 +186,6 @@ classdef HybridBusApp < handle
             summaryTab=uitab(tabs,'Title','KPIs');
             analysisTab=uitab(tabs,'Title','Simulation Analysis');
             credibilityTab=uitab(tabs,'Title','Model Credibility');
-            rankTab=uitab(tabs,'Title','Optimization Ranking');
             plotTab=uitab(tabs,'Title','Signals');
             detailedTab=uitab(tabs,'Title','Detailed Plot');
 
@@ -300,8 +300,6 @@ classdef HybridBusApp < handle
             app.buildSimulationAnalysis(analysisTab);
             app.buildCredibilityDashboard(credibilityTab);
             app.loadCredibilityEvidence();
-            rankGrid=uigridlayout(rankTab,[1 1]);
-            app.RankingTable=uitable(rankGrid);
             app.StatusLabel=uilabel(root,'Text','Ready');
             app.StatusLabel.Layout.Row=2; app.StatusLabel.Layout.Column=[1 2];
         end
@@ -725,39 +723,6 @@ classdef HybridBusApp < handle
             drawnow;
         end
 
-        function runOptimization(app)
-            app.CancelRequested=false; app.StatusLabel.Text='Optimizing...'; drawnow;
-            try
-                app.CurrentPowertrainSequence=[];
-                if strcmpi(string(app.PowertrainModeSwitch.Value),"BEV")
-                    varyComponents=["Battery1","Battery2","Motor","FinalDrive"];
-                else
-                    varyComponents=["Battery1","Motor","Genset","FinalDrive"];
-                end
-                app.CurrentOptimization=optimize_hybrid_bus_configuration( ...
-                    string(app.DatabaseField.Value),Vary=varyComponents, ...
-                    MaxConfigurations=round(app.MaxConfigurationsField.Value), ...
-                    BaseOverrides=app.gatherOverrides(), ...
-                    ProgressFcn=@(n,total,row)app.progress(n,total,row), ...
-                    CancelFcn=@()app.CancelRequested,SaveResults=false);
-                app.RankingTable.Data=app.CurrentOptimization.TopConfigurations;
-                if ~isempty(app.CurrentOptimization.BestResult)
-                    app.CurrentResults=app.CurrentOptimization.BestResult;
-                    app.updateResults(app.CurrentResults);
-                end
-                app.StatusLabel.Text=sprintf('Optimization complete: %d evaluated', ...
-                    height(app.CurrentOptimization.EvaluatedConfigurations));
-            catch exception
-                app.StatusLabel.Text='Optimization failed';
-                uialert(app.Figure,exception.message,'Optimization error');
-            end
-        end
-
-        function progress(app,n,total,row)
-            app.StatusLabel.Text=sprintf('Evaluated %d/%d; latest cost %.4f',n,total,row.CostPer_km);
-            drawnow limitrate;
-        end
-
         function requestCancel(app)
             app.CancelRequested=true; app.StatusLabel.Text='Cancellation requested...'; drawnow;
         end
@@ -811,7 +776,7 @@ classdef HybridBusApp < handle
             header.Layout.Row=1; header.Layout.Column=[1 2];
             headerGrid=uigridlayout(header,[1 1]); headerGrid.Padding=[16 8 16 8];
             app.AnalysisHeaderLabel=uilabel(headerGrid,'WordWrap','on','FontSize',12, ...
-                'Text',['Run a manual case or optimization to generate an engineering interpretation ' ...
+                'Text',['Run a simulation to generate an engineering interpretation ' ...
                 'of energy use, battery duty, genset operation, and limiting constraints.']);
             app.AnalysisEnergyAxes=uiaxes(layout); app.AnalysisEnergyAxes.Layout.Row=2;
             app.AnalysisEnergyAxes.Layout.Column=1; title(app.AnalysisEnergyAxes,'Mission energy allocation');
@@ -983,7 +948,7 @@ classdef HybridBusApp < handle
                 'FontColor',theme.warning);
             app.KPIStatusLabel.Layout.Row=1; app.KPIStatusLabel.Layout.Column=2;
             app.KPIContextLabel=uilabel(headerGrid, ...
-                'Text','Run a manual case or optimization to populate the decision views.', ...
+                'Text','Run a simulation to populate the decision views.', ...
                 'FontSize',11,'WordWrap','on');
             app.KPIContextLabel.Layout.Row=2; app.KPIContextLabel.Layout.Column=1;
             app.KPIRunScopeLabel=uilabel(headerGrid,'Text','No simulation evidence', ...
@@ -1718,7 +1683,7 @@ classdef HybridBusApp < handle
             title(ax,selection); xlabel(ax,'Time (min)');
             if isempty(app.CurrentResults)
                 ylabel(ax,'');
-                text(ax,0.5,0.5,'Run a manual case or optimization first.', ...
+                text(ax,0.5,0.5,'Run a simulation first.', ...
                     'Units','normalized','HorizontalAlignment','center');
                 return
             end

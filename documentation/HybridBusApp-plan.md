@@ -4,14 +4,22 @@
 
 **Serialization:** Programmatic App Designer-compatible MATLAB class (`HybridBusApp.m`). This is the documented R2025a fallback requested in the specification; it uses only public `uifigure` components and opens directly from MATLAB.
 
-**Layout:** Explorer — a stable left control panel for database/configuration inputs and a responsive main area with KPI summary, plots, and ranked configurations.
+**Layout:** Explorer — a stable left control panel for database/configuration inputs and a responsive main area with architecture, decision, credibility, and signal views.
+
+## Current change: remove optimization from the app (3 September 2026)
+
+- Remove the `Max configurations` field and `Optimize` button from Configuration.
+- Remove the `Optimization Ranking` tab and all app-owned ranking state/callbacks.
+- Keep `Run Manual`, paired `BEV first, then Hybrid`, repeat-to-depletion, Cancel, Export, KPI, analysis, credibility, Signals, and Detailed Plot workflows unchanged.
+- Retain `src/optimize_hybrid_bus_configuration.m`, its database settings, and its regression tests as a headless engineering API; this request removes the feature from the app, not the validated batch capability.
+- Update empty-state guidance so it asks for a simulation rather than a manual run or optimization.
 
 ## Structure
 
-- Slightly widened left control grid: database browser; a titled `Mission Inputs` panel that keeps Route, editable load, calculated curb/total mass, and Auxiliary together; component selectors; price/SOE inputs; manual/optimization mode controls; run/cancel/export actions; and progress status.
+- Slightly widened left control grid: database browser; a titled `Mission Inputs` panel that keeps Route, editable load, calculated curb/total mass, and Auxiliary together; component selectors; price/SOE inputs; simulation controls; run/cancel/export actions; and progress status.
 - Add a `Repeat route until depleted` checkbox. Off preserves the single-cycle study; on repeats the selected speed/grade/auxiliary mission continuously and terminates when the fuel tank is empty and neither battery can provide usable traction energy.
 - Add a default-off `Run BEV first, then Hybrid` checkbox for manual simulations. When checked, execute the same mission in explicit BEV-to-Hybrid order, retain both results, show the final Hybrid histories, and report both operating-cost outcomes. When unchecked, execute only the mode selected by the Hybrid/BEV slider.
-- Main tab group in workflow order: Powertrain Architecture, Route Map, KPIs, Simulation Analysis, Model Credibility, Optimization Ranking, Signals, and Detailed Plot.
+- Main tab group in workflow order: Powertrain Architecture, Route Map, KPIs, Simulation Analysis, Model Credibility, Signals, and Detailed Plot.
 - KPI tab as a nested decision workspace with four subtabs: `Executive Decision`, `Engineering Scorecard`, `Vehicle Performance`, and `Robustness`. The Executive view gives the shortest qualified architecture recommendation; the Scorecard exposes first-principles feasibility gates and like-for-like metrics; Vehicle Performance compares target versus achieved motion and propulsion-limited mission completion; the Robustness view separates nominal evidence from operational scenarios that have not been simulated.
 - Simulation Analysis tab: a concise run interpretation header, energy-flow comparison chart, active-battery duty-share chart, and an engineering assessment table covering mission completion, battery limits, regeneration utilization, genset duty, unmet demand, and conservation error.
 - Model Credibility tab: release-gate status, explicit evidence and decisions, powertrain concept screening, and a sensitivity tornado-style chart. Failed, unavailable, and not-implemented evidence remains visible instead of being converted into a cosmetic pass.
@@ -29,7 +37,7 @@
 - Run a selected configuration and display speed, power, genset, fuel, and cost histories; present Battery 1 and Battery 2 SOE on a 0-100 percentage scale with percent-formatted y-axis ticks.
 - Scale the Signals and Detailed Plot time axes for human interpretation: use minutes for missions shorter than two hours and hours for missions of two hours or longer. Keep all simulation calculations and fuel integration in seconds, and apply the selected display unit consistently to every plotted signal.
 - Add synchronized slider-style `Time / Distance` switches to the Signals and Detailed Plot tabs. Time mode retains adaptive minutes/hours; Distance mode uses cumulative vehicle distance in kilometres. Switching either tab updates both tabs so comparisons always use one common horizontal coordinate.
-- Replace the former card-only KPI dashboard with three scan-friendly decision subtabs while preserving the existing summary calculations. Use actual simulation outputs only; never invent the absent architecture in a selected-only run. BEV-only and Hybrid-only runs report a qualified single-architecture assessment, ordered BEV-then-Hybrid runs enable a true side-by-side recommendation, and optimization results are explicitly labelled as the selected best-result architecture rather than a cross-architecture comparison.
+- Replace the former card-only KPI dashboard with scan-friendly decision subtabs while preserving the existing summary calculations. Use actual simulation outputs only; never invent the absent architecture in a selected-only run. BEV-only and Hybrid-only runs report a qualified single-architecture assessment, while ordered BEV-then-Hybrid runs enable a true side-by-side recommendation.
 - In `Executive Decision`, show mission context, run scope, recommendation/qualification, two architecture columns, and concise `Why this result`, `Alternative value`, and `Decision limits` panels. A cross-architecture winner is chosen only after feasibility; among two feasible results, lower modeled operating cost per kilometre is the primary discriminator, with source energy and terminal reserve shown as supporting evidence rather than silently folded into an opaque score.
 - In `Engineering Scorecard`, show four first-principles gates—mission completion, peak-power delivery, energy conservation/terminal reserve, and economics—plus a metric table with value, unit, direction of preference, and BEV/Hybrid values. Display `NOT RUN` wherever an architecture was not simulated. Do not allow cost to override a failed feasibility gate.
 - In `Robustness`, plot the available architectures on operating-cost versus source-energy axes, show nominal mission checks, and keep cold-weather, high-auxiliary, and infrastructure scenarios visibly marked `NOT ASSESSED` until dedicated scenario simulations exist. For `Repeat route until depleted`, relabel mission distance as achieved range, identify the controlled depletion endpoint, show fuel/battery exhaustion evidence, and suppress ordinary terminal-reserve pass/fail wording that would misclassify the intended stopping condition.
@@ -64,9 +72,9 @@
 - Keep charging branches orthogonal and terminate them directly at Battery 1 and Battery 2; no energy or control line may pass through a component box.
 - Show the complete blue regeneration path in physical order: wheels and vehicle to fixed reduction, then motor pair and inverters. From the inverter DC side, show numbered branches to auxiliary loads first, the traction DC bus and active battery second, and the resistor load bank third. Use offset forward and reverse arrows between drivetrain blocks so traction and regeneration directions remain visually distinct. Limit supervisory graphics to two dashed command links terminating at the standby and active selectors.
 - Remove floating explanatory labels from the flow field. Use left-aligned lane titles, a compact bottom legend, and the existing tab note for interpretation. Keep the diagram static and independent of simulation results.
-- Open on Powertrain Architecture by creating it as the first tab, followed by Route Map, KPIs, Optimization Ranking, Signals, and Detailed Plot.
+- Open on Powertrain Architecture by creating it as the first tab, followed by Route Map, KPIs, Simulation Analysis, Model Credibility, Signals, and Detailed Plot.
 - Increase the sidebar width from 310 px to 350 px so database paths and geographic route names are more legible while preserving most of the architecture canvas.
-- Run bounded base-MATLAB configuration searches and honor cancellation between simulations.
+- Keep bounded base-MATLAB configuration search available through the headless API, but do not expose it in the app UI.
 - Export selected results to MAT and CSV.
 
 ## Internal references used
@@ -98,7 +106,7 @@
 1. Build and validate the reusable data/simulation functions.
 2. Create the explorer layout with `uigridlayout` only.
 3. Bind callbacks to the reusable functions.
-4. Add standard plots and the dropdown-driven detailed-plot tab, then ranked table, progress/cancel, and export.
+4. Add standard plots and the dropdown-driven detailed-plot tab, then cancel and export controls.
 5. Launch the app in R2025a and execute a manual run.
 6. Render the architecture tab at the normal 1400 x 820 app size and visually verify that blocks, labels, and interconnections do not overlap.
 7. Exercise auxiliary-first, active-battery-second, and full-battery load-bank cases and verify DC energy conservation.
