@@ -669,6 +669,48 @@ def optimization_diagram():
     return d
 
 
+def formulation_comparison_diagram():
+    """Three-lane explanation of causality in the available formulations."""
+    d = Drawing(485, 278)
+    d.add(Rect(0, 0, 485, 278, rx=8, ry=8, fillColor=HexColor("#F7FAFC"), strokeColor=GRID))
+    lanes = [
+        (190, "BACKWARD DEMAND", BLUE, HexColor("#EDF4FA")),
+        (102, "CONSTRAINED", TEAL, HexColor("#EAF7F6")),
+        (14, "PERFORMANCE", ORANGE, HexColor("#FFF4E8")),
+    ]
+    for y, title, color, fill in lanes:
+        d.add(Rect(8, y, 469, 76, rx=7, ry=7, fillColor=WHITE, strokeColor=HexColor("#DCE5EA")))
+        d.add(Rect(8, y, 92, 76, rx=7, ry=7, fillColor=fill, strokeColor=None))
+        d.add(String(54, y + 45, title, fontName="Arial-Bold", fontSize=6.7,
+                     fillColor=color, textAnchor="middle"))
+    # Backward: prescribed motion -> required power -> energy sources.
+    card(d, 110, 208, 93, 40, "Prescribed speed\n+ grade", "route", SKY, BLUE, 6.2)
+    card(d, 220, 208, 106, 40, "Required wheel\nforce + power", "vehicle", HexColor("#EEF2F8"), NAVY_2, 6.2)
+    card(d, 343, 208, 120, 40, "Limits + energy\naccounting", "battery", TEAL_LIGHT, TEAL, 6.2)
+    routed_arrow(d, [(203, 228), (220, 228)], BLUE)
+    routed_arrow(d, [(326, 228), (343, 228)], TEAL)
+    # Constrained: target, capability estimate, suppressed motion, final energy pass.
+    card(d, 110, 120, 78, 40, "Route-time\ntarget", "route", SKY, BLUE, 6.1)
+    card(d, 199, 120, 84, 40, "Two capability\npasses", "check", TEAL_LIGHT, TEAL, 6.1)
+    card(d, 294, 120, 78, 40, "Limited speed\n+ distance", "vehicle", HexColor("#E8F3EA"), GREEN, 6.1)
+    card(d, 383, 120, 80, 40, "Final energy\npass", "battery", HexColor("#EFE9F6"), BLUE, 6.1)
+    routed_arrow(d, [(188, 140), (199, 140)], BLUE)
+    routed_arrow(d, [(283, 140), (294, 140)], TEAL)
+    routed_arrow(d, [(372, 140), (383, 140)], GREEN)
+    # Performance: actual distance closes route lookup; speed closes driver loop.
+    card(d, 110, 32, 78, 40, "Distance-based\nroute target", "route", SKY, BLUE, 6.1)
+    card(d, 199, 32, 78, 40, "Driver + force\ndemand", "control", TEAL_LIGHT, TEAL, 6.1)
+    card(d, 288, 32, 78, 40, "Component\nforce limits", "check", HexColor("#FFF1E4"), ORANGE, 6.1)
+    card(d, 377, 32, 86, 40, "Forward vehicle\nplant", "vehicle", HexColor("#E8F3EA"), GREEN, 6.1)
+    routed_arrow(d, [(188, 52), (199, 52)], BLUE)
+    routed_arrow(d, [(277, 52), (288, 52)], TEAL)
+    routed_arrow(d, [(366, 52), (377, 52)], ORANGE)
+    routed_arrow(d, [(420, 32), (420, 22), (149, 22), (149, 32)], BLUE, 1.2, [4, 3])
+    d.add(String(284, 17, "actual distance closes route/terrain lookup",
+                 fontName="Arial-Bold", fontSize=5.6, fillColor=BLUE, textAnchor="middle"))
+    return d
+
+
 def validation_pyramid():
     d = Drawing(485, 230)
     d.add(Rect(0, 0, 485, 230, rx=8, ry=8, fillColor=HexColor("#F7FAFC"), strokeColor=GRID))
@@ -847,7 +889,7 @@ story += [
     P("Hybrid-Electric Bus<br/>System Modeling", "CoverTitle"),
     P("A MATLAB and Simulink textbook for selectable hybrid and battery-electric<br/>architectures, route studies, supervisory control, and engineering evidence", "CoverSubtitle"),
     Spacer(1, 52 * mm),
-    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.6<br/>MATLAB / Simulink R2025a<br/>Revised 3 September 2026", "CoverMeta"),
+    P(f"Project database version {dashboard.get('DatabaseVersion')}<br/>Document revision 2.7<br/>MATLAB / Simulink R2025a<br/>Revised 5 September 2026", "CoverMeta"),
     PageBreak(),
 ]
 
@@ -1232,23 +1274,109 @@ section(story, "9.4", "Feasibility before economics")
 story.append(P("A low cost per kilometre is meaningful only when unmet traction energy is negligible and the balance residual satisfies tolerance. An infeasible case can look artificially cheap because energy that the vehicle failed to deliver was never purchased. The optimizer therefore filters feasibility before ranking cost.", "Lead"))
 
 # Chapter 10
-chapter(story, "10", "Numerical Implementation in MATLAB and Simulink")
-section(story, "10.1", "Discrete solution")
-story.append(P("The default solver interpretation is fixed-step discrete with a 1 s sample time. Route speed, grade, and auxiliary multiplier are linearly interpolated; stop flags use previous-value interpolation. Energy updates use time-step integration in kWh, while fuel rate is integrated in litres.", "BodyTextBook"))
-section(story, "10.2", "Execution sequence")
+chapter(story, "10", "Backward, Constrained, and Performance Formulations")
+story.append(P("The three selections answer different engineering questions and therefore use different causal assumptions. They share the same route library, component records, battery and motor maps, powertrain mode, supervisory rules, sign conventions, and result contract. They must not be interpreted as three interchangeable accuracy levels.", "Lead"))
+story += [formulation_comparison_diagram(), figure_caption("10.1", "Causality and information flow in the three selectable simulation formulations")]
+
+section(story, "10.1", "Comparison and model-selection guide")
+formulation_rows = [
+    ["Formulation", "Primary question", "Motion treatment", "Horizon / completion", "Implementation artifact"],
+    ["Backward", "What energy and component demand is required if the route speed is achieved?", "Speed is prescribed; no vehicle-speed feedback state", "Exactly the route time trace", "Hybrid/BEV SLX models + backward MATLAB core"],
+    ["Constrained", "Can available current, torque, power, and force approximately deliver the route within its scheduled time?", "Acceleration and achieved speed are suppressed by estimated capability", "One fixed route-time horizon; 99.5% distance is the concept completion threshold", "Constrained MATLAB function; no separate SLX"],
+    ["Performance", "What speed and distance does the vehicle actually achieve under closed-loop demand and physical limits?", "Driver, component limits, and longitudinal plant form a forward loop", "Continues to route completion, sustained stall, or maximum duration", "Performance SLX model + forward MATLAB function"],
+]
+story += [table_caption("10.1", "What each formulation calculates and what it can prove"),
+          make_table(formulation_rows, [24*mm, 43*mm, 39*mm, 37*mm, 35*mm], font_size=6.2)]
+story.append(callout("Decision rule", "Use Backward for fast energy and rating demand. Use Constrained as a rapid capability screen when the scheduled route time must stay fixed. Use Performance for achieved-speed, gradeability, stall, and mission-completion conclusions. If Backward passes but either achieved-speed formulation fails, the vehicle is energy-accountable but not dynamically capable for that mission.", "warn"))
+
+section(story, "10.2", "Backward demand model")
+story.append(P("Backward causality begins at the route. At every route-time sample, desired speed is treated as actual vehicle speed. A filtered finite difference gives acceleration; mass, rolling resistance, grade, and aerodynamic drag give required tractive force; and force times speed gives wheel-power demand. The calculation then moves backward through fixed reduction, motor loss and torque-speed limits, the traction DC bus, auxiliaries, battery limits, and the Hybrid or BEV energy manager.", "BodyTextBook"))
+story += [
+    equation("v<sub>actual,k</sub> = v<sub>route,k</sub>", "10.1"),
+    equation("F<sub>required,k</sub> = m a<sub>route,k</sub> + F<sub>roll,k</sub> + F<sub>grade,k</sub> + F<sub>aero,k</sub>", "10.2"),
+    equation("P<sub>wheel,required,k</sub> = F<sub>required,k</sub> v<sub>route,k</sub>", "10.3"),
+]
+story.append(P("Component saturation does not feed back to change route speed. Instead, any motor or battery shortfall is recorded as unmet wheel or DC energy. This is intentional: the model exposes the demand that the selected hardware cannot serve without allowing a lower simulated speed to hide the original requirement. It is therefore excellent for duty-cycle energy accounting and preliminary sizing, but it cannot prove acceleration, hill-climb speed, timetable adherence, or route completion.", "BodyTextBook"))
+backward_rows = [
+    ["Stage", "Principal operation", "Evidence produced"],
+    ["Route and environment", "Prescribed speed, grade, auxiliary multiplier, ambient and wind", "Known mission boundary"],
+    ["Vehicle dynamics", "Differentiate speed; sum inertia and road-load forces", "Required force, acceleration, wheel power"],
+    ["Hub drive", "Apply motor torque-speed/power, loss map, final-drive efficiency, regeneration limit", "DC demand, motor loss, unmet motor power, friction braking"],
+    ["Energy management", "Route traction/auxiliary demand; apply battery limits; switch Hybrid roles; charge standby only", "Battery power/SOE, genset power, regen allocation, load-bank heat"],
+    ["Accounting", "Integrate electrical energy, fuel, cost, and balance residual", "Energy/cost KPIs and feasibility warnings"],
+]
+story += [table_caption("10.2", "Backward model signal progression"), make_table(backward_rows, [35*mm, 82*mm, 61*mm], font_size=6.5)]
+story.append(callout("Simulink structure", "HybridBus_BackwardModel.slx contains Route and Environment, Vehicle Longitudinal Dynamics, Rear Hub Motor Drive, Auxiliary Loads, Supervisory Energy Management, two Battery Packs, Engine Genset, Energy and Cost Accounting, and Output Logging. HybridBus_BEVModel.slx preserves the demand-side chain but replaces the Hybrid supervisor and genset with parallel BEV battery energy management.", "info"))
+
+section(story, "10.3", "Fast constrained formulation")
+story.append(P("Constrained mode was added to answer a practical question faster than the detailed forward simulation: if the scheduled route remains one fixed time trace, how much of it can the selected vehicle physically cover? The algorithm uses the route speed as a driver target, but it integrates a separate achieved-speed state. At each sample it calculates road load at actual travelled distance, determines the requested acceleration from speed error, and caps positive tractive force by the lesser of motor and battery capability after auxiliary demand.", "BodyTextBook"))
+story += [
+    equation("a<sub>requested</sub> = clip[K<sub>p</sub>(v<sub>target</sub>-v), -a<sub>dec,max</sub>, a<sub>acc,max</sub>]", "10.4"),
+    equation("F<sub>available</sub> = min(F<sub>motor limit</sub>, F<sub>battery limit</sub>)", "10.5"),
+    equation("F<sub>delivered</sub> = min(F<sub>demand</sub>, max[0,F<sub>available</sub>])", "10.6"),
+    equation("a<sub>achieved</sub> = (F<sub>delivered</sub>-F<sub>road load</sub>)/m", "10.7"),
+]
+story.append(P("The implementation deliberately performs two capability/speed iterations and then one final energy-consistent backward-kernel pass. The first pass estimates capability from an initial achieved-speed trace; the second updates battery state and speed-dependent limits; the final pass recomputes energy and power histories on the converged approximate trace. Grade and auxiliary demand are sampled at actual distance, speed and distance cannot decrease, and a depleted or force-deficient vehicle remains stopped.", "BodyTextBook"))
+story.append(numbered_list([
+    "Start with zero achieved speed over the original route-time vector.",
+    "Build a temporary route from the current achieved speed and run the backward energy kernel.",
+    "Use battery discharge capability, auxiliary demand, motor torque-speed limits, final-drive force, and road load to integrate a limited speed and distance trace.",
+    "Repeat the capability update once, then execute a final backward energy pass on the updated trace.",
+    "Report route completion, distance shortfall, maximum achieved speed, RMS and maximum speed error, time below target, dominant limiting cause, and termination reason.",
+]))
+story.append(callout("Why there is no Constrained .slx file", "Constrained is a MATLAB algorithmic wrapper around the validated backward energy kernel, not a third standalone Simulink model. It is an iterative quasi-forward approximation designed for bounded runtime. Repeat route until depleted is disabled in this mode, and failure to finish before the original route-time horizon is reported as incomplete rather than extending the schedule.", "warn"))
+
+section(story, "10.4", "Forward Performance model")
+story.append(P("Performance mode reverses the causality used by Backward mode. Route speed becomes a target rather than an imposed state. Actual distance addresses the route, terrain, auxiliary, and station-stop data; a proportional driver converts speed error into bounded requested acceleration; the force-demand block adds road load; component limits determine delivered traction or regenerative braking; and the vehicle plant integrates the resulting net force into actual acceleration, speed, and distance.", "BodyTextBook"))
+story += [
+    equation("e<sub>v,k</sub> = v<sub>target</sub>(s<sub>actual,k</sub>) - v<sub>actual,k</sub>", "10.8"),
+    equation("F<sub>demand,k</sub> = m a<sub>requested,k</sub> + F<sub>road load,k</sub>", "10.9"),
+    equation("F<sub>drive,k</sub> = min(F<sub>demand,k</sub>, F<sub>motor,k</sub>, F<sub>battery,k</sub>)", "10.10"),
+    equation("v<sub>k+1</sub> = max[0, v<sub>k</sub> + (F<sub>drive,k</sub>-F<sub>road load,k</sub>)Δt/m]", "10.11"),
+]
+story.append(P("During braking, the motor regeneration envelope supplies as much negative wheel force as speed and component limits allow; pneumatic/friction braking supplies the remainder. On the DC side, regeneration still follows the same priority: auxiliaries first, active or connected battery capacity second, and resistor load bank third. Hybrid role switching and standby-only constant-point genset charging, or BEV parallel battery sharing, are evaluated at every forward time step.", "BodyTextBook"))
+performance_rows = [
+    ["Subsystem / function", "Inputs", "Outputs and role"],
+    ["Route Target and Terrain", "Actual distance", "Desired speed, grade, auxiliary multiplier; handles stop approach and dwell"],
+    ["Driver and Force Demand", "Desired speed, actual speed, grade", "Speed error, bounded desired acceleration, total force demand"],
+    ["Component Force Limits", "Force demand, speed, battery available power", "Delivered force and unmet force after motor/battery constraints"],
+    ["Forward Vehicle Plant", "Delivered force and grade", "Nonnegative actual speed, actual distance, actual acceleration"],
+    ["MATLAB energy loop", "Plant motion plus component states", "Battery/genset/fuel, regen/friction braking, limits, costs, and conservation"],
+]
+story += [table_caption("10.3", "Forward Performance signal loop"), make_table(performance_rows, [42*mm, 54*mm, 82*mm], font_size=6.5)]
+story.append(P("Unlike Constrained mode, Performance may continue beyond nominal route time while attempting to reach the route endpoint. It terminates when the route is completed, when sustained inability to overcome road load satisfies the stall rule, or when the maximum allowed simulation duration is reached. This makes it the appropriate formulation for gradeability, acceleration adequacy, route completion, and stopped-vehicle conclusions, while still remaining a concept model until driver, tyre, thermal, and component data are calibrated against a real bus.", "BodyTextBook"))
+
+section(story, "10.5", "Shared discretization and result contract")
+story.append(P("All formulations use the configured fixed sample time, normally 1 s. Energy updates integrate signed power in kWh, fuel rate integrates in litres, and every result uses the same Metadata, SelectedConfiguration, InputParameters, Signals, Summary, and Validation groups. This common contract allows the app to reuse Signals, Detailed Plot, Simulation Analysis, and KPI views without pretending that prescribed and achieved motion have the same evidential meaning.", "BodyTextBook"))
+interpretation_rows = [
+    ["Reported quantity", "Backward interpretation", "Constrained / Performance interpretation"],
+    ["Vehicle speed", "Prescribed route speed", "Achieved state after physical force and power limits"],
+    ["Vehicle distance", "Prescribed route integration", "Actual nondecreasing travelled distance"],
+    ["Unmet energy", "Demand the selected hardware could not supply at prescribed speed", "Residual shortfall after achieved motion has already been limited"],
+    ["Route completion", "Not a dynamic proof", "Explicit distance-based completion result"],
+    ["Speed error", "Zero by construction; not performance evidence", "Driver target minus achieved speed"],
+    ["Limiting cause", "Component saturation in demand accounting", "Dominant cause of actual speed or distance shortfall"],
+]
+story += [table_caption("10.4", "How to interpret common outputs without mixing model causality"), make_table(interpretation_rows, [38*mm, 67*mm, 73*mm], font_size=6.4)]
+
+section(story, "10.6", "Execution sequence")
 run_code = """
 cd('C:\\TempData\\Hybrid_Vehicle\\HybridBusProject')
 project = startup_hybrid_bus;
 db = load_hybrid_bus_database(fullfile('data','HybridBus_ComponentDatabase.xlsx'));
-Results = run_hybrid_bus_simulation;
-Sequence = run_powertrain_sequence(db, struct('PowertrainMode',"Hybrid"), true);
+
+backward = run_hybrid_bus_simulation('', struct('SimulationFormulation',"BackwardDemand"));
+constrained = run_hybrid_bus_simulation('', struct('SimulationFormulation',"ConstrainedBackward"));
+performance = run_hybrid_bus_simulation('', struct('SimulationFormulation',"ForwardPerformance"));
+
 open_system('HybridBus_BackwardModel.slx')
-open_system('HybridBus_BEVModel.slx')
+open_system('HybridBus_PerformanceModel.slx')
 app = HybridBusApp;
 """
 story.append(code_block(run_code))
-story.append(P("The runner loads and validates the database, resolves the selected input structure, executes the detailed kernel, attaches validation metadata, and optionally exports MAT and CSV files. The SLX workspace publisher assigns only the stable, unit-suffixed variables needed by the block diagram.", "BodyTextBook"))
-section(story, "10.3", "Results structure")
+story.append(P("The dispatcher selects simulate_hybrid_bus_core, simulate_hybrid_bus_constrained, or simulate_hybrid_bus_performance from Input.SimulationFormulation. The app exposes the same choice as Backward, Constrained, and Performance. The runner loads and validates the database, resolves a complete input structure, executes the selected kernel, attaches validation metadata, and optionally exports MAT and CSV files.", "BodyTextBook"))
+
+section(story, "10.7", "Results structure")
 result_rows = [
     ["Field", "Contents"],
     ["Metadata", "database file/version, MATLAB release, model version, timestamp"],
@@ -1258,7 +1386,18 @@ result_rows = [
     ["Summary", "distance, fuel, grid energy, regeneration allocation, load-bank heat, costs, range, SOE, unmet energy, residual, and mass decomposition"],
     ["Validation", "warnings, constraint violations, and feasibility flag"],
 ]
-story += [table_caption("10.1", "Simulation output contract"), make_table(result_rows, [50*mm, 120*mm])]
+story += [table_caption("10.5", "Simulation output contract"), make_table(result_rows, [50*mm, 120*mm])]
+
+section(story, "10.8", "Verification evidence and recommended comparison")
+verification_rows = [
+    ["Formulation", "Automated evidence", "Principal acceptance statement"],
+    ["Backward", "Constant-speed hand calculation; acceleration and grade response; saturation; conservation; repeatability", "Required power follows first-principles equations and all unsupplied demand remains visible"],
+    ["Constrained", "Acceleration suppression; depletion stop; distance-indexed terrain; Hybrid/BEV; fixed horizon", "Limited hardware lowers achieved speed/distance without rollback and preserves energy balance"],
+    ["Performance", "Flat-route completion; severe-grade stall; distance-indexed terrain; Hybrid/BEV; dispatcher; SLX structure", "Forward motion completes capable cases and terminates incapable cases without crediting prescribed distance"],
+]
+story += [table_caption("10.6", "Formulation-specific automated evidence"), make_table(verification_rows, [30*mm, 74*mm, 74*mm], font_size=6.5)]
+story.append(P("For a defensible vehicle decision, run all three formulations with identical route, powertrain, component IDs, load, auxiliaries, prices, initial SOEs, and battery-set multiplier. First use Backward to establish the requested energy and peak demand. Next use Constrained to identify rapid capability shortfalls within the scheduled horizon. Finally use Performance to confirm achieved speed, completion time, gradeability, stopping behavior, and stall outcome. Differences between the results are expected evidence of their different causality, not automatically a software defect.", "BodyTextBook"))
+story.append(callout("Credibility boundary", "The automated tests verify implemented equations, interfaces, limits, invariants, and deterministic behavior. They do not replace supplier-map calibration, driver and tyre validation, thermal and ageing models, or measured CAN/GPS/dynamometer comparison. Performance conclusions remain concept-level until those evidence gaps are closed.", "warn"))
 
 # Chapter 11
 chapter(story, "11", "Using the Explorer App")
@@ -1622,7 +1761,7 @@ story += [table_caption("B.2", "Principal parameter groups"), make_table(param_r
 # References
 chapter(story, "", "References, Sources, and Project Files")
 refs = [
-    f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.6, revised 3 September 2026.",
+    f"[1] HybridBusProject source tree, modular route/component data, MATLAB functions, Hybrid, BEV, and Performance Simulink models, generated results, traceability matrix, and model-credibility evidence. Database version {dashboard.get('DatabaseVersion')}; textbook revision 2.7, revised 5 September 2026.",
     "[2] European Commission, Vehicle Energy Consumption Calculation Tool (VECTO), https://climate.ec.europa.eu/eu-action/transport-decarbonisation/road-transport/vehicle-energy-consumption-calculation-tool-vecto_en.",
     "[3] European Commission VECTO source repository, declaration mission cycles, commit d16ba783c1d8af0ea68797f5d7ed6cf01877d402, https://code.europa.eu/vecto/vecto.",
     "[4] Project OSRM API documentation, route service and annotation objects, https://project-osrm.org/docs/v5.24.0/api/.",
