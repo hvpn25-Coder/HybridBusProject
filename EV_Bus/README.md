@@ -1,81 +1,48 @@
-# Forward electric bus model
+# Electric bus forward model
 
-**Reusable case workflow:** [GENERIC_COMPENSATOR.md](GENERIC_COMPENSATOR.md) describes the current entry point `run_EV_Bus_case.m` for new measurement files, vehicle parameters, profile lengths and noise levels. It automatically scales and assesses compensator settings. Earlier pages describe prior configurations.
+Start with `run_EV_Bus.m` in MATLAB to run the supplied measurement case and plot the results. Open `EV_Bus_Forward.slx` to inspect the model or run its embedded configuration.
 
-**Current noisy-data update:** see [NOISY_COMPENSATOR.md](NOISY_COMPENSATOR.md). Logging now has 38 signals, with filtering, bounded adaptation rate, and standstill fading of the physical generic loss. Earlier descriptions below are retained as baseline documentation.
+## Folder guide
 
-**Updated with measured-force compensation:** see [COMPENSATOR.md](COMPENSATOR.md) for stationary bias removal, the physical generic-loss estimator, new logging columns, and measured results. The model now logs 36 signals; the original 28 retain their column order. The equations below describe the original baseline; the updated force balance additionally includes GenericLossForce_N.
+| File or folder | Purpose |
+|---|---|
+| `EV_Bus_Forward.slx` | Current forward model and physical traction compensator |
+| `run_EV_Bus.m` | Runs and plots the supplied example |
+| `run_EV_Bus_case.m` | Reusable entry point for other recordings, profiles and vehicle specifications |
+| `Veh_Meas_Traction_Force.mat` | Original supplied measurement file |
+| `Analysis.m` | Your existing analysis/noise-generation scratch script, preserved unchanged |
+| `docs/` | Current illustrated explanation and case-runner reference |
+| `results/` | Latest saved simulation result and plots; future run outputs also go here |
+| `tests/` | Regression script for different vehicles, sampling rates and noise levels |
+| `_archive/` | Superseded backups, notes, scripts and generated files; not needed by the current workflow |
 
-Open `EV_Bus_Forward.slx` and press Run, or run `run_EV_Bus.m` to simulate, verify force/power bounds, save results, and plot the drive cycle. Built with the MATLAB Simulink MCP server in R2025a. Only basic Simulink blocks are used; there are no MATLAB Function blocks, Stateflow charts, S-functions, Simscape components, or external runtime dependencies.
+## Documentation
 
-All parameters are embedded in the model workspace as `P`; environment inputs are `SpeedProfile`, `SlopeProfile`, and `TemperatureProfile` (two-column time/value matrices, linearly interpolated). Open Model Explorer to edit them. The MAT parameter file is a reference copy; the model does not require it to run.
+- [Illustrated compensator explanation](docs/Compensator_Explained.html): equations, physical feedback, noise handling, interactive example and results.
+- [Reusable case workflow](docs/GENERIC_COMPENSATOR.md): measurement format, options, scaling, acceptance checks and limitations.
 
-## Architecture
+The example wrapper assumes the supplied 300-second recording and its known parked calibration interval of 0–4 seconds. For another recording, call `run_EV_Bus_case` with corresponding profiles, vehicle parameters and appropriate bias calibration; do not reuse that parked interval blindly.
 
-Environment -> Driver -> Powertrain Controller -> Electric Drive -> Final Drive -> Vehicle Dynamics. Actual vehicle speed feeds back to the driver, while kinematic motor speed feeds back to the torque controller and electric drive. The pneumatic subsystem supplies the friction braking remaining after actual regenerative wheel torque. Vehicle velocity is integrated from net force divided by mass: this is a forward model.
+## Model and outputs
 
-The two identical motors share torque equally and are represented by their combined torque/power envelope and a common shaft speed. Both combined and per-motor torque are logged. Positive torque drives; negative torque regenerates. Per-motor power is half the logged combined mechanical power.
+The vehicle has a mass of 20,000 kg, two 400 kW motors and a 21:1 final drive. Parameters and environment profiles are embedded in the model workspace. The model uses basic Simulink blocks, with no MATLAB Function blocks.
 
-## Specifications and assumptions
+The forward path is Environment → Driver → Powertrain Controller → Electric Drive → Final Drive → Vehicle Dynamics, with pneumatic friction braking and speed feedback. The signed generic loss acts in the vehicle dynamics; the driver's response changes the physical wheel traction force.
 
-| Parameter | Value |
-|---|---:|
-| Vehicle mass, user specified | 20,000 kg |
-| Motors, user specified | 2 x 400 kW |
-| Final drive, user specified | 21:1 |
-| Peak driving torque | 2,500 Nm per motor |
-| Peak regenerative torque | 1,500 Nm per motor |
-| Regenerative power ceiling | 250 kW per motor |
-| Maximum commanded driving speed | 12,000 motor RPM |
-| Wheel rolling radius | 0.50 m |
-| Gear efficiency | 97% in either power direction |
-| Drag coefficient / frontal area | 0.65 / 8 square metres |
-| Rolling resistance coefficient | 0.008 |
-| Motor torque time constant | 0.05 s |
-| Maximum total wheel friction brake torque | 60,000 Nm |
-| Maximum brake chamber pressure | 8 bar |
-| Pneumatic transport delay / time constant | 0.10 s / 0.25 s |
-| Initial speed and travelled distance | Zero |
-| Electrical supply | Available supply; no battery SOC limitation |
+Wheel traction = acceleration force + gradient force + rolling resistance + aerodynamic drag + applied generic loss. At standstill, the applied generic loss fades to zero and an ideal reaction prevents reverse motion. Reverse driving, tire slip, battery SOC and thermal dynamics are outside this model.
 
-Driver: PI control with limited integral state and saturation feedback, separate 0–100% accelerator/brake outputs, and minimum 15% brake when desired speed is at or below 0.1 km/h. Regeneration fades linearly below 2 m/s, with friction braking supplying the remainder. Pneumatic pressure tracks the requested residual brake torque with delay and first-order chamber dynamics. This is a reduced-order pneumatic model, not a valve/reservoir flow model.
+All 38 subsystem outputs are logged in the structure `logout`. The case runner also adds signal names and named vectors under `logout.data`. Logging sample time is selected for the supplied measurement.
 
-## Forces and sign conventions
+`results/EV_Bus_case_results.mat` is the single saved result, containing `logout` and `report`. The example wrapper additionally writes `EV_Bus_results.png` and `EV_Bus_compensation.png` into `results/`; its extra summary `metrics` remain in the MATLAB workspace. These files are overwritten on subsequent runs. To experiment without saving a new model configuration or result file, use `options.Apply=false` with the case runner.
 
-With road grade `s` in percent, `theta = atan(s/100)`:
-
-- Gradient force = `m*g*sin(theta)` (positive uphill, negative downhill).
-- Rolling force = `m*g*Crr*cos(theta)*tanh(v/0.2)`.
-- Aerodynamic force = `0.5*rho*Cd*A*v^2`, with `rho = 101325/(287.05*(ambientC+273.15))`.
-- Acceleration force = `m*a`.
-- Wheel traction force = acceleration + gradient + rolling + aerodynamic forces.
-- Net applied force = motor wheel force minus friction brake force minus gradient, rolling, and aerodynamic forces.
-
-During motion, wheel traction is the signed net tire force after friction braking. Motor wheel force is separately logged as DriveForce_N. At standstill the model prevents reverse motion with an ideal unilateral constraint; its reaction is explicitly logged. Thus traction equals drive force minus friction brake force plus standstill reaction. This also means automatic rollback prevention is assumed, even if the physical parking brake would not hold the grade. Reverse driving, tire slip, wheel rotational inertia, suspension, battery SOC, electrical losses, and thermal dynamics are outside this model. Ambient temperature affects air density only. A speed above the motor RPM limit disables positive torque; it does not impose an artificial vehicle-speed clamp downhill.
-
-## Logging
-
-The model's To Workspace block produces the actual MATLAB **structure** `logout`, using Structure With Time format at 0.01 s intervals. It contains all 28 subsystem outputs:
+Run the regression script from the project root:
 
 ```matlab
-logout.time                 % N-by-1 seconds
-logout.signals.values        % N-by-28 output samples
+run('tests/check_EV_Bus_generic_cases.m')
 ```
 
-Column order is stored as `SignalNames` in the model workspace. Running `run_EV_Bus.m` also adds `logout.signalNames` and convenient named vectors, for example:
+It writes generated cases under `results/generic_case_examples/`.
 
-```matlab
-logout.data.Vehicle_Dynamics_VehicleSpeed_kmph
-logout.data.Powertrain_Controller_MotorCommandTotal_Nm
-logout.data.Pneumatic_Brake_FrictionBrakeTorque_Nm
-```
+## Cleanup note
 
-The model's Run button places `logout` directly in the base workspace. The script uses SimulationInput/SimulationOutput, extracts `out.logout` into `logout`, and saves it to `EV_Bus_results.mat`. Basic-block intermediate wires are not separately logged; every subsystem output is logged.
-
-## Default scenario and validation
-
-The 300 s synthetic cycle includes stops, targets up to 60 km/h, grades from -3% to +4%, and ambient temperature from 25 to 35 degrees Celsius. It is an illustrative cycle, not a certified bus drive cycle. The solver uses ode23t, a maximum step of 0.01 s, relative tolerance 1e-5, and absolute tolerance 1e-7.
-
-Structural connectivity checks pass. The run script checks finite outputs, pedal bounds, forward-only speed, combined drive/regeneration power limits, torque bounds, and both the requested traction identity and Newton's force balance. The standard cycle gives approximately 1.0 km/h RMS speed error and 2.38 km travelled.
-
-A separate flat-road stress simulation commanded 100 km/h at 1.01 s, then zero at 60.01 s, ending at 100 s. It reached the 800 kW combined drive limit without exceeding it, regenerated up to 495.83 kW, produced a peak combined driving torque of 4,999.4 Nm, and stopped at zero speed. Its SimulationOutput is saved in `EV_Bus_stress_results.mat`. The nominal profile embedded in the model was not modified.
+Obsolete files were moved to `_archive` because automatic approval review blocked permanent deletion. The current workflow does not require them. MATLAB may regenerate its own `slprj` folder or `.slxc` cache during future simulations.

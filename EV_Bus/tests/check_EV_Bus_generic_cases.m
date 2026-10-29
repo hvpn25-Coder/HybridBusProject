@@ -1,10 +1,11 @@
 % Regression across vehicle scale, profile, timestamps, sampling and noise.
 % Synthetic cases exercise the real Simulink plant and the case-runner API.
-folder=fileparts(mfilename('fullpath'));
+folder=fileparts(fileparts(mfilename('fullpath')));
+addpath(folder);
 open_system(fullfile(folder,'EV_Bus_Forward.slx'));
 mw=get_param('EV_Bus_Forward','ModelWorkspace');
 originalP=getVariable(mw,'P'); originalComp=getVariable(mw,'Comp');
-caseFolder=fullfile(folder,'generic_case_examples');
+caseFolder=fullfile(folder,'results','generic_case_examples');
 if ~isfolder(caseFolder), mkdir(caseFolder); end
 settings=[12000 1 250e3 14 120 .02 100 0; ...
           28000 2 500e3 25 160 .05 600 0; ...

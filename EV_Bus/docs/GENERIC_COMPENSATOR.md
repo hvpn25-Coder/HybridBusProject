@@ -12,7 +12,7 @@ options.StationaryWindow = [100 104]; % Only if known parked/level/zero traction
 [logout, report, out] = run_EV_Bus_case('my_recording.mat', options);
 ```
 
-Use the full file path if necessary. `logout` remains a MATLAB structure, with all 38 output signals and named vectors under `logout.data`. The accepted configuration is embedded in the model and saved, so the Simulink Run button reuses it. `EV_Bus_case_results.mat` stores the result and configuration report. For experiments without changing the saved model, set `options.Apply=false`.
+Use the full file path if necessary. `logout` remains a MATLAB structure, with all 38 output signals and named vectors under `logout.data`. The accepted configuration is embedded in the model and saved, so the Simulink Run button reuses it. `results/EV_Bus_case_results.mat` stores the result and configuration report. For experiments without changing the saved model, set `options.Apply=false`.
 
 Vehicle values are merged with the current model workspace `P`; unspecified values retain their current settings. MotorPower and torque limits are **per motor**, while MaxBrakeTorque is total wheel friction torque. Update peak torque, regenerative capability, motor speed limit and brake capacity as well when they differ on the new vehicle. Changing only rated power cannot infer those specifications. The current saved model is the source of unspecified parameters, not an immutable factory default.
 
@@ -80,7 +80,7 @@ Supported scope is forward travel, no tire slip, the existing PI driver, and the
 
 ## Checks performed
 
-`check_EV_Bus_generic_cases.m` creates and exercises self-contained cases in `generic_case_examples` with changed mass, motor count/power, gearing, profile, duration, sampling, grades and noise. Each has a known synthetic physical correction and uses the actual Simulink plant.
+`tests/check_EV_Bus_generic_cases.m` creates and exercises self-contained cases in `results/generic_case_examples` with changed mass, motor count/power, gearing, profile, duration, sampling, grades and noise. Each has a known synthetic physical correction and uses the actual Simulink plant.
 
 | Case | Main changes | Baseline RMS | Compensated RMS |
 |---|---|---:|---:|

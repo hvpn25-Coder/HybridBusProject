@@ -1,6 +1,8 @@
 % Run the self-contained forward electric-bus model and inspect all outputs.
 % Parameters and environment profiles are stored in the model workspace.
 modelFolder = fileparts(mfilename('fullpath'));
+resultFolder = fullfile(modelFolder,'results');
+if ~isfolder(resultFolder), mkdir(resultFolder); end
 open_system(fullfile(modelFolder,'EV_Bus_Forward.slx'));
 [logout, caseReport, out] = run_EV_Bus_case( ...
     fullfile(modelFolder,'Veh_Meas_Traction_Force.mat'), ...
@@ -15,7 +17,7 @@ logout.signalNames = getVariable(modelWorkspace,'SignalNames');
 for signalIndex = 1:numel(logout.signalNames)
     logout.data.(logout.signalNames{signalIndex}) = logout.signals.values(:,signalIndex);
 end
-save(fullfile(modelFolder,'EV_Bus_results.mat'),'logout');
+% The case runner saves logout and its report in results/EV_Bus_case_results.mat.
 
 % Verify physical invariants using the actual simulated signals.
 x = logout.signals.values;
@@ -49,7 +51,7 @@ nexttile; plot(logout.time,x(:,27)/1000,'LineWidth',1.1); grid on;
 xlabel('Time (s)'); ylabel('Friction torque (kNm)'); title('Pneumatic service brake');
 nexttile; plot(logout.time,x(:,11),'LineWidth',1.1); grid on;
 xlabel('Time (s)'); ylabel('Mechanical power (kW)'); title('Positive drive / negative regeneration');
-exportgraphics(fig,fullfile(modelFolder,'EV_Bus_results.png'),'Resolution',150);
+exportgraphics(fig,fullfile(resultFolder,'EV_Bus_results.png'),'Resolution',150);
 
 % All samples are included in the primary error metrics, including stops.
 metrics.rawRMSE_N = sqrt(mean((x(:,29)-x(:,22)).^2));
@@ -60,7 +62,7 @@ metrics.movingRMSE_N = sqrt(mean(x(movingSamples,32).^2));
 metrics.maximumGenericLoss_N = max(abs(x(:,30)));
 metrics.stationaryBias_N = MeasuredForceBias;
 disp(metrics);
-save(fullfile(modelFolder,'EV_Bus_compensation_results.mat'),'logout','metrics');
+% Additional summary metrics remain available in the workspace.
 compFig = figure('Name','Traction force compensation','Color','w','Position',[120 80 1200 850]);
 tiledlayout(3,1,'TileSpacing','compact');
 nexttile; plot(logout.time,x(:,[29 35 22])/1000); grid on;
@@ -74,4 +76,4 @@ nexttile; plot(logout.time,x(:,[30 34])); grid on;
 legend('Learned loss','Applied loss');
 ylabel('Generic loss (N)'); xlabel('Time (s)');
 title('Bounded loss estimate; applied loss fades to zero at standstill');
-exportgraphics(compFig,fullfile(modelFolder,'EV_Bus_compensation.png'),'Resolution',150);
+exportgraphics(compFig,fullfile(resultFolder,'EV_Bus_compensation.png'),'Resolution',150);

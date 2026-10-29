@@ -1,7 +1,7 @@
 function [logout, report, out] = run_EV_Bus_case(measurementFile, options)
 %RUN_EV_BUS_CASE Import, scale, tune and verify a forward bus measurement case.
 % [logout,report,out] = run_EV_Bus_case(file,options)
-% See GENERIC_COMPENSATOR.md for the MAT schema, options and limitations.
+% See docs/GENERIC_COMPENSATOR.md for the MAT schema, options and limitations.
 % Simulink equations use basic blocks; this function configures simulations.
 if nargin<2, options=struct; end
 allowed={'ReuseModelProfiles','Vehicle','SpeedProfile','SlopeProfile', ...
@@ -215,7 +215,9 @@ if opt(options,'Apply',true)
     for j=1:numel(profileNames), name=profileNames{j}; assignin(mw,name,profiles.(name)); end
     save_system(model);
     assignin('base','logout',logout); assignin('base','caseReport',report);
-    save(fullfile(folder,'EV_Bus_case_results.mat'),'logout','report');
+    resultFolder=fullfile(folder,'results');
+    if ~isfolder(resultFolder), mkdir(resultFolder); end
+    save(fullfile(resultFolder,'EV_Bus_case_results.mat'),'logout','report');
 end
 fprintf('%s: RMS %.2f -> %.2f N, noise %.2f N, bias %.2f N, Tau %.3g s\n', ...
     report.status,report.baselineRMSE_N,report.RMSE_N,noise,bias,selected.Tau);
